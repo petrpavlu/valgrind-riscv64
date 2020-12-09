@@ -47,7 +47,7 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/ir_match.o			        \
 		priv/ir_opt.o				\
 		priv/ir_inject.o			\
-		priv/main_main.o			\
+		priv/multiarch_main_main.o		\
 		priv/main_globals.o			\
 		priv/main_util.o			\
 		priv/s390_disasm.o			\
@@ -269,9 +269,9 @@ priv/ir_opt.o: $(ALL_HEADERS) priv/ir_opt.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir_opt.o \
 					 -c priv/ir_opt.c
 
-priv/main_main.o: $(ALL_HEADERS) priv/main_main.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main_main.o \
-					 -c priv/main_main.c
+priv/multiarch_main_main.o: $(ALL_HEADERS) priv/multiarch_main_main.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/multiarch_main_main.o \
+					 -c priv/multiarch_main_main.c
 
 priv/main_globals.o: $(ALL_HEADERS) priv/main_globals.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main_globals.o \
