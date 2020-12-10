@@ -12,6 +12,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_s390x.h		\
 		pub/libvex_s390x_common.h		\
 		pub/libvex_guest_mips32.h		\
+		pub/libvex_guest_riscv64.h		\
 		pub/libvex_guest_offsets.h
 
 PRIV_HEADERS = 	priv/host_x86_defs.h			\
@@ -21,6 +22,7 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/host_s390_defs.h			\
 		priv/host_mips_defs.h			\
 		priv/host_nanomips_defs.h		\
+		priv/host_riscv64_defs.h		\
 		priv/host_generic_maddf.h	        \
 		priv/host_generic_regs.h	        \
 		priv/host_generic_simd64.h	        \
@@ -36,6 +38,7 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/guest_ppc_defs.h			\
 		priv/guest_mips_defs.h			\
 		priv/guest_nanomips_defs.h		\
+		priv/guest_riscv64_defs.h		\
 		priv/mips_defs.h			\
 		priv/common_nanomips_defs.h		\
 		priv/s390_disasm.h		        \
@@ -59,6 +62,7 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_s390_defs.o			\
 		priv/host_mips_defs.o			\
 		priv/host_nanomips_defs.o		\
+		priv/host_riscv64_defs.o		\
 		priv/host_x86_isel.o			\
 		priv/host_amd64_isel.o			\
 		priv/host_arm_isel.o			\
@@ -67,6 +71,7 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_s390_isel.o			\
 		priv/host_mips_isel.o			\
 		priv/host_nanomips_isel.o		\
+		priv/host_riscv64_isel.o		\
 		priv/host_generic_maddf.o	        \
 		priv/host_generic_regs.o	        \
 		priv/host_generic_simd64.o	        \
@@ -84,6 +89,7 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_s390_helpers.o		\
 		priv/guest_mips_helpers.o		\
 		priv/guest_nanomips_helpers.o		\
+		priv/guest_riscv64_helpers.o		\
 		priv/guest_x86_toIR.o			\
 		priv/guest_amd64_toIR.o			\
 		priv/guest_arm_toIR.o			\
@@ -92,7 +98,8 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_s390_toIR.o			\
 		priv/guest_mipsdsp_toIR.o		\
 		priv/guest_mips_toIR.o			\
-		priv/guest_nanomips_toIR.o
+		priv/guest_nanomips_toIR.o		\
+		priv/guest_riscv64_toIR.o
 
 PUB_INCLUDES = -Ipub
 
@@ -217,6 +224,12 @@ TAG-arm64-linux:
 	if [ ! -f TAG-arm64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
 	touch TAG-arm64-linux
 
+libvex-riscv64-linux.a: TAG-riscv64-linux libvex.a
+	mv -f libvex.a libvex-riscv64-linux.a
+TAG-riscv64-linux:
+	if [ ! -f TAG-riscv64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-riscv64-linux
+
 
 clean:
 	rm -f $(LIB_OBJS) *.a TAG-* \
@@ -313,6 +326,10 @@ priv/host_nanomips_defs.o: $(ALL_HEADERS) priv/host_nanomips_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_nanomips_defs.o \
 					 -c priv/host_nanomips_defs.c
 
+priv/host_riscv64_defs.o: $(ALL_HEADERS) priv/host_riscv64_defs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_riscv64_defs.o \
+					 -c priv/host_riscv64_defs.c
+
 priv/host_x86_isel.o: $(ALL_HEADERS) priv/host_x86_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_x86_isel.o \
 					 -c priv/host_x86_isel.c
@@ -344,6 +361,10 @@ priv/host_mips_isel.o: $(ALL_HEADERS) priv/host_mips_isel.c
 priv/host_nanomips_isel.o: $(ALL_HEADERS) priv/host_nanomips_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_nanomips_isel.o \
 					 -c priv/host_nanomips_isel.c
+
+priv/host_riscv64_isel.o: $(ALL_HEADERS) priv/host_riscv64_isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_riscv64_isel.o \
+					 -c priv/host_riscv64_isel.c
 
 priv/host_generic_maddf.o: $(ALL_HEADERS) priv/host_generic_maddf.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_maddf.o \
@@ -405,6 +426,10 @@ priv/guest_arm64_helpers.o: $(ALL_HEADERS) priv/guest_arm64_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm64_helpers.o \
 					 -c priv/guest_arm64_helpers.c
 
+priv/guest_riscv64_helpers.o: $(ALL_HEADERS) priv/guest_riscv64_helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_riscv64_helpers.o \
+					 -c priv/guest_riscv64_helpers.c
+
 priv/guest_arm_toIR.o: $(ALL_HEADERS) priv/guest_arm_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm_toIR.o \
 					 -c priv/guest_arm_toIR.c
@@ -428,6 +453,10 @@ priv/guest_ppc_toIR.o: $(ALL_HEADERS) priv/guest_ppc_toIR.c
 priv/guest_s390_toIR.o: $(ALL_HEADERS) priv/guest_s390_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_s390_toIR.o \
 					 -c priv/guest_s390_toIR.c
+
+priv/guest_riscv64_toIR.o: $(ALL_HEADERS) priv/guest_riscv64_toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_riscv64_toIR.o \
+					 -c priv/guest_riscv64_toIR.c
 
 priv/s390_disasm.o: $(ALL_HEADERS) priv/s390_disasm.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/s390_disasm.o \
