@@ -52,6 +52,22 @@
    VEX-generated code.
 */
 
+/* TODO helpers */
+
+/*------------------------------------------------------------*/
+/*--- Flag-helpers translation-time function specialisers. ---*/
+/*--- These help iropt specialise calls the above run-time ---*/
+/*--- flags functions.                                     ---*/
+/*------------------------------------------------------------*/
+
+IRExpr* guest_riscv64_spechelper(const HChar* function_name,
+                                 IRExpr**     args,
+                                 IRStmt**     precedingStmts,
+                                 Int          n_precedingStmts)
+{
+   return NULL;
+}
+
 /*------------------------------------------------------------*/
 /*--- Helpers for dealing with, and describing, guest      ---*/
 /*--- state as a whole.                                    ---*/

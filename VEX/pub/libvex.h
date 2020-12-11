@@ -60,6 +60,7 @@ typedef
       VexArchMIPS32,
       VexArchMIPS64,
       VexArchNANOMIPS,
+      VexArchRISCV64,
    }
    VexArch;
 
