@@ -57,6 +57,26 @@ ST_IN HReg hregRISCV64_x27(void) { return mkHReg(False, HRcInt64, 27, 9); }
 #undef ST_IN
 
 /*------------------------------------------------------------*/
+/*--- Memory address expressions (amodes)                  ---*/
+/*------------------------------------------------------------*/
+
+typedef enum {
+   RISCV64am_RI12 = 10, /* reg + soff12 */
+} RISCV64AModeTag;
+
+typedef struct {
+   RISCV64AModeTag tag;
+   union {
+      struct {
+         HReg reg;
+         Int  soff12; /* -2048 .. +2047 */
+      } RI12;
+   } RISCV64am;
+} RISCV64AMode;
+
+RISCV64AMode* RISCV64AMode_RI12(HReg reg, Int soff12);
+
+/*------------------------------------------------------------*/
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
 

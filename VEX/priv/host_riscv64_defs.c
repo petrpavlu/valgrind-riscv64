@@ -58,6 +58,55 @@ UInt ppHRegRISCV64(HReg reg)
 }
 
 /*------------------------------------------------------------*/
+/*--- Memory address expressions (amodes)                  ---*/
+/*------------------------------------------------------------*/
+
+RISCV64AMode* RISCV64AMode_RI12(HReg reg, Int soff12)
+{
+   RISCV64AMode* am          = LibVEX_Alloc_inline(sizeof(RISCV64AMode));
+   am->tag                   = RISCV64am_RI12;
+   am->RISCV64am.RI12.reg    = reg;
+   am->RISCV64am.RI12.soff12 = soff12;
+   vassert(soff12 >= -2048 && soff12 <= 2047);
+   return am;
+}
+
+static void ppRISCV64AMode(RISCV64AMode* am)
+{
+   switch (am->tag) {
+   case RISCV64am_RI12:
+      vex_printf("%d(", am->RISCV64am.RI12.soff12);
+      ppHRegRISCV64(am->RISCV64am.RI12.reg);
+      vex_printf(")");
+      break;
+   default:
+      vpanic("ppRISCV64AMode");
+   }
+}
+
+static void addRegUsage_RISCV64AMode(HRegUsage* u, RISCV64AMode* am)
+{
+   switch (am->tag) {
+   case RISCV64am_RI12:
+      addHRegUse(u, HRmRead, am->RISCV64am.RI12.reg);
+      return;
+   default:
+      vpanic("addRegUsage_RISCV64Amode");
+   }
+}
+
+static void mapRegs_RISCV64AMode(HRegRemap* m, RISCV64AMode* am)
+{
+   switch (am->tag) {
+   case RISCV64am_RI12:
+      am->RISCV64am.RI12.reg = lookupHRegRemap(m, am->RISCV64am.RI12.reg);
+      return;
+   default:
+      vpanic("mapRegs_RISCV64Amode");
+   }
+}
+
+/*------------------------------------------------------------*/
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
 
