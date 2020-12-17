@@ -1017,6 +1017,15 @@ extern void LibVEX_InitIRI ( const IRICB * );
    ~~~~~
    r21 is GSP.
 
+   riscv64
+   ~~~~~~~
+   On entry, x8/s0 should point to the guest state + 2048. RISC-V has
+   load/store instructions with immediate (offset from the base
+   register) in range -2048 to 2047. The adjustment of 2048 allows
+   LibVEX to need only a single instruction to read/write the complete
+   guest state (primary + 2x shadow state areas) and most of the spill
+   area.
+
    ALL GUEST ARCHITECTURES
    ~~~~~~~~~~~~~~~~~~~~~~~
    The guest state must contain two pseudo-registers, guest_CMSTART

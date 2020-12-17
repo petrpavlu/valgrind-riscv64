@@ -133,6 +133,7 @@ static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
 /*------------------------------------------------------------*/
 
 static HReg get_baseblock_register(void) { return hregRISCV64_x8(); }
+#define BASEBLOCK_OFFSET_ADJUSTMENT 2048
 
 /*------------------------------------------------------------*/
 /*--- ISEL: Integer expressions (64/32 bit)                ---*/
@@ -228,30 +229,31 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    /* ------------------------- PUT ------------------------- */
    /* Write guest state, fixed offset. */
    case Ist_Put: {
-      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
-      UInt   off = (UInt)stmt->Ist.Put.offset;
-      vassert(off < (1 << 12));
+      IRType tyd  = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
+      HReg   base = get_baseblock_register();
+      Int    off  = stmt->Ist.Put.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
+      vassert(off >= -2048 && off <= 2047);
       if (tyd == Ity_I64) {
          HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
          addInstr(env, RISCV64Instr_SD(src, am));
          return;
       }
       if (tyd == Ity_I32) {
          HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
          addInstr(env, RISCV64Instr_SW(src, am));
          return;
       }
       if (tyd == Ity_I16) {
          HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
          addInstr(env, RISCV64Instr_SH(src, am));
          return;
       }
       if (tyd == Ity_I8) {
          HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
          addInstr(env, RISCV64Instr_SB(src, am));
          return;
       }
