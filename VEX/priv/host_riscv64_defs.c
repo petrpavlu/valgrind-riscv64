@@ -289,6 +289,7 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
 
    /* Add the registers that are not available for allocation. */
    /* TODO */
+   ru->regs[ru->size++] = hregRISCV64_x8();
 
    initialised = True;
 
