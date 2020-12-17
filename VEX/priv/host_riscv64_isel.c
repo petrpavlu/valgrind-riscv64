@@ -155,7 +155,7 @@ static HReg get_baseblock_register(void) { return hregRISCV64_x8(); }
 /* DO NOT CALL THIS DIRECTLY ! */
 static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
 {
-   IRType ty = typeOfIRExpr(env->type_env,e);
+   IRType ty = typeOfIRExpr(env->type_env, e);
    vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    switch (e->tag) {
@@ -217,6 +217,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       ppIRStmt(stmt);
       vex_printf("\n");
    }
+
    switch (stmt->tag) {
    /* ------------------------ STORE ------------------------ */
    /* Little-endian write to memory. */
@@ -393,7 +394,7 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    vassert(sizeof(RISCV64Instr) <= 24);
 
    /* Make up an initial environment to use. */
-   env = LibVEX_Alloc_inline(sizeof(ISelEnv));
+   env           = LibVEX_Alloc_inline(sizeof(ISelEnv));
    env->vreg_ctr = 0;
 
    /* Set up output code array. */

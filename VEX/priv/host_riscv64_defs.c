@@ -59,10 +59,10 @@ UInt ppHRegRISCV64(HReg reg)
 
 static inline UInt iregEnc(HReg r)
 {
-   UInt n;
    vassert(hregClass(r) == HRcInt64);
    vassert(!hregIsVirtual(r));
-   n = hregEncoding(r);
+
+   UInt n = hregEncoding(r);
    vassert(n > 0 && n <= 31);
    return n;
 }
@@ -273,7 +273,7 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
 {
    static RRegUniverse all_regs;
    static Bool         initialised = False;
-   RRegUniverse*       ru = &all_regs;
+   RRegUniverse*       ru          = &all_regs;
 
    if (LIKELY(initialised))
       return ru;
@@ -283,19 +283,18 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
    /* Add the registers that are available to the register allocator. */
    /* TODO */
    ru->allocable_start[HRcInt64] = ru->size;
-   ru->regs[ru->size++] = hregRISCV64_x18();
-   ru->regs[ru->size++] = hregRISCV64_x19();
-   ru->regs[ru->size++] = hregRISCV64_x20();
-   ru->regs[ru->size++] = hregRISCV64_x21();
-   ru->regs[ru->size++] = hregRISCV64_x22();
-   ru->regs[ru->size++] = hregRISCV64_x23();
-   ru->regs[ru->size++] = hregRISCV64_x24();
-   ru->regs[ru->size++] = hregRISCV64_x25();
-   ru->regs[ru->size++] = hregRISCV64_x26();
-   ru->regs[ru->size++] = hregRISCV64_x27();
-
-   ru->allocable_end[HRcInt64] = ru->size - 1;
-   ru->allocable = ru->size;
+   ru->regs[ru->size++]          = hregRISCV64_x18();
+   ru->regs[ru->size++]          = hregRISCV64_x19();
+   ru->regs[ru->size++]          = hregRISCV64_x20();
+   ru->regs[ru->size++]          = hregRISCV64_x21();
+   ru->regs[ru->size++]          = hregRISCV64_x22();
+   ru->regs[ru->size++]          = hregRISCV64_x23();
+   ru->regs[ru->size++]          = hregRISCV64_x24();
+   ru->regs[ru->size++]          = hregRISCV64_x25();
+   ru->regs[ru->size++]          = hregRISCV64_x26();
+   ru->regs[ru->size++]          = hregRISCV64_x27();
+   ru->allocable_end[HRcInt64]   = ru->size - 1;
+   ru->allocable                 = ru->size;
 
    /* Add the registers that are not available for allocation. */
    /* TODO */
@@ -312,6 +311,7 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
 void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
 {
    vassert(mode64 == True);
+
    initHRegUsage(u);
    switch (i->tag) {
    case RISCV64in_LI:
@@ -359,6 +359,7 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
 void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
 {
    vassert(mode64 == True);
+
    switch (i->tag) {
    case RISCV64in_LI:
       i->RISCV64in.LI.dst = lookupHRegRemap(m, i->RISCV64in.LI.dst);
@@ -410,12 +411,11 @@ void genSpill_RISCV64(/*OUT*/ HInstr** i1,
                       Int              offsetB,
                       Bool             mode64)
 {
-   HRegClass rclass;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == True);
-   *i1 = NULL;
-   rclass = hregClass(rreg);
+
+   HRegClass rclass = hregClass(rreg);
    switch (rclass) {
 #if 0
    case HRcInt64:
@@ -440,12 +440,11 @@ void genReload_RISCV64(/*OUT*/ HInstr** i1,
                        Int              offsetB,
                        Bool             mode64)
 {
-   HRegClass rclass;
    vassert(offsetB >= 0);
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == True);
-   *i1 = NULL;
-   rclass = hregClass(rreg);
+
+   HRegClass rclass = hregClass(rreg);
    switch (rclass) {
 #if 0
    case HRcInt64:
@@ -551,8 +550,7 @@ static UChar* emit_S(UChar* p,
 }
 
 /* Emit a U-type instruction. */
-static UChar*
-emit_U(UChar* p, UInt opcode, UInt rd, UInt imm31_12)
+static UChar* emit_U(UChar* p, UInt opcode, UInt rd, UInt imm31_12)
 {
    vassert(opcode >> 7 == 0);
    vassert(rd >> 5 == 0);
@@ -624,6 +622,7 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
 static UChar* do_load(UChar* p, UInt dst, const RISCV64AMode* am, UInt szB)
 {
    vassert(dst > 0 && dst <= 31);
+
    if (am->tag == RISCV64am_RI12) {
       UInt base = iregEnc(am->RISCV64am.RI12.reg);
       vassert(base > 0 && base <= 31);
@@ -652,6 +651,7 @@ static UChar* do_load(UChar* p, UInt dst, const RISCV64AMode* am, UInt szB)
 static UChar* do_store(UChar* p, UInt src, const RISCV64AMode* am, UInt szB)
 {
    vassert(src > 0 && src <= 31);
+
    if (am->tag == RISCV64am_RI12) {
       UInt base = iregEnc(am->RISCV64am.RI12.reg);
       vassert(base > 0 && base <= 31);
@@ -693,10 +693,11 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
                       const void*         disp_cp_xindir,
                       const void*         disp_cp_xassisted)
 {
-   UChar* p = &buf[0];
    vassert(nbuf >= 32);
    vassert(mode64 == True);
    vassert(((HWord)buf & 1) == 0);
+
+   UChar* p = &buf[0];
 
    switch (i->tag) {
    case RISCV64in_LI:

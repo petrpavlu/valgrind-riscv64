@@ -65,7 +65,7 @@
 static inline UInt getInsn(const UChar* p)
 {
    Bool is_compressed = (p[0] & 0x3) != 0x3;
-   UInt w = 0;
+   UInt w             = 0;
    if (!is_compressed) {
       w = (w << 8) | p[3];
       w = (w << 8) | p[2];
@@ -109,10 +109,7 @@ static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
 }
 
 /* Create an expression to produce a constant. */
-static IRExpr* mkU64(ULong i)
-{
-   return IRExpr_Const(IRConst_U64(i));
-}
+static IRExpr* mkU64(ULong i) { return IRExpr_Const(IRConst_U64(i)); }
 
 /*------------------------------------------------------------*/
 /*--- Offsets of various parts of the riscv64 guest state  ---*/
@@ -285,7 +282,7 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
 
    /* ---------------- lui rd, nzimm[17:12] ----------------- */
    if (INSN(15, 13) == 0b011) {
-      UInt rd = INSN(11, 7);
+      UInt rd    = INSN(11, 7);
       UInt nzimm = INSN(12, 12) << 17 | INSN(6, 2) << 12;
       if (rd == 0 || rd == 2 || nzimm == 0) {
          /* Invalid C.LUI, fall through. */
@@ -332,10 +329,10 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
 
    /* Set result defaults. */
-   dres->whatNext = Dis_Continue;
-   dres->len = 0;
+   dres->whatNext    = Dis_Continue;
+   dres->len         = 0;
    dres->jk_StopHere = Ijk_INVALID;
-   dres->hint = Dis_HintNone;
+   dres->hint        = Dis_HintNone;
 
    /* Read the instruction word. */
    UInt insn = getInsn(guest_instr);
@@ -458,8 +455,8 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
          register should be up-to-date since it is made so at the start of each
          insn, but nevertheless be paranoid and update it again right now. */
       stmt(irsb, IRStmt_Put(OFFB_PC, mkU64(guest_IP)));
-      dres.len = 0;
-      dres.whatNext = Dis_StopHere;
+      dres.len         = 0;
+      dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
    }
    return dres;
