@@ -487,10 +487,9 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
                       const void*         disp_cp_xassisted)
 {
    UChar* p = &buf[0];
-   vassert(nbuf >= 64);
+   vassert(nbuf >= 32);
    vassert(mode64 == True);
-
-   /* vex_printf("asm  "); ppRISCV6464Instr(i, mode64); vex_printf("\n"); */
+   vassert(((HWord)buf & 1) == 0);
 
    switch (i->tag) {
 #if 0
@@ -511,7 +510,7 @@ bad:
    /*NOTREACHED*/
 
 done:
-   vassert(p - &buf[0] <= 64);
+   vassert(p - &buf[0] <= 32);
    return p - &buf[0];
 }
 
