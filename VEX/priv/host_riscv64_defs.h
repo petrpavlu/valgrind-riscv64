@@ -82,18 +82,77 @@ RISCV64AMode* RISCV64AMode_RI12(HReg reg, Int soff12);
 
 /* The kind of instructions. */
 typedef enum {
-   Rin_Imm64, /* Generate 64-bit literal to register */
+   RISCV64in_LI, /* Load immediate pseudoinstruction. */
+   RISCV64in_LD, /* 64-bit load. */
+   RISCV64in_LW, /* sx-32-to-64-bit load. */
+   RISCV64in_LH, /* sx-16-to-64-bit load. */
+   RISCV64in_LB, /* sx-8-to-64-bit load. */
+   RISCV64in_SD, /* 64-bit store. */
+   RISCV64in_SW, /* 32-bit store. */
+   RISCV64in_SH, /* 16-bit store. */
+   RISCV64in_SB, /* 8-bit store. */
 } RISCV64InstrTag;
 
 typedef struct {
    RISCV64InstrTag tag;
    union {
+      /* Load immediate pseudoinstruction. */
       struct {
-         ULong imm64;
          HReg  dst;
-      } Imm64;
-   } Rin;
+         ULong imm64;
+      } LI;
+      /* 64-bit load. */
+      struct {
+         HReg          dst;
+         RISCV64AMode* amode;
+      } LD;
+      /* sx-32-to-64-bit load. */
+      struct {
+         HReg          dst;
+         RISCV64AMode* amode;
+      } LW;
+      /* sx-16-to-64-bit load. */
+      struct {
+         HReg          dst;
+         RISCV64AMode* amode;
+      } LH;
+      /* sx-8-to-64-bit load. */
+      struct {
+         HReg          dst;
+         RISCV64AMode* amode;
+      } LB;
+      /* 64-bit store. */
+      struct {
+         HReg          src;
+         RISCV64AMode* amode;
+      } SD;
+      /* 32-bit store. */
+      struct {
+         HReg          src;
+         RISCV64AMode* amode;
+      } SW;
+      /* 16-bit store. */
+      struct {
+         HReg          src;
+         RISCV64AMode* amode;
+      } SH;
+      /* 8-bit store. */
+      struct {
+         HReg          src;
+         RISCV64AMode* amode;
+      } SB;
+   } RISCV64in;
 } RISCV64Instr;
+
+RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
+RISCV64Instr* RISCV64Instr_LD(HReg dst, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_LW(HReg dst, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_LH(HReg dst, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_LB(HReg dst, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_SD(HReg src, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_SW(HReg src, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_SH(HReg src, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_SB(HReg src, RISCV64AMode* amode);
 
 /*------------------------------------------------------------*/
 /* --- Interface exposed to VEX                           --- */
