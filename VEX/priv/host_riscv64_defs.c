@@ -57,6 +57,16 @@ UInt ppHRegRISCV64(HReg reg)
    }
 }
 
+static inline UInt iregEnc(HReg r)
+{
+   UInt n;
+   vassert(hregClass(r) == HRcInt64);
+   vassert(!hregIsVirtual(r));
+   n = hregEncoding(r);
+   vassert(n > 0 && n <= 31);
+   return n;
+}
+
 /*------------------------------------------------------------*/
 /*--- Memory address expressions (amodes)                  ---*/
 /*------------------------------------------------------------*/
@@ -467,9 +477,206 @@ RISCV64Instr* genMove_RISCV64(HReg from, HReg to, Bool mode64)
    }
 }
 
-/*---------------------------------------------------------------*/
-/*--- Code generation                                         ---*/
-/*---------------------------------------------------------------*/
+/*------------------------------------------------------------*/
+/*--- Functions to emit a sequence of bytes                ---*/
+/*------------------------------------------------------------*/
+
+static inline UChar* emit16(UChar* p, UShort val)
+{
+   *p++ = (val >> 0) & 0xff;
+   *p++ = (val >> 8) & 0xff;
+   return p;
+}
+
+static inline UChar* emit32(UChar* p, UInt val)
+{
+   *p++ = (val >> 0) & 0xff;
+   *p++ = (val >> 8) & 0xff;
+   *p++ = (val >> 16) & 0xff;
+   *p++ = (val >> 24) & 0xff;
+   return p;
+}
+
+/*------------------------------------------------------------*/
+/*--- Functions to emit various instruction formats        ---*/
+/*------------------------------------------------------------*/
+
+/* Emit an I-type instruction. */
+static UChar*
+emit_I(UChar* p, UInt opcode, UInt rd, UInt funct3, UInt rs1, UInt imm11_0)
+{
+   vassert(opcode >> 7 == 0);
+   vassert(rd >> 5 == 0);
+   vassert(funct3 >> 3 == 0);
+   vassert(rs1 >> 5 == 0);
+   vassert(imm11_0 >> 12 == 0);
+
+   UInt the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= rd << 7;
+   the_insn |= funct3 << 12;
+   the_insn |= rs1 << 15;
+   the_insn |= imm11_0 << 20;
+
+   return emit32(p, the_insn);
+}
+
+/* Emit an S-type instruction. */
+static UChar* emit_S(UChar* p,
+                     UInt   opcode,
+                     UInt   imm4_0,
+                     UInt   funct3,
+                     UInt   rs1,
+                     UInt   rs2,
+                     UInt   imm11_5)
+{
+   vassert(opcode >> 7 == 0);
+   vassert(imm4_0 >> 5 == 0);
+   vassert(funct3 >> 3 == 0);
+   vassert(rs1 >> 5 == 0);
+   vassert(rs2 >> 5 == 0);
+   vassert(imm11_5 >> 7 == 0);
+
+   UInt the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= imm4_0 << 7;
+   the_insn |= funct3 << 12;
+   the_insn |= rs1 << 15;
+   the_insn |= rs2 << 20;
+   the_insn |= imm11_5 << 25;
+
+   return emit32(p, the_insn);
+}
+
+/* Emit a U-type instruction. */
+static UChar*
+emit_U(UChar* p, UInt opcode, UInt rd, UInt imm31_12)
+{
+   vassert(opcode >> 7 == 0);
+   vassert(rd >> 5 == 0);
+   vassert(imm31_12 >> 20 == 0);
+
+   UInt the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= rd << 7;
+   the_insn |= imm31_12 << 12;
+
+   return emit32(p, the_insn);
+}
+
+/* Emit a CI-type instruction. */
+static UChar*
+emit_CI(UChar* p, UInt opcode, UInt imm4_0, UInt rd, UInt imm5, UInt funct3)
+{
+   vassert(opcode >> 2 == 0);
+   vassert(imm4_0 >> 5 == 0);
+   vassert(rd >> 5 == 0);
+   vassert(imm5 >> 1 == 0);
+   vassert(funct3 >> 3 == 0);
+
+   UShort the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= imm4_0 << 2;
+   the_insn |= rd << 7;
+   the_insn |= imm5 << 12;
+   the_insn |= funct3 << 13;
+
+   return emit16(p, the_insn);
+}
+
+/*------------------------------------------------------------*/
+/*--- Code generation                                      ---*/
+/*------------------------------------------------------------*/
+
+/* Get an immediate into a register, using only that register. */
+static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
+{
+   vassert(dst > 0 && dst <= 31);
+
+   Long simm64 = imm64;
+
+   if (simm64 >= -32 && simm64 <= 31) {
+      /* c.li dst, simm64[5:0] */
+      return emit_CI(p, 0b01, imm64 & 0x1f, dst, (imm64 >> 5) & 0x1, 0b010);
+   }
+
+   /* TODO Add implementation with addi only and c.lui+addi. */
+
+   if (simm64 >= -2147483648 && simm64 <= 2147483647) {
+      /* lui dst, simm64[31:12]+simm64[11] */
+      p = emit_U(p, 0b0110111, dst, ((imm64 + 0x800) >> 12) & 0xfffff);
+      if ((imm64 & 0xfff) == 0)
+         return p;
+      /* addi dst, dst, simm64[11:0] */
+      return emit_I(p, 0b0010011, dst, 0b000, dst, imm64 & 0xfff);
+   }
+
+   /* TODO Implement support for >32-bit constants. */
+   vpanic("imm64_to_ireg");
+   return p;
+}
+
+/* Generate a load to dst, using the given amode for the address. */
+static UChar* do_load(UChar* p, UInt dst, const RISCV64AMode* am, UInt szB)
+{
+   vassert(dst > 0 && dst <= 31);
+   if (am->tag == RISCV64am_RI12) {
+      UInt base = iregEnc(am->RISCV64am.RI12.reg);
+      vassert(base > 0 && base <= 31);
+      Int soff12 = am->RISCV64am.RI12.soff12;
+      if (szB == 8) {
+         /* ld dst, soff12(base) */
+         return emit_I(p, 0b0000011, dst, 0b011, base, soff12);
+      }
+      if (szB == 4) {
+         /* lw dst, soff12(base) */
+         return emit_I(p, 0b0000011, dst, 0b010, base, soff12);
+      }
+      if (szB == 2) {
+         /* lh dst, soff12(base) */
+         return emit_I(p, 0b0000011, dst, 0b001, base, soff12);
+      }
+      if (szB == 1) {
+         /* lb dst, soff12(base) */
+         return emit_I(p, 0b0000011, dst, 0b000, base, soff12);
+      }
+   }
+   vpanic("do_load");
+}
+
+/* Generate a store from src, using the given amode for the address. */
+static UChar* do_store(UChar* p, UInt src, const RISCV64AMode* am, UInt szB)
+{
+   vassert(src > 0 && src <= 31);
+   if (am->tag == RISCV64am_RI12) {
+      UInt base = iregEnc(am->RISCV64am.RI12.reg);
+      vassert(base > 0 && base <= 31);
+      Int  soff12  = am->RISCV64am.RI12.soff12;
+      UInt imm4_0  = soff12 & 0x1f;
+      UInt imm11_5 = (soff12 >> 5) & 0x7f;
+      if (szB == 8) {
+         /* sd src, soff12(base) */
+         return emit_S(p, 0b0100011, imm4_0, 0b011, base, src, imm11_5);
+      }
+      if (szB == 4) {
+         /* sw src, soff12(base) */
+         return emit_S(p, 0b0100011, imm4_0, 0b010, base, src, imm11_5);
+      }
+      if (szB == 2) {
+         /* sh src, soff12(base) */
+         return emit_S(p, 0b0100011, imm4_0, 0b001, base, src, imm11_5);
+      }
+      if (szB == 1) {
+         /* sb src, soff12(base) */
+         return emit_S(p, 0b0100011, imm4_0, 0b000, base, src, imm11_5);
+      }
+   }
+   vpanic("do_store");
+}
 
 /* Emit an instruction into buf and return the number of bytes used. Note that
    buf is not the insn's final place, and therefore it is imperative to emit
@@ -492,16 +699,35 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
    vassert(((HWord)buf & 1) == 0);
 
    switch (i->tag) {
-#if 0
-      case RISCV64Ain_Imm64:
-         *p++ = toUChar(0x48 + (1 & iregEnc3(i->Ain.Imm64.dst)));
-         *p++ = toUChar(0xB8 + iregEnc210(i->Ain.Imm64.dst));
-         p = emit64(p, i->Ain.Imm64.imm64);
-         goto done;
-#endif
-
-      default:
-         goto bad;
+   case RISCV64in_LI:
+      p = imm64_to_ireg(p, iregEnc(i->RISCV64in.LI.dst), i->RISCV64in.LI.imm64);
+      goto done;
+   case RISCV64in_LD:
+      p = do_load(p, iregEnc(i->RISCV64in.LD.dst), i->RISCV64in.LD.amode, 8);
+      goto done;
+   case RISCV64in_LW:
+      p = do_load(p, iregEnc(i->RISCV64in.LW.dst), i->RISCV64in.LW.amode, 4);
+      goto done;
+   case RISCV64in_LH:
+      p = do_load(p, iregEnc(i->RISCV64in.LH.dst), i->RISCV64in.LH.amode, 2);
+      goto done;
+   case RISCV64in_LB:
+      p = do_load(p, iregEnc(i->RISCV64in.LB.dst), i->RISCV64in.LB.amode, 1);
+      goto done;
+   case RISCV64in_SD:
+      p = do_store(p, iregEnc(i->RISCV64in.SD.src), i->RISCV64in.SD.amode, 8);
+      goto done;
+   case RISCV64in_SW:
+      p = do_store(p, iregEnc(i->RISCV64in.SW.src), i->RISCV64in.SW.amode, 4);
+      goto done;
+   case RISCV64in_SH:
+      p = do_store(p, iregEnc(i->RISCV64in.SH.src), i->RISCV64in.SH.amode, 2);
+      goto done;
+   case RISCV64in_SB:
+      p = do_store(p, iregEnc(i->RISCV64in.SB.src), i->RISCV64in.SB.amode, 1);
+      goto done;
+   default:
+      goto bad;
    }
 
 bad:
