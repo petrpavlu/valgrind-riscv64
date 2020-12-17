@@ -86,14 +86,6 @@ static ULong sx_to_64(ULong x, UInt n)
    return (ULong)r;
 }
 
-#define BITS2(_b1, _b0)      (((_b1) << 1) | (_b0))
-#define BITS3(_b2, _b1, _b0) (((_b2) << 2) | ((_b1) << 1) | (_b0))
-
-#define X00 BITS2(0, 0)
-#define X01 BITS2(0, 1)
-#define X10 BITS2(1, 0)
-#define X11 BITS2(1, 1)
-
 /* Produce _uint[_bMax:_bMin]. */
 #define SLICE_UInt(_uint, _bMax, _bMin)                                        \
    ((((UInt)(_uint)) >> (_bMin)) &                                             \
@@ -292,7 +284,7 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
 
    /* ---------------- lui rd, nzimm[17:12] ----------------- */
-   if (INSN(15, 13) == BITS3(0, 1, 1)) {
+   if (INSN(15, 13) == 0b011) {
       UInt rd = INSN(11, 7);
       UInt nzimm = INSN(12, 12) << 17 | INSN(6, 2) << 12;
       if (rd == 0 || rd == 2 || nzimm == 0) {
