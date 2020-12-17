@@ -48,12 +48,12 @@ UInt ppHRegRISCV64(HReg reg)
 
    /* Be specific for real regs. */
    switch (hregClass(reg)) {
-      case HRcInt64:
-         r = hregEncoding(reg);
-         vassert(r >= 0 && r < 31);
-         return vex_printf("x%d", r);
-      default:
-         vpanic("ppHRegRISCV64");
+   case HRcInt64:
+      r = hregEncoding(reg);
+      vassert(r >= 0 && r < 31);
+      return vex_printf("x%d", r);
+   default:
+      vpanic("ppHRegRISCV64");
    }
 }
 
@@ -174,19 +174,19 @@ void genSpill_RISCV64(/*OUT*/ HInstr** i1,
    rclass = hregClass(rreg);
    switch (rclass) {
 #if 0
-      case HRcInt64:
-         vassert(0 == (offsetB & 7));
-         offsetB >>= 3;
-         vassert(offsetB < 4096);
-         *i1 = RISCV64Instr_LdSt64(
-            False /*!isLoad*/,
-            rreg,
-            RISCV64AMode_RI12(hregRISCV64_X21(), offsetB, 8));
-         return;
+   case HRcInt64:
+      vassert(0 == (offsetB & 7));
+      offsetB >>= 3;
+      vassert(offsetB < 4096);
+      *i1 = RISCV64Instr_LdSt64(
+         False /*!isLoad*/,
+         rreg,
+         RISCV64AMode_RI12(hregRISCV64_X21(), offsetB, 8));
+      return;
 #endif
-      default:
-         ppHRegClass(rclass);
-         vpanic("genSpill_RISCV64: unimplemented regclass");
+   default:
+      ppHRegClass(rclass);
+      vpanic("genSpill_RISCV64: unimplemented regclass");
    }
 }
 
@@ -204,19 +204,19 @@ void genReload_RISCV64(/*OUT*/ HInstr** i1,
    rclass = hregClass(rreg);
    switch (rclass) {
 #if 0
-      case HRcInt64:
-         vassert(0 == (offsetB & 7));
-         offsetB >>= 3;
-         vassert(offsetB < 4096);
-         *i1 = RISCV64Instr_LdSt64(
-            True /*isLoad*/,
-            rreg,
-            RISCV64AMode_RI12(hregRISCV64_X21(), offsetB, 8));
-         return;
+   case HRcInt64:
+      vassert(0 == (offsetB & 7));
+      offsetB >>= 3;
+      vassert(offsetB < 4096);
+      *i1 = RISCV64Instr_LdSt64(
+         True /*isLoad*/,
+         rreg,
+         RISCV64AMode_RI12(hregRISCV64_X21(), offsetB, 8));
+      return;
 #endif
-      default:
-         ppHRegClass(rclass);
-         vpanic("genReload_RISCV64: unimplemented regclass");
+   default:
+      ppHRegClass(rclass);
+      vpanic("genReload_RISCV64: unimplemented regclass");
    }
 }
 
@@ -224,12 +224,12 @@ RISCV64Instr* genMove_RISCV64(HReg from, HReg to, Bool mode64)
 {
    switch (hregClass(from)) {
 #if 0
-      case HRcInt64:
-         return RISCV64Instr_MovI(to, from);
+   case HRcInt64:
+      return RISCV64Instr_MovI(to, from);
 #endif
-      default:
-         ppHRegClass(hregClass(from));
-         vpanic("genMove_RISCV64: unimplemented regclass");
+   default:
+      ppHRegClass(hregClass(from));
+      vpanic("genMove_RISCV64: unimplemented regclass");
    }
 }
 

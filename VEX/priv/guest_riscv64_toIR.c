@@ -173,72 +173,72 @@ static IRExpr* mkU64(ULong i)
 static Int offsetIReg64(UInt iregNo)
 {
    switch (iregNo) {
-      case 0:
-         return OFFB_X0;
-      case 1:
-         return OFFB_X1;
-      case 2:
-         return OFFB_X2;
-      case 3:
-         return OFFB_X3;
-      case 4:
-         return OFFB_X4;
-      case 5:
-         return OFFB_X5;
-      case 6:
-         return OFFB_X6;
-      case 7:
-         return OFFB_X7;
-      case 8:
-         return OFFB_X8;
-      case 9:
-         return OFFB_X9;
-      case 10:
-         return OFFB_X10;
-      case 11:
-         return OFFB_X11;
-      case 12:
-         return OFFB_X12;
-      case 13:
-         return OFFB_X13;
-      case 14:
-         return OFFB_X14;
-      case 15:
-         return OFFB_X15;
-      case 16:
-         return OFFB_X16;
-      case 17:
-         return OFFB_X17;
-      case 18:
-         return OFFB_X18;
-      case 19:
-         return OFFB_X19;
-      case 20:
-         return OFFB_X20;
-      case 21:
-         return OFFB_X21;
-      case 22:
-         return OFFB_X22;
-      case 23:
-         return OFFB_X23;
-      case 24:
-         return OFFB_X24;
-      case 25:
-         return OFFB_X25;
-      case 26:
-         return OFFB_X26;
-      case 27:
-         return OFFB_X27;
-      case 28:
-         return OFFB_X28;
-      case 29:
-         return OFFB_X29;
-      case 30:
-         return OFFB_X30;
-      case 31:
-         return OFFB_X31;
-      default:
-         vassert(0);
+   case 0:
+      return OFFB_X0;
+   case 1:
+      return OFFB_X1;
+   case 2:
+      return OFFB_X2;
+   case 3:
+      return OFFB_X3;
+   case 4:
+      return OFFB_X4;
+   case 5:
+      return OFFB_X5;
+   case 6:
+      return OFFB_X6;
+   case 7:
+      return OFFB_X7;
+   case 8:
+      return OFFB_X8;
+   case 9:
+      return OFFB_X9;
+   case 10:
+      return OFFB_X10;
+   case 11:
+      return OFFB_X11;
+   case 12:
+      return OFFB_X12;
+   case 13:
+      return OFFB_X13;
+   case 14:
+      return OFFB_X14;
+   case 15:
+      return OFFB_X15;
+   case 16:
+      return OFFB_X16;
+   case 17:
+      return OFFB_X17;
+   case 18:
+      return OFFB_X18;
+   case 19:
+      return OFFB_X19;
+   case 20:
+      return OFFB_X20;
+   case 21:
+      return OFFB_X21;
+   case 22:
+      return OFFB_X22;
+   case 23:
+      return OFFB_X23;
+   case 24:
+      return OFFB_X24;
+   case 25:
+      return OFFB_X25;
+   case 26:
+      return OFFB_X26;
+   case 27:
+      return OFFB_X27;
+   case 28:
+      return OFFB_X28;
+   case 29:
+      return OFFB_X29;
+   case 30:
+      return OFFB_X30;
+   case 31:
+      return OFFB_X31;
+   default:
+      vassert(0);
    }
 }
 
@@ -366,20 +366,20 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
    /* Parse insn[1:0] to determine whether the instruction is 16-bit
       (compressed) or 32-bit. */
    switch (INSN(1, 0)) {
-      case X00:
-         ok = dis_RISCV64_compressed_00(dres, irsb, insn, sigill_diag);
-         break;
-      case X01:
-         ok = dis_RISCV64_compressed_01(dres, irsb, insn, sigill_diag);
-         break;
-      case X10:
-         ok = dis_RISCV64_compressed_10(dres, irsb, insn, sigill_diag);
-         break;
-      case X11:
-         /* TODO */
-         break;
-      default:
-         vassert(0); /* Can't happen. */
+   case 0b00:
+      ok = dis_RISCV64_compressed_00(dres, irsb, insn, sigill_diag);
+      break;
+   case 0b01:
+      ok = dis_RISCV64_compressed_01(dres, irsb, insn, sigill_diag);
+      break;
+   case 0b10:
+      ok = dis_RISCV64_compressed_10(dres, irsb, insn, sigill_diag);
+      break;
+   case 0b11:
+      /* TODO */
+      break;
+   default:
+      vassert(0); /* Can't happen. */
    }
 
    /* If the next-level down decoders failed, make sure dres didn't get
@@ -427,13 +427,13 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
       /* All decode successes end up here. */
       vassert(dres.len == 4 || dres.len == 20);
       switch (dres.whatNext) {
-         case Dis_Continue:
-            stmt(irsb, IRStmt_Put(OFFB_PC, mkU64(guest_IP + dres.len)));
-            break;
-         case Dis_StopHere:
-            break;
-         default:
-            vassert(0);
+      case Dis_Continue:
+         stmt(irsb, IRStmt_Put(OFFB_PC, mkU64(guest_IP + dres.len)));
+         break;
+      case Dis_StopHere:
+         break;
+      default:
+         vassert(0);
       }
       DIP("\n");
    } else {
