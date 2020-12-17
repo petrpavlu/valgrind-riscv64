@@ -101,11 +101,110 @@ typedef struct {
    IRExpr* previous_rm;
 } ISelEnv;
 
+static void addInstr(ISelEnv* env, RISCV64Instr* instr)
+{
+   addHInstr(env->code, instr);
+   if (vex_traceflags & VEX_TRACE_VCODE) {
+      ppRISCV64Instr(instr, True /*mode64*/);
+      vex_printf("\n");
+   }
+}
+
+static HReg newVRegI(ISelEnv* env)
+{
+   HReg reg = mkHReg(True /*virtual*/, HRcInt64, 0, env->vreg_ctr);
+   env->vreg_ctr++;
+   return reg;
+}
+
+/*------------------------------------------------------------*/
+/*--- ISEL: Forward declarations                           ---*/
+/*------------------------------------------------------------*/
+
+/* These are organised as iselXXX and iselXXX_wrk pairs. The iselXXX_wrk do the
+   real work, but are not to be called directly. For each XXX, iselXXX calls its
+   iselXXX_wrk counterpart, then checks that all returned registers are virtual.
+   You should not call the _wrk version directly. */
+
+static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
+
 /*------------------------------------------------------------*/
 /*--- ISEL: Misc helpers                                   ---*/
 /*------------------------------------------------------------*/
 
 static HReg get_baseblock_register(void) { return hregRISCV64_x8(); }
+
+/*------------------------------------------------------------*/
+/*--- ISEL: Integer expressions (64/32 bit)                ---*/
+/*------------------------------------------------------------*/
+
+/* Select insns for an integer-typed expression, and add them to the code list.
+   Return a reg holding the result. This reg will be a virtual register. THE
+   RETURNED REG MUST NOT BE MODIFIED. If you want to modify it, ask for a new
+   vreg, copy it in there, and modify the copy. The register allocator will do
+   its best to map both vregs to the same real register, so the copies will
+   often disappear later in the game.
+
+   This should handle expressions of 64- and 32-bit type. All results are
+   returned in a 64-bit register. For 32-bit expressions, the upper 32 bits are
+   arbitrary, so you should mask or sign extend partial values if necessary.
+*/
+
+/* -------------------------- Reg --------------------------- */
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
+{
+   IRType ty = typeOfIRExpr(env->type_env,e);
+   vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
+
+   switch (e->tag) {
+   /* ----------------------- LITERAL ----------------------- */
+   /* 64-bit literals. */
+   case Iex_Const: {
+      ULong u;
+      HReg  dst = newVRegI(env);
+      switch (e->Iex.Const.con->tag) {
+      case Ico_U64:
+         u = e->Iex.Const.con->Ico.U64;
+         break;
+      case Ico_U32:
+         u = e->Iex.Const.con->Ico.U32;
+         break;
+      case Ico_U16:
+         u = e->Iex.Const.con->Ico.U16;
+         break;
+      case Ico_U8:
+         u = e->Iex.Const.con->Ico.U8;
+         break;
+      default:
+         ppIRExpr(e);
+         vpanic("iselIntExpr_R.Iex_Const(riscv64)");
+      }
+      addInstr(env, RISCV64Instr_LI(dst, u));
+      return dst;
+   }
+
+   default:
+      break;
+   }
+
+   /* We get here if no pattern matched. */
+irreducible:
+   ppIRExpr(e);
+   vpanic("iselIntExpr_R: cannot reduce tree");
+}
+
+static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e)
+{
+   HReg r = iselIntExpr_R_wrk(env, e);
+
+   /* Sanity checks ... */
+   vassert(hregClass(r) == HRcInt64);
+   vassert(hregIsVirtual(r));
+
+   return r;
+}
 
 /*------------------------------------------------------------*/
 /*--- ISEL: Statements                                     ---*/
@@ -119,6 +218,51 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       vex_printf("\n");
    }
    switch (stmt->tag) {
+   /* ------------------------ STORE ------------------------ */
+   /* Little-endian write to memory. */
+   case Ist_Store:
+      /* TODO */
+      break;
+
+   /* ------------------------- PUT ------------------------- */
+   /* Write guest state, fixed offset. */
+   case Ist_Put: {
+      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
+      UInt   off = (UInt)stmt->Ist.Put.offset;
+      vassert(off < (1 << 12));
+      if (tyd == Ity_I64) {
+         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         addInstr(env, RISCV64Instr_SD(src, am));
+         return;
+      }
+      if (tyd == Ity_I32) {
+         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         addInstr(env, RISCV64Instr_SW(src, am));
+         return;
+      }
+      if (tyd == Ity_I16) {
+         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         addInstr(env, RISCV64Instr_SH(src, am));
+         return;
+      }
+      if (tyd == Ity_I8) {
+         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         RISCV64AMode* am  = RISCV64AMode_RI12(get_baseblock_register(), off);
+         addInstr(env, RISCV64Instr_SB(src, am));
+         return;
+      }
+
+      break;
+   }
+
+   /* --------------------- INSTR MARK ---------------------- */
+   /* Doesn't generate any executable code ... */
+   case Ist_IMark:
+      return;
+
    default:
       break;
    }
