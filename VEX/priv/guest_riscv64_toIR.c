@@ -333,7 +333,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
 
    /* Set result defaults. */
    dres->whatNext = Dis_Continue;
-   dres->len = 4;
+   dres->len = 0;
    dres->jk_StopHere = Ijk_INVALID;
    dres->hint = Dis_HintNone;
 
@@ -345,7 +345,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
 
    DIP("\t(riscv64) 0x%llx:  ", (ULong)guest_pc_curr_instr);
 
-   vassert(0 == (guest_pc_curr_instr & 3ULL));
+   vassert((guest_pc_curr_instr & 1) == 0);
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
@@ -354,20 +354,25 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
 
    /* Main riscv64 instruction decoder starts here. */
    Bool ok = False;
+   UInt inst_size;
 
    /* Parse insn[1:0] to determine whether the instruction is 16-bit
       (compressed) or 32-bit. */
    switch (INSN(1, 0)) {
    case 0b00:
+      dres->len = inst_size = 2;
       ok = dis_RISCV64_compressed_00(dres, irsb, insn, sigill_diag);
       break;
    case 0b01:
+      dres->len = inst_size = 2;
       ok = dis_RISCV64_compressed_01(dres, irsb, insn, sigill_diag);
       break;
    case 0b10:
+      dres->len = inst_size = 2;
       ok = dis_RISCV64_compressed_10(dres, irsb, insn, sigill_diag);
       break;
    case 0b11:
+      dres->len = inst_size = 4;
       /* TODO */
       break;
    default:
@@ -378,7 +383,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
       changed. */
    if (!ok) {
       vassert(dres->whatNext == Dis_Continue);
-      vassert(dres->len == 4);
+      vassert(dres->len == inst_size);
       vassert(dres->jk_StopHere == Ijk_INVALID);
    }
 
@@ -417,7 +422,7 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
                                   sigill_diag);
    if (ok) {
       /* All decode successes end up here. */
-      vassert(dres.len == 4 || dres.len == 20);
+      vassert(dres.len == 2 || dres.len == 4 || dres.len == 20);
       switch (dres.whatNext) {
       case Dis_Continue:
          stmt(irsb, IRStmt_Put(OFFB_PC, mkU64(guest_IP + dres.len)));
