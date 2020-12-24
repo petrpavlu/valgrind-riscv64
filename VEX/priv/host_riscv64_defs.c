@@ -31,6 +31,8 @@
    without prior written permission.
 */
 
+#include "libvex_trc_values.h"
+
 #include "host_riscv64_defs.h"
 #include "main_util.h"
 
@@ -266,6 +268,51 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.SB.base);
       vex_printf(")");
       return;
+   case RISCV64in_XDirect:
+      vex_printf("(xDirect) ");
+      if (!hregIsInvalid(i->RISCV64in.XDirect.cond)) {
+         vex_printf("beq ");
+         ppHRegRISCV64(i->RISCV64in.XDirect.cond);
+         vex_printf(", zero, 1f; ");
+      }
+      vex_printf("li t0, 0x%llx; ", i->RISCV64in.XDirect.dstGA);
+      vex_printf("sd t0, %d(", i->RISCV64in.XDirect.soff12);
+      ppHRegRISCV64(i->RISCV64in.XDirect.base);
+      vex_printf("); li t0, <%s>; ",
+                 i->RISCV64in.XDirect.toFastEP ? "disp_cp_chain_me_to_fastEP"
+                                               : "disp_cp_chain_me_to_slowEP");
+      vex_printf("jalr zero, 0(t0); 1:");
+      return;
+   case RISCV64in_XIndir:
+      vex_printf("(xIndir) ");
+      if (!hregIsInvalid(i->RISCV64in.XIndir.cond)) {
+         vex_printf("beq ");
+         ppHRegRISCV64(i->RISCV64in.XIndir.cond);
+         vex_printf(", zero, 1f; ");
+      }
+      vex_printf("sd ");
+      ppHRegRISCV64(i->RISCV64in.XIndir.dstGA);
+      vex_printf(", %d(", i->RISCV64in.XIndir.soff12);
+      ppHRegRISCV64(i->RISCV64in.XIndir.base);
+      vex_printf("); li t0, <disp_cp_xindir>; ");
+      vex_printf("jalr zero, 0(t0); 1:");
+      return;
+   case RISCV64in_XAssisted:
+      vex_printf("(xAssisted) ");
+      if (!hregIsInvalid(i->RISCV64in.XAssisted.cond)) {
+         vex_printf("beq ");
+         ppHRegRISCV64(i->RISCV64in.XAssisted.cond);
+         vex_printf(", zero, 1f; ");
+      }
+      vex_printf("sd ");
+      ppHRegRISCV64(i->RISCV64in.XAssisted.dstGA);
+      vex_printf(", %d(", i->RISCV64in.XAssisted.soff12);
+      ppHRegRISCV64(i->RISCV64in.XAssisted.base);
+      vex_printf("); mov s0, $IRJumpKind_to_TRCVAL(%d)",
+                 (Int)i->RISCV64in.XAssisted.jk);
+      vex_printf("; li t0, <disp_cp_xassisted>; ");
+      vex_printf("jalr zero, t0(0); 1:");
+      return;
    default:
       vpanic("ppRISCV64Instr");
    }
@@ -357,6 +404,27 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.SB.src);
       addHRegUse(u, HRmRead, i->RISCV64in.SB.base);
       return;
+   /* XDirect/XIndir/XAssisted are also a bit subtle. They conditionally exit
+      the block. Hence we only need to list (1) the registers that they read,
+      and (2) the registers that they write in the case where the block is not
+      exited. (2) is empty, hence only (1) is relevant here. */
+   case RISCV64in_XDirect:
+      addHRegUse(u, HRmRead, i->RISCV64in.XDirect.base);
+      if (!hregIsInvalid(i->RISCV64in.XDirect.cond))
+         addHRegUse(u, HRmRead, i->RISCV64in.XDirect.cond);
+      return;
+   case RISCV64in_XIndir:
+      addHRegUse(u, HRmRead, i->RISCV64in.XIndir.dstGA);
+      addHRegUse(u, HRmRead, i->RISCV64in.XIndir.base);
+      if (!hregIsInvalid(i->RISCV64in.XDirect.cond))
+         addHRegUse(u, HRmRead, i->RISCV64in.XDirect.cond);
+      return;
+   case RISCV64in_XAssisted:
+      addHRegUse(u, HRmRead, i->RISCV64in.XAssisted.dstGA);
+      addHRegUse(u, HRmRead, i->RISCV64in.XAssisted.base);
+      if (!hregIsInvalid(i->RISCV64in.XAssisted.cond))
+         addHRegUse(u, HRmRead, i->RISCV64in.XAssisted.cond);
+      return;
    default:
       ppRISCV64Instr(i, mode64);
       vpanic("getRegUsage_RISCV64Instr");
@@ -406,6 +474,23 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    case RISCV64in_SB:
       mapReg(m, &i->RISCV64in.SB.src);
       mapReg(m, &i->RISCV64in.SB.base);
+      return;
+   case RISCV64in_XDirect:
+      mapReg(m, &i->RISCV64in.XDirect.base);
+      if (!hregIsInvalid(i->RISCV64in.XDirect.cond))
+         mapReg(m, &i->RISCV64in.XDirect.cond);
+      return;
+   case RISCV64in_XIndir:
+      mapReg(m, &i->RISCV64in.XIndir.dstGA);
+      mapReg(m, &i->RISCV64in.XIndir.base);
+      if (!hregIsInvalid(i->RISCV64in.XIndir.cond))
+         mapReg(m, &i->RISCV64in.XIndir.cond);
+      return;
+   case RISCV64in_XAssisted:
+      mapReg(m, &i->RISCV64in.XAssisted.dstGA);
+      mapReg(m, &i->RISCV64in.XAssisted.base);
+      if (!hregIsInvalid(i->RISCV64in.XAssisted.cond))
+         mapReg(m, &i->RISCV64in.XAssisted.cond);
       return;
    default:
       ppRISCV64Instr(i, mode64);
@@ -553,6 +638,35 @@ emit_S(UChar* p, UInt opcode, UInt imm11_0, UInt funct3, UInt rs1, UInt rs2)
    the_insn |= rs1 << 15;
    the_insn |= rs2 << 20;
    the_insn |= imm11_5 << 25;
+
+   return emit32(p, the_insn);
+}
+
+/* Emit a B-type instruction. */
+static UChar*
+emit_B(UChar* p, UInt opcode, UInt imm12_1, UInt funct3, UInt rs1, UInt rs2)
+{
+   vassert(opcode >> 7 == 0);
+   vassert(imm12_1 >> 12 == 0);
+   vassert(funct3 >> 3 == 0);
+   vassert(rs1 >> 5 == 0);
+   vassert(rs2 >> 5 == 0);
+
+   UInt imm11   = (imm12_1 >> 10) & 0x1;
+   UInt imm4_1  = (imm12_1 >> 0) & 0xf;
+   UInt imm10_5 = (imm12_1 >> 4) & 0x3f;
+   UInt imm12   = (imm12_1 >> 11) & 0x1;
+
+   UInt the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= imm11 << 7;
+   the_insn |= imm4_1 << 8;
+   the_insn |= funct3 << 12;
+   the_insn |= rs1 << 15;
+   the_insn |= rs2 << 20;
+   the_insn |= imm10_5 << 25;
+   the_insn |= imm12 << 31;
 
    return emit32(p, the_insn);
 }
@@ -740,6 +854,209 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = emit_S(p, 0b0100011, imm11_0, 0b000, base, src);
       goto done;
    }
+
+   case RISCV64in_XDirect: {
+      /* NB: what goes on here has to be very closely coordinated with the
+         chainXDirect_RISCV64() and unchainXDirect_RISCV64() below. */
+      /* We're generating chain-me requests here, so we need to be sure this is
+         actually allowed -- no-redir translations can't use chain-me's.
+         Hence: */
+      vassert(disp_cp_chain_me_to_slowEP != NULL);
+      vassert(disp_cp_chain_me_to_fastEP != NULL);
+
+      /* First off, if this is conditional, create a conditional jump over the
+         rest of it. Or at least, leave a space for it that we will shortly fill
+         in. */
+      UChar* ptmp = NULL;
+      if (!hregIsInvalid(i->RISCV64in.XDirect.cond)) {
+         ptmp = p;
+         p += 4;
+      }
+
+      /* Update the guest pc. */
+      {
+         /* li t0, dstGA */
+         p = imm64_to_ireg(p, 5 /*x5/t0*/, i->RISCV64in.XDirect.dstGA);
+
+         /* sd t0, soff12(base) */
+         UInt base   = iregEnc(i->RISCV64in.XDirect.base);
+         Int  soff12 = i->RISCV64in.XDirect.soff12;
+         vassert(soff12 >= -2048 && soff12 < 2048);
+         UInt imm11_0 = soff12 & 0xfff;
+
+         p = emit_S(p, 0b0100011, imm11_0, 0b011, base, 5 /*x5/t0*/);
+      }
+
+      /* --- FIRST PATCHABLE BYTE follows --- */
+      /* VG_(disp_cp_chain_me_to_{slowEP,fastEP}) (where we're calling to) backs
+         up the return address, so as to find the address of the first patchable
+         byte. So: don't change the number of instructions (3) below. */
+      /* TODO Make the number of instructions always constant. */
+      /* li t0, VG_(disp_cp_chain_me_to_{slowEP,fastEP}) */
+      const void* disp_cp_chain_me = i->RISCV64in.XDirect.toFastEP
+                                        ? disp_cp_chain_me_to_fastEP
+                                        : disp_cp_chain_me_to_slowEP;
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_chain_me);
+
+      /* jalr zero, t0(0) */
+      p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
+      /* --- END of PATCHABLE BYTES --- */
+
+      /* Fix up the conditional jump, if there was one. */
+      if (!hregIsInvalid(i->RISCV64in.XDirect.cond)) {
+         /* beq cond, zero, delta */
+         UInt cond  = iregEnc(i->RISCV64in.XDirect.cond);
+         UInt delta = p - ptmp;
+         /* TODO Fix assert. */
+         vassert(delta >= 16 && delta < 4096 && (delta & 1) == 0);
+         UInt imm12_1 = (delta >> 1) & 0x7ff;
+
+         p = emit_B(p, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
+      }
+
+      goto done;
+   }
+
+   case RISCV64in_XIndir: {
+      /* We're generating transfers that could lead indirectly to a chain-me, so
+         we need to be sure this is actually allowed -- no-redir translations
+         are not allowed to reach normal translations without going through the
+         scheduler. That means no XDirects or XIndirs out from no-redir
+         translations. Hence: */
+      vassert(disp_cp_xindir != NULL);
+
+      /* First off, if this is conditional, create a conditional jump over the
+         rest of it. Or at least, leave a space for it that we will shortly fill
+         in. */
+      UChar* ptmp = NULL;
+      if (!hregIsInvalid(i->RISCV64in.XIndir.cond)) {
+         ptmp = p;
+         p += 4;
+      }
+
+      /* Update the guest pc. */
+      {
+         /* sd r-dstGA, soff12(base) */
+         UInt src    = iregEnc(i->RISCV64in.XIndir.dstGA);
+         UInt base   = iregEnc(i->RISCV64in.XIndir.base);
+         Int  soff12 = i->RISCV64in.XIndir.soff12;
+         vassert(soff12 >= -2048 && soff12 < 2048);
+         UInt imm11_0 = soff12 & 0xfff;
+
+         p = emit_S(p, 0b0100011, imm11_0, 0b011, base, src);
+      }
+
+      /* li t0, VG_(disp_cp_xindir) */
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_xindir);
+
+      /* jalr zero, t0(0) */
+      p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (!hregIsInvalid(i->RISCV64in.XIndir.cond)) {
+         /* beq cond, zero, delta */
+         UInt cond  = iregEnc(i->RISCV64in.XIndir.cond);
+         UInt delta = p - ptmp;
+         vassert(delta >= 16 && delta < 4096 && (delta & 1) == 0);
+         UInt imm12_1 = (delta >> 1) & 0x7ff;
+
+         p = emit_B(p, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
+      }
+
+      goto done;
+   }
+
+   case RISCV64in_XAssisted: {
+      /* First off, if this is conditional, create a conditional jump over the
+         rest of it. Or at least, leave a space for it that we will shortly fill
+         in. */
+      UChar* ptmp = NULL;
+      if (!hregIsInvalid(i->RISCV64in.XAssisted.cond)) {
+         ptmp = p;
+         p += 4;
+      }
+
+      /* Update the guest pc. */
+      {
+         /* sd r-dstGA, soff12(base) */
+         UInt src    = iregEnc(i->RISCV64in.XAssisted.dstGA);
+         UInt base   = iregEnc(i->RISCV64in.XAssisted.base);
+         Int  soff12 = i->RISCV64in.XAssisted.soff12;
+         vassert(soff12 >= -2048 && soff12 < 2048);
+         UInt imm11_0 = soff12 & 0xfff;
+
+         p = emit_S(p, 0b0100011, imm11_0, 0b011, base, src);
+      }
+
+      /* li s0, $magic_number */
+      UInt trcval = 0;
+      switch (i->RISCV64in.XAssisted.jk) {
+      case Ijk_ClientReq:
+         trcval = VEX_TRC_JMP_CLIENTREQ;
+         break;
+      case Ijk_Sys_syscall:
+         trcval = VEX_TRC_JMP_SYS_SYSCALL;
+         break;
+      case Ijk_EmWarn:
+         trcval = VEX_TRC_JMP_EMWARN;
+         break;
+      case Ijk_EmFail:
+         trcval = VEX_TRC_JMP_EMFAIL;
+         break;
+      case Ijk_NoDecode:
+         trcval = VEX_TRC_JMP_NODECODE;
+         break;
+      case Ijk_InvalICache:
+         trcval = VEX_TRC_JMP_INVALICACHE;
+         break;
+      case Ijk_NoRedir:
+         trcval = VEX_TRC_JMP_NOREDIR;
+         break;
+      case Ijk_SigILL:
+         trcval = VEX_TRC_JMP_SIGILL;
+         break;
+      case Ijk_SigTRAP:
+         trcval = VEX_TRC_JMP_SIGTRAP;
+         break;
+      case Ijk_SigBUS:
+         trcval = VEX_TRC_JMP_SIGBUS;
+         break;
+      case Ijk_SigFPE_IntDiv:
+         trcval = VEX_TRC_JMP_SIGFPE_INTDIV;
+         break;
+      case Ijk_SigFPE_IntOvf:
+         trcval = VEX_TRC_JMP_SIGFPE_INTOVF;
+         break;
+      case Ijk_Boring:
+         trcval = VEX_TRC_JMP_BORING;
+         break;
+      default:
+         ppIRJumpKind(i->RISCV64in.XAssisted.jk);
+         vpanic("emit_RISCV64Instr.RISCV64in_XAssisted: unexpected jump kind");
+      }
+      vassert(trcval != 0);
+      p = imm64_to_ireg(p, 8 /*x8/s0*/, trcval);
+
+      /* li t0, VG_(disp_cp_xassisted) */
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_xassisted);
+
+      /* jalr zero, t0(0) */
+      p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (!hregIsInvalid(i->RISCV64in.XAssisted.cond)) {
+         /* beq cond, zero, delta */
+         UInt cond  = iregEnc(i->RISCV64in.XAssisted.cond);
+         UInt delta = p - ptmp;
+         vassert(delta >= 20 && delta < 4096 && (delta & 1) == 0);
+         UInt imm12_1 = (delta >> 1) & 0x7ff;
+
+         p = emit_B(p, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
+      }
+
+      goto done;
+   }
+
    default:
       goto bad;
    }
