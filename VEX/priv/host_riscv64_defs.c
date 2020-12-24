@@ -206,6 +206,7 @@ RISCV64Instr* RISCV64Instr_XAssisted(
 void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
 {
    vassert(mode64 == True);
+
    switch (i->tag) {
    case RISCV64in_LI:
       vex_printf("li      ");
@@ -441,7 +442,7 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
 
    switch (i->tag) {
    case RISCV64in_LI:
-      i->RISCV64in.LI.dst = lookupHRegRemap(m, i->RISCV64in.LI.dst);
+      mapReg(m, &i->RISCV64in.LI.dst);
       return;
    case RISCV64in_LD:
       mapReg(m, &i->RISCV64in.LD.dst);
