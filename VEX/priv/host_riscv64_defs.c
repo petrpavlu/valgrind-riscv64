@@ -164,6 +164,43 @@ RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_XDirect(
+   Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP)
+{
+   RISCV64Instr* i               = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                        = RISCV64in_XDirect;
+   i->RISCV64in.XDirect.dstGA    = dstGA;
+   i->RISCV64in.XDirect.base     = base;
+   i->RISCV64in.XDirect.soff12   = soff12;
+   i->RISCV64in.XDirect.cond     = cond;
+   i->RISCV64in.XDirect.toFastEP = toFastEP;
+   return i;
+}
+
+RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond)
+{
+   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                     = RISCV64in_XIndir;
+   i->RISCV64in.XIndir.dstGA  = dstGA;
+   i->RISCV64in.XIndir.base   = base;
+   i->RISCV64in.XIndir.soff12 = soff12;
+   i->RISCV64in.XIndir.cond   = cond;
+   return i;
+}
+
+RISCV64Instr* RISCV64Instr_XAssisted(
+   HReg dstGA, HReg base, Int soff12, HReg cond, IRJumpKind jk)
+{
+   RISCV64Instr* i               = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                        = RISCV64in_XAssisted;
+   i->RISCV64in.XAssisted.dstGA  = dstGA;
+   i->RISCV64in.XAssisted.base   = base;
+   i->RISCV64in.XAssisted.soff12 = soff12;
+   i->RISCV64in.XAssisted.cond   = cond;
+   i->RISCV64in.XAssisted.jk     = jk;
+   return i;
+}
+
 void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
 {
    vassert(mode64 == True);

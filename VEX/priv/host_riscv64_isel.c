@@ -386,7 +386,7 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    vassert(archinfo_host->endness == VexEndnessLE);
 
    /* Guard against unexpected space regressions. */
-   vassert(sizeof(RISCV64Instr) <= 24);
+   vassert(sizeof(RISCV64Instr) <= 32);
 
    /* Make up an initial environment to use. */
    env           = LibVEX_Alloc_inline(sizeof(ISelEnv));

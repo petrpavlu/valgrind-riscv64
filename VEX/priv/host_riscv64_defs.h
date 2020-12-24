@@ -73,6 +73,9 @@ typedef enum {
    RISCV64in_SW,              /* 32-bit store. */
    RISCV64in_SH,              /* 16-bit store. */
    RISCV64in_SB,              /* 8-bit store. */
+   RISCV64in_XDirect,         /* Direct transfer to guest address. */
+   RISCV64in_XIndir,          /* Indirect transfer to guest address. */
+   RISCV64in_XAssisted,       /* Assisted transfer to guest address. */
 } RISCV64InstrTag;
 
 typedef struct {
@@ -131,6 +134,32 @@ typedef struct {
          HReg base;
          Int  soff12; /* -2048 .. +2047 */
       } SB;
+      /* Update the guest pc value, then exit requesting to chain to it. May be
+         conditional. */
+      struct {
+         Addr64 dstGA;    /* Next guest address. */
+         HReg   base;     /* Base to access the guest state. */
+         Int    soff12;   /* Offset from the base register to access pc. */
+         HReg   cond;     /* Condition, can be INVALID_HREG for "always". */
+         Bool   toFastEP; /* Chain to the slow or fast point? */
+      } XDirect;
+      /* Boring transfer to a guest address not known at JIT time. Not
+         chainable. May be conditional. */
+      struct {
+         HReg dstGA;  /* Next guest address. */
+         HReg base;   /* Base to access the guest state. */
+         Int  soff12; /* Offset from the base register to access pc. */
+         HReg cond;   /* Condition, can be INVALID_REG for "always". */
+      } XIndir;
+      /* Assisted transfer to a guest address, most general case. Not chainable.
+         May be conditional. */
+      struct {
+         HReg       dstGA;  /* Next guest address. */
+         HReg       base;   /* Base to access the guest state. */
+         Int        soff12; /* Offset from the base register to access pc. */
+         HReg       cond;   /* Condition, can be INVALID_REG for "always". */
+         IRJumpKind jk;
+      } XAssisted;
    } RISCV64in;
 } RISCV64Instr;
 
@@ -143,6 +172,11 @@ RISCV64Instr* RISCV64Instr_SD(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_XDirect(
+   Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);
+RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond);
+RISCV64Instr* RISCV64Instr_XAssisted(
+   HReg dstGA, HReg base, Int soff12, HReg cond, IRJumpKind jk);
 
 /*------------------------------------------------------------*/
 /* --- Interface exposed to VEX                           --- */
