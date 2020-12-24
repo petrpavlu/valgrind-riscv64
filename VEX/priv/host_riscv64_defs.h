@@ -64,15 +64,15 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 10); }
 
 /* The kind of instructions. */
 typedef enum {
-   RISCV64in_LI, /* Load immediate pseudoinstruction. */
-   RISCV64in_LD, /* 64-bit load. */
-   RISCV64in_LW, /* sx-32-to-64-bit load. */
-   RISCV64in_LH, /* sx-16-to-64-bit load. */
-   RISCV64in_LB, /* sx-8-to-64-bit load. */
-   RISCV64in_SD, /* 64-bit store. */
-   RISCV64in_SW, /* 32-bit store. */
-   RISCV64in_SH, /* 16-bit store. */
-   RISCV64in_SB, /* 8-bit store. */
+   RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
+   RISCV64in_LD,              /* 64-bit load. */
+   RISCV64in_LW,              /* sx-32-to-64-bit load. */
+   RISCV64in_LH,              /* sx-16-to-64-bit load. */
+   RISCV64in_LB,              /* sx-8-to-64-bit load. */
+   RISCV64in_SD,              /* 64-bit store. */
+   RISCV64in_SW,              /* 32-bit store. */
+   RISCV64in_SH,              /* 16-bit store. */
+   RISCV64in_SB,              /* 8-bit store. */
 } RISCV64InstrTag;
 
 typedef struct {
