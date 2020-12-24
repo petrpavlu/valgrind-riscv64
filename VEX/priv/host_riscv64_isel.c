@@ -279,80 +279,81 @@ static void iselNext(ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP)
       vex_printf("\n");
    }
 
-#if 0
+   HReg base   = get_baseblock_register();
+   Int  soff12 = offsIP - BASEBLOCK_OFFSET_ADJUSTMENT;
+   vassert(soff12 >= -2048 && offsIP < 2048);
+
    /* Case: boring transfer to known address. */
    if (next->tag == Iex_Const) {
       IRConst* cdst = next->Iex.Const.con;
       vassert(cdst->tag == Ico_U64);
       if (jk == Ijk_Boring || jk == Ijk_Call) {
          /* Boring transfer to known address. */
-         ARM64AMode* amPC = mk_baseblock_64bit_access_amode(offsIP);
          if (env->chainingAllowed) {
             /* .. almost always true .. */
             /* Skip the event check at the dst if this is a forwards edge. */
-            Bool toFastEP
-               = ((Addr64)cdst->Ico.U64) > env->max_ga;
-            if (0) vex_printf("%s", toFastEP ? "X" : ".");
-            addInstr(env, ARM64Instr_XDirect(cdst->Ico.U64,
-                                             amPC, ARM64cc_AL,
-                                             toFastEP));
+            Bool toFastEP = (Addr64)cdst->Ico.U64 > env->max_ga;
+            if (0)
+               vex_printf("%s", toFastEP ? "X" : ".");
+            addInstr(env,
+                     RISCV64Instr_XDirect(
+                        cdst->Ico.U64, base, soff12, INVALID_HREG, toFastEP));
          } else {
             /* .. very occasionally .. */
-            /* We can't use chaining, so ask for an assisted transfer,
-               as that's the only alternative that is allowable. */
+            /* We can't use chaining, so ask for an assisted transfer, as that's
+               the only alternative that is allowable. */
             HReg r = iselIntExpr_R(env, next);
-            addInstr(env, ARM64Instr_XAssisted(r, amPC, ARM64cc_AL,
-                                               Ijk_Boring));
+            addInstr(env,
+                     RISCV64Instr_XAssisted(
+                        r, base, soff12, INVALID_HREG, Ijk_Boring));
          }
          return;
       }
    }
 
-   /* Case: call/return (==boring) transfer to any address */
+   /* Case: call/return (==boring) transfer to any address. */
    switch (jk) {
-      case Ijk_Boring: case Ijk_Ret: case Ijk_Call: {
-         HReg        r    = iselIntExpr_R(env, next);
-         ARM64AMode* amPC = mk_baseblock_64bit_access_amode(offsIP);
-         if (env->chainingAllowed) {
-            addInstr(env, ARM64Instr_XIndir(r, amPC, ARM64cc_AL));
-         } else {
-            addInstr(env, ARM64Instr_XAssisted(r, amPC, ARM64cc_AL,
-                                               Ijk_Boring));
-         }
-         return;
-      }
-      default:
-         break;
+   case Ijk_Boring:
+   case Ijk_Ret:
+   case Ijk_Call: {
+      HReg r = iselIntExpr_R(env, next);
+      if (env->chainingAllowed)
+         addInstr(env, RISCV64Instr_XIndir(r, base, soff12, INVALID_HREG));
+      else
+         addInstr(
+            env,
+            RISCV64Instr_XAssisted(r, base, soff12, INVALID_HREG, Ijk_Boring));
+      return;
+   }
+   default:
+      break;
    }
 
-   /* Case: assisted transfer to arbitrary address */
+   /* Case: assisted transfer to arbitrary address. */
    switch (jk) {
-      /* Keep this list in sync with that for Ist_Exit above */
-      case Ijk_ClientReq:
-      case Ijk_NoDecode:
-      case Ijk_NoRedir:
-      case Ijk_Sys_syscall:
-      case Ijk_InvalICache:
-      case Ijk_FlushDCache:
-      case Ijk_SigTRAP:
-      case Ijk_Yield:
-      {
-         HReg        r    = iselIntExpr_R(env, next);
-         ARM64AMode* amPC = mk_baseblock_64bit_access_amode(offsIP);
-         addInstr(env, ARM64Instr_XAssisted(r, amPC, ARM64cc_AL, jk));
-         return;
-      }
-      default:
-         break;
+   /* Keep this list in sync with that for Ist_Exit above. */
+   case Ijk_ClientReq:
+   case Ijk_NoDecode:
+   case Ijk_NoRedir:
+   case Ijk_Sys_syscall:
+   case Ijk_InvalICache:
+   case Ijk_FlushDCache:
+   case Ijk_SigTRAP:
+   case Ijk_Yield: {
+      HReg r = iselIntExpr_R(env, next);
+      addInstr(env, RISCV64Instr_XAssisted(r, base, soff12, INVALID_HREG, jk));
+      return;
+   }
+   default:
+      break;
    }
 
-   vex_printf( "\n-- PUT(%d) = ", offsIP);
-   ppIRExpr( next );
-   vex_printf( "; exit-");
+   vex_printf("\n-- PUT(%d) = ", offsIP);
+   ppIRExpr(next);
+   vex_printf("; exit-");
    ppIRJumpKind(jk);
-   vex_printf( "\n");
-   vassert(0); // are we expecting any other kind?
-#endif
+   vex_printf("\n");
+   vassert(0); /* Are we expecting any other kind? */
 }
 
 /*------------------------------------------------------------*/
