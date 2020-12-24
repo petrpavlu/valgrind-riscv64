@@ -496,20 +496,17 @@ emit_I(UChar* p, UInt opcode, UInt rd, UInt funct3, UInt rs1, UInt imm11_0)
 }
 
 /* Emit an S-type instruction. */
-static UChar* emit_S(UChar* p,
-                     UInt   opcode,
-                     UInt   imm4_0,
-                     UInt   funct3,
-                     UInt   rs1,
-                     UInt   rs2,
-                     UInt   imm11_5)
+static UChar*
+emit_S(UChar* p, UInt opcode, UInt imm11_0, UInt funct3, UInt rs1, UInt rs2)
 {
    vassert(opcode >> 7 == 0);
-   vassert(imm4_0 >> 5 == 0);
+   vassert(imm11_0 >> 12 == 0);
    vassert(funct3 >> 3 == 0);
    vassert(rs1 >> 5 == 0);
    vassert(rs2 >> 5 == 0);
-   vassert(imm11_5 >> 7 == 0);
+
+   UInt imm4_0  = (imm11_0 >> 0) & 0x1f;
+   UInt imm11_5 = (imm11_0 >> 5) & 0x7f;
 
    UInt the_insn = 0;
 
@@ -540,14 +537,15 @@ static UChar* emit_U(UChar* p, UInt opcode, UInt rd, UInt imm31_12)
 }
 
 /* Emit a CI-type instruction. */
-static UChar*
-emit_CI(UChar* p, UInt opcode, UInt imm4_0, UInt rd, UInt imm5, UInt funct3)
+static UChar* emit_CI(UChar* p, UInt opcode, UInt imm5_0, UInt rd, UInt funct3)
 {
    vassert(opcode >> 2 == 0);
-   vassert(imm4_0 >> 5 == 0);
+   vassert(imm5_0 >> 6 == 0);
    vassert(rd >> 5 == 0);
-   vassert(imm5 >> 1 == 0);
    vassert(funct3 >> 3 == 0);
+
+   UInt imm4_0 = (imm5_0 >> 0) & 0x1f;
+   UInt imm5   = (imm5_0 >> 5) & 0x1;
 
    UShort the_insn = 0;
 
@@ -573,7 +571,7 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
 
    if (simm64 >= -32 && simm64 <= 31) {
       /* c.li dst, simm64[5:0] */
-      return emit_CI(p, 0b01, imm64 & 0x1f, dst, (imm64 >> 5) & 0x1, 0b010);
+      return emit_CI(p, 0b01, imm64 & 0x3f, dst, 0b010);
    }
 
    /* TODO Add implementation with addi only and c.lui+addi. */
