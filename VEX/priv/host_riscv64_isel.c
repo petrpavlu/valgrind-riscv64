@@ -230,34 +230,24 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    /* Write guest state, fixed offset. */
    case Ist_Put: {
       IRType tyd  = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
-      HReg   base = get_baseblock_register();
-      Int    off  = stmt->Ist.Put.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
-      vassert(off >= -2048 && off <= 2047);
-      if (tyd == Ity_I64) {
-         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
-         addInstr(env, RISCV64Instr_SD(src, am));
-         return;
-      }
-      if (tyd == Ity_I32) {
-         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
-         addInstr(env, RISCV64Instr_SW(src, am));
-         return;
-      }
-      if (tyd == Ity_I16) {
-         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
-         addInstr(env, RISCV64Instr_SH(src, am));
-         return;
-      }
-      if (tyd == Ity_I8) {
-         HReg          src = iselIntExpr_R(env, stmt->Ist.Put.data);
-         RISCV64AMode* am  = RISCV64AMode_RI12(base, off);
-         addInstr(env, RISCV64Instr_SB(src, am));
-         return;
-      }
+      if (tyd == Ity_I64 || tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
+         HReg src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         HReg base = get_baseblock_register();
+         Int  off  = stmt->Ist.Put.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
+         vassert(off >= -2048 && off < 2048);
 
+         if (tyd == Ity_I64)
+            addInstr(env, RISCV64Instr_SD(src, base, off));
+         else if (tyd == Ity_I32)
+            addInstr(env, RISCV64Instr_SW(src, base, off));
+         else if (tyd == Ity_I16)
+            addInstr(env, RISCV64Instr_SH(src, base, off));
+         else if (tyd == Ity_I8)
+            addInstr(env, RISCV64Instr_SB(src, base, off));
+         else
+            vassert(0);
+         return;
+      }
       break;
    }
 
@@ -384,7 +374,10 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    Int           i, j;
    HReg          hreg, hregHI;
    ISelEnv*      env;
+   /* TODO */
+#if 0
    RISCV64AMode *amCounter, *amFailAddr;
+#endif
 
    /* Do some sanity checks. */
    vassert(arch_host == VexArchRISCV64);

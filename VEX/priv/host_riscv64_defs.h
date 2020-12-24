@@ -59,26 +59,6 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 10); }
 #undef ST_IN
 
 /*------------------------------------------------------------*/
-/*--- Memory address expressions (amodes)                  ---*/
-/*------------------------------------------------------------*/
-
-typedef enum {
-   RISCV64am_RI12 = 10, /* reg + soff12 */
-} RISCV64AModeTag;
-
-typedef struct {
-   RISCV64AModeTag tag;
-   union {
-      struct {
-         HReg reg;
-         Int  soff12; /* -2048 .. +2047 */
-      } RI12;
-   } RISCV64am;
-} RISCV64AMode;
-
-RISCV64AMode* RISCV64AMode_RI12(HReg reg, Int soff12);
-
-/*------------------------------------------------------------*/
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
 
@@ -105,56 +85,64 @@ typedef struct {
       } LI;
       /* 64-bit load. */
       struct {
-         HReg          dst;
-         RISCV64AMode* amode;
+         HReg dst;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } LD;
       /* sx-32-to-64-bit load. */
       struct {
-         HReg          dst;
-         RISCV64AMode* amode;
+         HReg dst;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } LW;
       /* sx-16-to-64-bit load. */
       struct {
-         HReg          dst;
-         RISCV64AMode* amode;
+         HReg dst;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } LH;
       /* sx-8-to-64-bit load. */
       struct {
-         HReg          dst;
-         RISCV64AMode* amode;
+         HReg dst;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } LB;
       /* 64-bit store. */
       struct {
-         HReg          src;
-         RISCV64AMode* amode;
+         HReg src;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } SD;
       /* 32-bit store. */
       struct {
-         HReg          src;
-         RISCV64AMode* amode;
+         HReg src;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } SW;
       /* 16-bit store. */
       struct {
-         HReg          src;
-         RISCV64AMode* amode;
+         HReg src;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } SH;
       /* 8-bit store. */
       struct {
-         HReg          src;
-         RISCV64AMode* amode;
+         HReg src;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
       } SB;
    } RISCV64in;
 } RISCV64Instr;
 
 RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
-RISCV64Instr* RISCV64Instr_LD(HReg dst, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_LW(HReg dst, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_LH(HReg dst, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_LB(HReg dst, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_SD(HReg src, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_SW(HReg src, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_SH(HReg src, RISCV64AMode* amode);
-RISCV64Instr* RISCV64Instr_SB(HReg src, RISCV64AMode* amode);
+RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_LH(HReg dst, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_LB(HReg dst, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_SD(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 
 /*------------------------------------------------------------*/
 /* --- Interface exposed to VEX                           --- */
