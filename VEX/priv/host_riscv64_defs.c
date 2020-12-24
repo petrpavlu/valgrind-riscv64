@@ -590,66 +590,6 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
    return p;
 }
 
-/* Generate a load to dst, using the given amode for the address. */
-static UChar* do_load(UChar* p, UInt dst, const RISCV64AMode* am, UInt szB)
-{
-   vassert(dst > 0 && dst <= 31);
-
-   if (am->tag == RISCV64am_RI12) {
-      UInt base = iregEnc(am->RISCV64am.RI12.reg);
-      vassert(base > 0 && base <= 31);
-      Int soff12 = am->RISCV64am.RI12.soff12;
-      if (szB == 8) {
-         /* ld dst, soff12(base) */
-         return emit_I(p, 0b0000011, dst, 0b011, base, soff12);
-      }
-      if (szB == 4) {
-         /* lw dst, soff12(base) */
-         return emit_I(p, 0b0000011, dst, 0b010, base, soff12);
-      }
-      if (szB == 2) {
-         /* lh dst, soff12(base) */
-         return emit_I(p, 0b0000011, dst, 0b001, base, soff12);
-      }
-      if (szB == 1) {
-         /* lb dst, soff12(base) */
-         return emit_I(p, 0b0000011, dst, 0b000, base, soff12);
-      }
-   }
-   vpanic("do_load");
-}
-
-/* Generate a store from src, using the given amode for the address. */
-static UChar* do_store(UChar* p, UInt src, const RISCV64AMode* am, UInt szB)
-{
-   vassert(src > 0 && src <= 31);
-
-   if (am->tag == RISCV64am_RI12) {
-      UInt base = iregEnc(am->RISCV64am.RI12.reg);
-      vassert(base > 0 && base <= 31);
-      Int  soff12  = am->RISCV64am.RI12.soff12;
-      UInt imm4_0  = soff12 & 0x1f;
-      UInt imm11_5 = (soff12 >> 5) & 0x7f;
-      if (szB == 8) {
-         /* sd src, soff12(base) */
-         return emit_S(p, 0b0100011, imm4_0, 0b011, base, src, imm11_5);
-      }
-      if (szB == 4) {
-         /* sw src, soff12(base) */
-         return emit_S(p, 0b0100011, imm4_0, 0b010, base, src, imm11_5);
-      }
-      if (szB == 2) {
-         /* sh src, soff12(base) */
-         return emit_S(p, 0b0100011, imm4_0, 0b001, base, src, imm11_5);
-      }
-      if (szB == 1) {
-         /* sb src, soff12(base) */
-         return emit_S(p, 0b0100011, imm4_0, 0b000, base, src, imm11_5);
-      }
-   }
-   vpanic("do_store");
-}
-
 /* Emit an instruction into buf and return the number of bytes used. Note that
    buf is not the insn's final place, and therefore it is imperative to emit
    position-independent code. If the emitted instruction was a profiler inc, set
@@ -675,30 +615,94 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
    case RISCV64in_LI:
       p = imm64_to_ireg(p, iregEnc(i->RISCV64in.LI.dst), i->RISCV64in.LI.imm64);
       goto done;
-   case RISCV64in_LD:
-      p = do_load(p, iregEnc(i->RISCV64in.LD.dst), i->RISCV64in.LD.amode, 8);
+   case RISCV64in_LD: {
+      /* ld dst, soff12(base) */
+      UInt dst    = iregEnc(i->RISCV64in.LD.dst);
+      UInt base   = iregEnc(i->RISCV64in.LD.base);
+      Int  soff12 = i->RISCV64in.LD.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_I(p, 0b0000011, dst, 0b011, base, imm11_0);
       goto done;
-   case RISCV64in_LW:
-      p = do_load(p, iregEnc(i->RISCV64in.LW.dst), i->RISCV64in.LW.amode, 4);
+   }
+   case RISCV64in_LW: {
+      /* lw dst, soff12(base) */
+      UInt dst    = iregEnc(i->RISCV64in.LW.dst);
+      UInt base   = iregEnc(i->RISCV64in.LW.base);
+      Int  soff12 = i->RISCV64in.LW.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_I(p, 0b0000011, dst, 0b010, base, imm11_0);
       goto done;
-   case RISCV64in_LH:
-      p = do_load(p, iregEnc(i->RISCV64in.LH.dst), i->RISCV64in.LH.amode, 2);
+   }
+   case RISCV64in_LH: {
+      /* lh dst, soff12(base) */
+      UInt dst    = iregEnc(i->RISCV64in.LH.dst);
+      UInt base   = iregEnc(i->RISCV64in.LH.base);
+      Int  soff12 = i->RISCV64in.LH.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_I(p, 0b0000011, dst, 0b001, base, imm11_0);
       goto done;
-   case RISCV64in_LB:
-      p = do_load(p, iregEnc(i->RISCV64in.LB.dst), i->RISCV64in.LB.amode, 1);
+   }
+   case RISCV64in_LB: {
+      /* lb dst, soff12(base) */
+      UInt dst    = iregEnc(i->RISCV64in.LB.dst);
+      UInt base   = iregEnc(i->RISCV64in.LB.base);
+      Int  soff12 = i->RISCV64in.LB.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_I(p, 0b0000011, dst, 0b000, base, imm11_0);
       goto done;
-   case RISCV64in_SD:
-      p = do_store(p, iregEnc(i->RISCV64in.SD.src), i->RISCV64in.SD.amode, 8);
+   }
+   case RISCV64in_SD: {
+      /* sd src, soff12(base) */
+      UInt src    = iregEnc(i->RISCV64in.SD.src);
+      UInt base   = iregEnc(i->RISCV64in.SD.base);
+      Int  soff12 = i->RISCV64in.SD.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_S(p, 0b0100011, imm11_0, 0b011, base, src);
       goto done;
-   case RISCV64in_SW:
-      p = do_store(p, iregEnc(i->RISCV64in.SW.src), i->RISCV64in.SW.amode, 4);
+   }
+   case RISCV64in_SW: {
+      /* sw src, soff12(base) */
+      UInt src    = iregEnc(i->RISCV64in.SW.src);
+      UInt base   = iregEnc(i->RISCV64in.SW.base);
+      Int  soff12 = i->RISCV64in.SW.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_S(p, 0b0100011, imm11_0, 0b010, base, src);
       goto done;
-   case RISCV64in_SH:
-      p = do_store(p, iregEnc(i->RISCV64in.SH.src), i->RISCV64in.SH.amode, 2);
+   }
+   case RISCV64in_SH: {
+      /* sh src, soff12(base) */
+      UInt src    = iregEnc(i->RISCV64in.SH.src);
+      UInt base   = iregEnc(i->RISCV64in.SH.base);
+      Int  soff12 = i->RISCV64in.SH.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_S(p, 0b0100011, imm11_0, 0b001, base, src);
       goto done;
-   case RISCV64in_SB:
-      p = do_store(p, iregEnc(i->RISCV64in.SB.src), i->RISCV64in.SB.amode, 1);
+   }
+   case RISCV64in_SB: {
+      /* sb src, soff12(base) */
+      UInt src    = iregEnc(i->RISCV64in.SB.src);
+      UInt base   = iregEnc(i->RISCV64in.SB.base);
+      Int  soff12 = i->RISCV64in.SB.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_S(p, 0b0100011, imm11_0, 0b000, base, src);
       goto done;
+   }
    default:
       goto bad;
    }
