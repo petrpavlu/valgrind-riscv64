@@ -317,13 +317,13 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
 
    /* ---------------- lui rd, nzimm[17:12] ----------------- */
    if (INSN(15, 13) == 0b011) {
-      UInt rd    = INSN(11, 7);
-      UInt nzimm = INSN(12, 12) << 17 | INSN(6, 2) << 12;
-      if (rd == 0 || rd == 2 || nzimm == 0) {
+      UInt rd         = INSN(11, 7);
+      UInt nzimm17_12 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd == 0 || rd == 2 || nzimm17_12 == 0) {
          /* Invalid C.LUI, fall through. */
       } else {
-         putIReg64(irsb, rd, mkU64(sx_to_64(nzimm, 18)));
-         DIP("lui %s, 0x%x\n", nameIReg64(rd), nzimm >> 12);
+         putIReg64(irsb, rd, mkU64(sx_to_64(nzimm17_12 << 12, 18)));
+         DIP("lui %s, 0x%x\n", nameIReg64(rd), nzimm17_12);
          return True;
       }
    }
