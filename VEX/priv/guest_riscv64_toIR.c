@@ -108,6 +108,21 @@ static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
    addStmtToIRSB(irsb, st);
 }
 
+/* Generate a statement "dst := e". */
+static void assign(/*OUT*/ IRSB* irsb, IRTemp dst, IRExpr* e)
+{
+   stmt(irsb, IRStmt_WrTmp(dst, e));
+}
+
+/* Create a binary-operation expression. */
+static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
+{
+   return IRExpr_Binop(op, a1, a2);
+}
+
+/* Create an expression to read a temporary. */
+static IRExpr* mkexpr(IRTemp tmp) { return IRExpr_RdTmp(tmp); }
+
 /* Create an expression to produce a constant. */
 static IRExpr* mkU64(ULong i) { return IRExpr_Const(IRConst_U64(i)); }
 
@@ -279,6 +294,26 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
                                       Bool                  sigill_diag)
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
+
+   /* --------------- addi rd, rd, nzimm[5:0] --------------- */
+   if (INSN(15, 13) == 0b000) {
+      UInt rd       = INSN(11, 7);
+      UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd == 0 || nzimm5_0 == 0) {
+         /* Invalid C.ADDI, fall through. */
+      } else {
+         ULong  simm = sx_to_64(nzimm5_0, 6);
+         IRTemp argL = newTemp(irsb, Ity_I64);
+         IRTemp argR = newTemp(irsb, Ity_I64);
+         IRTemp res  = newTemp(irsb, Ity_I64);
+         assign(irsb, argL, getIReg64(rd));
+         assign(irsb, argR, mkU64(simm));
+         assign(irsb, res, binop(Iop_Add64, mkexpr(argL), mkexpr(argR)));
+         putIReg64(irsb, rd, mkexpr(res));
+         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rd), simm);
+         return True;
+      }
+   }
 
    /* ---------------- lui rd, nzimm[17:12] ----------------- */
    if (INSN(15, 13) == 0b011) {
