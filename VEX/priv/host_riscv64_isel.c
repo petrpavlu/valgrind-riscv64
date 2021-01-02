@@ -179,6 +179,30 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       break;
    }
 
+   /* ------------------------- GET ------------------------- */
+   case Iex_Get: {
+      if (ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
+         HReg dst  = newVRegI(env);
+         HReg base = get_baseblock_register();
+         Int  off  = e->Iex.Get.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
+         vassert(off >= -2048 && off < 2048);
+
+         if (ty == Ity_I64)
+            addInstr(env, RISCV64Instr_LD(dst, base, off));
+         else if (ty == Ity_I32)
+            addInstr(env, RISCV64Instr_LW(dst, base, off));
+         else if (ty == Ity_I16)
+            addInstr(env, RISCV64Instr_LH(dst, base, off));
+         else if (ty == Ity_I8)
+            addInstr(env, RISCV64Instr_LB(dst, base, off));
+         else
+            vassert(0);
+         return dst;
+      }
+
+      break;
+   }
+
    /* ----------------------- LITERAL ----------------------- */
    /* 64-bit literals. */
    case Iex_Const: {
