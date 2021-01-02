@@ -114,6 +114,13 @@ static void assign(/*OUT*/ IRSB* irsb, IRTemp dst, IRExpr* e)
    stmt(irsb, IRStmt_WrTmp(dst, e));
 }
 
+/* Generate a statement to store a value in memory (in the little-endian
+   order). */
+static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
+{
+   stmt(irsb, IRStmt_Store(Iend_LE, addr, data));
+}
+
 /* Create a binary-operation expression. */
 static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
 {
@@ -341,7 +348,19 @@ static Bool dis_RISCV64_compressed_10(/*MB_OUT*/ DisResult* dres,
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
 
-   /* TODO */
+   /* ---------------- sd rs2, imm[8:3](x2) ----------------- */
+   if (INSN(15, 13) == 0b111) {
+      UInt rs2    = INSN(6, 2);
+      UInt imm8_3 = INSN(12, 9) << 2 | INSN(8, 7);
+      /* All C.SDSP encodings are valid. */
+
+      ULong offset = imm8_3 << 3;
+      storeLE(irsb,
+              binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(offset)),
+              getIReg64(rs2));
+      DIP("sd %s, %lld(sp)\n", nameIReg64(rs2), offset);
+      return True;
+   }
 
    if (sigill_diag)
       vex_printf("RISCV64 front end: compressed_10\n");
