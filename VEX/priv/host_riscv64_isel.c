@@ -265,9 +265,27 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    switch (stmt->tag) {
    /* ------------------------ STORE ------------------------ */
    /* Little-endian write to memory. */
-   case Ist_Store:
-      /* TODO */
+   case Ist_Store: {
+      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Store.data);
+      if (tyd == Ity_I64 || tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
+         HReg src = iselIntExpr_R(env, stmt->Ist.Store.data);
+         /* TODO Optimize the cases with small imm Add64/Sub64. */
+         HReg addr = iselIntExpr_R(env, stmt->Ist.Store.addr);
+
+         if (tyd == Ity_I64)
+            addInstr(env, RISCV64Instr_SD(src, addr, 0));
+         else if (tyd == Ity_I32)
+            addInstr(env, RISCV64Instr_SW(src, addr, 0));
+         else if (tyd == Ity_I16)
+            addInstr(env, RISCV64Instr_SH(src, addr, 0));
+         else if (tyd == Ity_I8)
+            addInstr(env, RISCV64Instr_SB(src, addr, 0));
+         else
+            vassert(0);
+         return;
+      }
       break;
+   }
 
    /* ------------------------- PUT ------------------------- */
    /* Write guest state, fixed offset. */
