@@ -349,6 +349,40 @@ static Bool dis_RISCV64_compressed_10(/*MB_OUT*/ DisResult* dres,
 #undef INSN
 }
 
+static Bool dis_RISCV64_standard_11(/*MB_OUT*/ DisResult* dres,
+                                    /*OUT*/ IRSB*         irsb,
+                                    UInt                  insn,
+                                    Bool                  sigill_diag)
+{
+#define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
+
+   /* --------------- addi rd, rs, imm[11:0] ---------------- */
+   if (INSN(7, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
+      UInt rd      = INSN(11, 7);
+      UInt rs      = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid ADDI, fall through. */
+      } else {
+         ULong  simm = sx_to_64(imm11_0, 12);
+         IRTemp argL = newTemp(irsb, Ity_I64);
+         IRTemp argR = newTemp(irsb, Ity_I64);
+         IRTemp res  = newTemp(irsb, Ity_I64);
+         assign(irsb, argL, getIReg64(rs));
+         assign(irsb, argR, mkU64(simm));
+         assign(irsb, res, binop(Iop_Add64, mkexpr(argL), mkexpr(argR)));
+         putIReg64(irsb, rd, mkexpr(res));
+         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs), simm);
+         return True;
+      }
+   }
+
+   if (sigill_diag)
+      vex_printf("RISCV64 front end: standard_11\n");
+   return False;
+#undef INSN
+}
+
 /* Disassemble a single riscv64 instruction into IR. Returns True iff the
    instruction was decoded, in which case *dres will be set accordingly, or
    False, in which case *dres should be ignored by the caller. */
@@ -405,7 +439,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
       break;
    case 0b11:
       dres->len = inst_size = 4;
-      /* TODO */
+      ok = dis_RISCV64_standard_11(dres, irsb, insn, sigill_diag);
       break;
    default:
       vassert(0); /* Can't happen. */
