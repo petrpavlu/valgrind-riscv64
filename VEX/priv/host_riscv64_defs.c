@@ -86,6 +86,16 @@ RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2)
+{
+   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                = RISCV64in_ADD;
+   i->RISCV64in.ADD.dst  = dst;
+   i->RISCV64in.ADD.src1 = src1;
+   i->RISCV64in.ADD.src2 = src2;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12)
 {
    RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -212,6 +222,14 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf("li      ");
       ppHRegRISCV64(i->RISCV64in.LI.dst);
       vex_printf(", 0x%llx", i->RISCV64in.LI.imm64);
+      return;
+   case RISCV64in_ADD:
+      vex_printf("add     ");
+      ppHRegRISCV64(i->RISCV64in.ADD.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.ADD.src1);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.ADD.src2);
       return;
    case RISCV64in_LD:
       vex_printf("ld      ");
@@ -373,6 +391,11 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
    case RISCV64in_LI:
       addHRegUse(u, HRmWrite, i->RISCV64in.LI.dst);
       return;
+   case RISCV64in_ADD:
+      addHRegUse(u, HRmWrite, i->RISCV64in.ADD.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.ADD.src1);
+      addHRegUse(u, HRmRead, i->RISCV64in.ADD.src2);
+      return;
    case RISCV64in_LD:
       addHRegUse(u, HRmWrite, i->RISCV64in.LD.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.LD.base);
@@ -443,6 +466,11 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    switch (i->tag) {
    case RISCV64in_LI:
       mapReg(m, &i->RISCV64in.LI.dst);
+      return;
+   case RISCV64in_ADD:
+      mapReg(m, &i->RISCV64in.ADD.dst);
+      mapReg(m, &i->RISCV64in.ADD.src1);
+      mapReg(m, &i->RISCV64in.ADD.src2);
       return;
    case RISCV64in_LD:
       mapReg(m, &i->RISCV64in.LD.dst);
@@ -596,6 +624,29 @@ static inline UChar* emit32(UChar* p, UInt val)
 /*------------------------------------------------------------*/
 /*--- Functions to emit various instruction formats        ---*/
 /*------------------------------------------------------------*/
+
+/* Emit an R-type instruction. */
+static UChar* emit_R(
+   UChar* p, UInt opcode, UInt rd, UInt funct3, UInt rs1, UInt rs2, UInt funct7)
+{
+   vassert(opcode >> 7 == 0);
+   vassert(rd >> 5 == 0);
+   vassert(funct3 >> 3 == 0);
+   vassert(rs1 >> 5 == 0);
+   vassert(rs2 >> 5 == 0);
+   vassert(funct7 >> 7 == 0);
+
+   UInt the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= rd << 7;
+   the_insn |= funct3 << 12;
+   the_insn |= rs1 << 15;
+   the_insn |= rs2 << 20;
+   the_insn |= funct7 << 25;
+
+   return emit32(p, the_insn);
+}
 
 /* Emit an I-type instruction. */
 static UChar*
@@ -767,6 +818,15 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
    case RISCV64in_LI:
       p = imm64_to_ireg(p, iregEnc(i->RISCV64in.LI.dst), i->RISCV64in.LI.imm64);
       goto done;
+   case RISCV64in_ADD: {
+      /* add dst, src1, src2 */
+      UInt dst  = iregEnc(i->RISCV64in.ADD.dst);
+      UInt src1 = iregEnc(i->RISCV64in.ADD.src1);
+      UInt src2 = iregEnc(i->RISCV64in.ADD.src2);
+
+      p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0000000);
+      goto done;
+   }
    case RISCV64in_LD: {
       /* ld dst, soff12(base) */
       UInt dst    = iregEnc(i->RISCV64in.LD.dst);

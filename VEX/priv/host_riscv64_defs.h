@@ -65,6 +65,7 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 10); }
 /* The kind of instructions. */
 typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
+   RISCV64in_ADD,             /* Addition of values in two registers. */
    RISCV64in_LD,              /* 64-bit load. */
    RISCV64in_LW,              /* sx-32-to-64-bit load. */
    RISCV64in_LH,              /* sx-16-to-64-bit load. */
@@ -86,6 +87,12 @@ typedef struct {
          HReg  dst;
          ULong imm64;
       } LI;
+      /* Addition of values in two registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } ADD;
       /* 64-bit load. */
       struct {
          HReg dst;
@@ -164,6 +171,7 @@ typedef struct {
 } RISCV64Instr;
 
 RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
+RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LH(HReg dst, HReg base, Int soff12);
