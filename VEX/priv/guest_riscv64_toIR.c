@@ -95,23 +95,10 @@ static ULong sx_to_64(ULong x, UInt n)
 /*--- Helpers for constructing IR.                         ---*/
 /*------------------------------------------------------------*/
 
-/* Generate a new temporary of the given type. */
-static IRTemp newTemp(/*OUT*/ IRSB* irsb, IRType ty)
-{
-   vassert(isPlausibleIRType(ty));
-   return newIRTemp(irsb->tyenv, ty);
-}
-
 /* Add a statement to the list held by irsb. */
 static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
 {
    addStmtToIRSB(irsb, st);
-}
-
-/* Generate a statement "dst := e". */
-static void assign(/*OUT*/ IRSB* irsb, IRTemp dst, IRExpr* e)
-{
-   stmt(irsb, IRStmt_WrTmp(dst, e));
 }
 
 /* Generate a statement to store a value in memory (in the little-endian
@@ -126,9 +113,6 @@ static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
 {
    return IRExpr_Binop(op, a1, a2);
 }
-
-/* Create an expression to read a temporary. */
-static IRExpr* mkexpr(IRTemp tmp) { return IRExpr_RdTmp(tmp); }
 
 /* Create an expression to produce a constant. */
 static IRExpr* mkU64(ULong i) { return IRExpr_Const(IRConst_U64(i)); }
@@ -309,14 +293,8 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
       if (rd == 0 || nzimm5_0 == 0) {
          /* Invalid C.ADDI, fall through. */
       } else {
-         ULong  simm = sx_to_64(nzimm5_0, 6);
-         IRTemp argL = newTemp(irsb, Ity_I64);
-         IRTemp argR = newTemp(irsb, Ity_I64);
-         IRTemp res  = newTemp(irsb, Ity_I64);
-         assign(irsb, argL, getIReg64(rd));
-         assign(irsb, argR, mkU64(simm));
-         assign(irsb, res, binop(Iop_Add64, mkexpr(argL), mkexpr(argR)));
-         putIReg64(irsb, rd, mkexpr(res));
+         ULong simm = sx_to_64(nzimm5_0, 6);
+         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rd), mkU64(simm)));
          DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rd), simm);
          return True;
       }
@@ -383,14 +361,8 @@ static Bool dis_RISCV64_standard_11(/*MB_OUT*/ DisResult* dres,
       if (rd == 0) {
          /* Invalid ADDI, fall through. */
       } else {
-         ULong  simm = sx_to_64(imm11_0, 12);
-         IRTemp argL = newTemp(irsb, Ity_I64);
-         IRTemp argR = newTemp(irsb, Ity_I64);
-         IRTemp res  = newTemp(irsb, Ity_I64);
-         assign(irsb, argL, getIReg64(rs));
-         assign(irsb, argR, mkU64(simm));
-         assign(irsb, res, binop(Iop_Add64, mkexpr(argL), mkexpr(argR)));
-         putIReg64(irsb, rd, mkexpr(res));
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rs), mkU64(simm)));
          DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs), simm);
          return True;
       }
