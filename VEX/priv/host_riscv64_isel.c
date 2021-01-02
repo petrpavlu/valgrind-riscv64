@@ -160,6 +160,25 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    switch (e->tag) {
+   /* ---------------------- BINARY OP ---------------------- */
+   case Iex_Binop: {
+      /* ADD */
+      switch (e->Iex.Binop.op) {
+      case Iop_Add64: {
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         /* TODO Optimize for small imms by generating addi. */
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_ADD(dst, argL, argR));
+         return dst;
+      }
+      default:
+         break;
+      }
+
+      break;
+   }
+
    /* ----------------------- LITERAL ----------------------- */
    /* 64-bit literals. */
    case Iex_Const: {
