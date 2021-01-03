@@ -108,6 +108,13 @@ static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
    stmt(irsb, IRStmt_Store(Iend_LE, addr, data));
 }
 
+/* Create an expression to load a value from memory (in the little-endian
+   order). */
+static IRExpr* loadLE(IRType ty, IRExpr* addr)
+{
+   return IRExpr_Load(Iend_LE, ty, addr);
+}
+
 /* Create a binary-operation expression. */
 static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
 {
@@ -305,6 +312,23 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg64(irsb, rd, mkU64(sx_to_64(nzimm17_12 << 12, 18)));
          DIP("lui %s, 0x%x\n", nameIReg64(rd), nzimm17_12);
+         return True;
+      }
+   }
+
+   /* ---------------- ld rd, uimm[8:3](x2) ----------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b011) {
+      UInt rd      = INSN(11, 7);
+      UInt uimm8_3 = INSN(4, 2) << 3 | INSN(12, 12) << 2 | INSN(6, 5);
+
+      if (rd == 0) {
+         /* Invalid C.LDSP, fall through. */
+      } else {
+         ULong offset = uimm8_3 << 3;
+         putIReg64(irsb, rd,
+                   loadLE(Ity_I64, binop(Iop_Add64, getIReg64(2 /*x2/sp*/),
+                                         mkU64(offset))));
+         DIP("ld %s, %lld(sp)\n", nameIReg64(rd), offset);
          return True;
       }
    }
