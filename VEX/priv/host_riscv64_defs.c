@@ -440,8 +440,8 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
    case RISCV64in_XIndir:
       addHRegUse(u, HRmRead, i->RISCV64in.XIndir.dstGA);
       addHRegUse(u, HRmRead, i->RISCV64in.XIndir.base);
-      if (!hregIsInvalid(i->RISCV64in.XDirect.cond))
-         addHRegUse(u, HRmRead, i->RISCV64in.XDirect.cond);
+      if (!hregIsInvalid(i->RISCV64in.XIndir.cond))
+         addHRegUse(u, HRmRead, i->RISCV64in.XIndir.cond);
       return;
    case RISCV64in_XAssisted:
       addHRegUse(u, HRmRead, i->RISCV64in.XAssisted.dstGA);
