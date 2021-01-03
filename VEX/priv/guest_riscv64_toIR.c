@@ -333,15 +333,14 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ---------------- sd rs2, imm[8:3](x2) ----------------- */
+   /* ---------------- sd rs2, uimm[8:3](x2) ---------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
-      UInt rs2    = INSN(6, 2);
-      UInt imm8_3 = INSN(12, 9) << 2 | INSN(8, 7);
+      UInt rs2     = INSN(6, 2);
+      UInt uimm8_3 = INSN(12, 9) << 2 | INSN(8, 7);
       /* All C.SDSP encodings are valid. */
 
-      ULong offset = imm8_3 << 3;
-      storeLE(irsb,
-              binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(offset)),
+      ULong offset = uimm8_3 << 3;
+      storeLE(irsb, binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(offset)),
               getIReg64(rs2));
       DIP("sd %s, %lld(sp)\n", nameIReg64(rs2), offset);
       return True;
