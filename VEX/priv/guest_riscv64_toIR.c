@@ -346,6 +346,26 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ---------------------- c.jr rs1 ----------------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1000) {
+      UInt rs1 = INSN(11, 7);
+      UInt rs2 = INSN(6, 2);
+      if (rs1 == 0 || rs2 != 0) {
+         /* Invalid C.JR, fall through. */
+      } else {
+         putPC(irsb, getIReg64(rs1));
+         dres->whatNext = Dis_StopHere;
+         if (rs1 == 1 /*x1/ra*/) {
+            dres->jk_StopHere = Ijk_Ret;
+            DIP("c.ret\n");
+         } else {
+            dres->jk_StopHere = Ijk_Call;
+            DIP("c.jr %s\n", nameIReg64(rs1));
+         }
+         return True;
+      }
+   }
+
    /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
       UInt rs2     = INSN(6, 2);
