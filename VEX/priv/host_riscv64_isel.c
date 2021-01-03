@@ -160,6 +160,28 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    switch (e->tag) {
+   /* ------------------------ LOAD ------------------------- */
+   case Iex_Load: {
+      if (e->Iex.Load.end != Iend_LE)
+         goto irreducible;
+
+      HReg dst = newVRegI(env);
+      /* TODO Optimize the cases with small imm Add64/Sub64. */
+      HReg addr = iselIntExpr_R(env, e->Iex.Load.addr);
+
+      if (ty == Ity_I64)
+         addInstr(env, RISCV64Instr_LD(dst, addr, 0));
+      else if (ty == Ity_I32)
+         addInstr(env, RISCV64Instr_LW(dst, addr, 0));
+      else if (ty == Ity_I16)
+         addInstr(env, RISCV64Instr_LH(dst, addr, 0));
+      else if (ty == Ity_I8)
+         addInstr(env, RISCV64Instr_LB(dst, addr, 0));
+      else
+         vassert(0);
+      return dst;
+   }
+
    /* ---------------------- BINARY OP ---------------------- */
    case Iex_Binop: {
       /* ADD */
