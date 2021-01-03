@@ -337,7 +337,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    vassert(INSN(1, 0) == 0b11);
 
    /* --------------- addi rd, rs, imm[11:0] ---------------- */
-   if (INSN(7, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
       UInt rd      = INSN(11, 7);
       UInt rs      = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
