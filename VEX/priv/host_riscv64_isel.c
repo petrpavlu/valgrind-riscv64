@@ -290,7 +290,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    /* ------------------------- PUT ------------------------- */
    /* Write guest state, fixed offset. */
    case Ist_Put: {
-      IRType tyd  = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
+      IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       if (tyd == Ity_I64 || tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
          HReg src = iselIntExpr_R(env, stmt->Ist.Put.data);
          HReg base = get_baseblock_register();

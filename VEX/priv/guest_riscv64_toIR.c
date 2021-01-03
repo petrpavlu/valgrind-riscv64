@@ -248,12 +248,14 @@ static const HChar* nameIReg64(UInt iregNo)
    return names[iregNo];
 }
 
+/* Read a value of a guest integer register. */
 static IRExpr* getIReg64(UInt iregNo)
 {
    vassert(iregNo < 32);
    return IRExpr_Get(offsetIReg64(iregNo), Ity_I64);
 }
 
+/* Write a value into a guest integer register. */
 static void putIReg64(/*OUT*/ IRSB* irsb, UInt iregNo, /*IN*/ IRExpr* e)
 {
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I64);
