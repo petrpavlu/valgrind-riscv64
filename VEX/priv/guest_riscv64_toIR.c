@@ -303,6 +303,20 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------- C.LI: addi rd, x0, imm[5:0] ------------- */
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b010) {
+      UInt rd     = INSN(11, 7);
+      UInt imm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd == 0) {
+         /* Invalid C.LI, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm5_0, 6);
+         putIReg64(irsb, rd, mkU64(simm));
+         DIP("addi %s, x0, %lld\n", nameIReg64(rd), simm);
+         return True;
+      }
+   }
+
    /* ---------------- lui rd, nzimm[17:12] ----------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b011) {
       UInt rd         = INSN(11, 7);
