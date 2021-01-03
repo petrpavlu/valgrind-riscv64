@@ -356,17 +356,15 @@ static void iselNext(ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP)
             Bool toFastEP = (Addr64)cdst->Ico.U64 > env->max_ga;
             if (0)
                vex_printf("%s", toFastEP ? "X" : ".");
-            addInstr(env,
-                     RISCV64Instr_XDirect(
-                        cdst->Ico.U64, base, soff12, INVALID_HREG, toFastEP));
+            addInstr(env, RISCV64Instr_XDirect(cdst->Ico.U64, base, soff12,
+                                               INVALID_HREG, toFastEP));
          } else {
             /* .. very occasionally .. */
             /* We can't use chaining, so ask for an assisted transfer, as that's
                the only alternative that is allowable. */
             HReg r = iselIntExpr_R(env, next);
-            addInstr(env,
-                     RISCV64Instr_XAssisted(
-                        r, base, soff12, INVALID_HREG, Ijk_Boring));
+            addInstr(env, RISCV64Instr_XAssisted(r, base, soff12, INVALID_HREG,
+                                                 Ijk_Boring));
          }
          return;
       }
@@ -381,9 +379,8 @@ static void iselNext(ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP)
       if (env->chainingAllowed)
          addInstr(env, RISCV64Instr_XIndir(r, base, soff12, INVALID_HREG));
       else
-         addInstr(
-            env,
-            RISCV64Instr_XAssisted(r, base, soff12, INVALID_HREG, Ijk_Boring));
+         addInstr(env, RISCV64Instr_XAssisted(r, base, soff12, INVALID_HREG,
+                                              Ijk_Boring));
       return;
    }
    default:

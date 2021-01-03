@@ -6,8 +6,6 @@ AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: true
 AlignConsecutiveMacros: true
 AllowAllParametersOfDeclarationOnNextLine: true
-AllowAllArgumentsOnNextLine: true
-BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBraces: Linux
 ContinuationIndentWidth: 3

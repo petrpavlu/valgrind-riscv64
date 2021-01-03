@@ -297,9 +297,9 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf("li t0, 0x%llx; ", i->RISCV64in.XDirect.dstGA);
       vex_printf("sd t0, %d(", i->RISCV64in.XDirect.soff12);
       ppHRegRISCV64(i->RISCV64in.XDirect.base);
-      vex_printf("); li t0, <%s>; ",
-                 i->RISCV64in.XDirect.toFastEP ? "disp_cp_chain_me_to_fastEP"
-                                               : "disp_cp_chain_me_to_slowEP");
+      vex_printf("); li t0, <%s>; ", i->RISCV64in.XDirect.toFastEP
+                                        ? "disp_cp_chain_me_to_fastEP"
+                                        : "disp_cp_chain_me_to_slowEP");
       vex_printf("jalr zero, 0(t0); 1:");
       return;
    case RISCV64in_XIndir:

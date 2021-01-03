@@ -422,16 +422,14 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
    case 0b01:
    case 0b10:
       dres->len = inst_size = 2;
-
-      ok = dis_RISCV64_compressed(
-         dres, irsb, insn, guest_pc_curr_instr, sigill_diag);
+      ok = dis_RISCV64_compressed(dres, irsb, insn, guest_pc_curr_instr,
+                                  sigill_diag);
       break;
 
    case 0b11:
       dres->len = inst_size = 4;
-
-      ok = dis_RISCV64_standard(
-         dres, irsb, insn, guest_pc_curr_instr, sigill_diag);
+      ok = dis_RISCV64_standard(dres, irsb, insn, guest_pc_curr_instr,
+                                sigill_diag);
       break;
 
    default:
@@ -472,13 +470,8 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
    vassert(guest_arch == VexArchRISCV64);
 
    /* Try to decode. */
-   Bool ok = disInstr_RISCV64_WRK(&dres,
-                                  irsb,
-                                  &guest_code[delta],
-                                  guest_IP,
-                                  archinfo,
-                                  abiinfo,
-                                  sigill_diag);
+   Bool ok = disInstr_RISCV64_WRK(&dres, irsb, &guest_code[delta], guest_IP,
+                                  archinfo, abiinfo, sigill_diag);
    if (ok) {
       /* All decode successes end up here. */
       vassert(dres.len == 2 || dres.len == 4 || dres.len == 20);
