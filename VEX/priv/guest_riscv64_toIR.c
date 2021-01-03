@@ -264,30 +264,16 @@ static void putIReg64(/*OUT*/ IRSB* irsb, UInt iregNo, /*IN*/ IRExpr* e)
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
-static Bool dis_RISCV64_compressed_00(/*MB_OUT*/ DisResult* dres,
-                                      /*OUT*/ IRSB*         irsb,
-                                      UInt                  insn,
-                                      Bool                  sigill_diag)
+static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
+                                   /*OUT*/ IRSB*         irsb,
+                                   UInt                  insn,
+                                   Bool                  sigill_diag)
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
-
-   /* TODO */
-
-   if (sigill_diag)
-      vex_printf("RISCV64 front end: compressed_00\n");
-   return False;
-#undef INSN
-}
-
-static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
-                                      /*OUT*/ IRSB*         irsb,
-                                      UInt                  insn,
-                                      Bool                  sigill_diag)
-{
-#define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
+   vassert(INSN(1, 0) == 0b00 || INSN(1, 0) == 0b01 || INSN(1, 0) == 0b10);
 
    /* --------------- addi rd, rd, nzimm[5:0] --------------- */
-   if (INSN(15, 13) == 0b000) {
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
       UInt rd       = INSN(11, 7);
       UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
       if (rd == 0 || nzimm5_0 == 0) {
@@ -301,7 +287,7 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
    }
 
    /* ---------------- lui rd, nzimm[17:12] ----------------- */
-   if (INSN(15, 13) == 0b011) {
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b011) {
       UInt rd         = INSN(11, 7);
       UInt nzimm17_12 = INSN(12, 12) << 5 | INSN(6, 2);
       if (rd == 0 || rd == 2 || nzimm17_12 == 0) {
@@ -313,21 +299,8 @@ static Bool dis_RISCV64_compressed_01(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   if (sigill_diag)
-      vex_printf("RISCV64 front end: compressed_01\n");
-   return False;
-#undef INSN
-}
-
-static Bool dis_RISCV64_compressed_10(/*MB_OUT*/ DisResult* dres,
-                                      /*OUT*/ IRSB*         irsb,
-                                      UInt                  insn,
-                                      Bool                  sigill_diag)
-{
-#define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
-
    /* ---------------- sd rs2, imm[8:3](x2) ----------------- */
-   if (INSN(15, 13) == 0b111) {
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
       UInt rs2    = INSN(6, 2);
       UInt imm8_3 = INSN(12, 9) << 2 | INSN(8, 7);
       /* All C.SDSP encodings are valid. */
@@ -341,17 +314,18 @@ static Bool dis_RISCV64_compressed_10(/*MB_OUT*/ DisResult* dres,
    }
 
    if (sigill_diag)
-      vex_printf("RISCV64 front end: compressed_10\n");
+      vex_printf("RISCV64 front end: compressed\n");
    return False;
 #undef INSN
 }
 
-static Bool dis_RISCV64_standard_11(/*MB_OUT*/ DisResult* dres,
-                                    /*OUT*/ IRSB*         irsb,
-                                    UInt                  insn,
-                                    Bool                  sigill_diag)
+static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
+                                 /*OUT*/ IRSB*         irsb,
+                                 UInt                  insn,
+                                 Bool                  sigill_diag)
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
+   vassert(INSN(1, 0) == 0b11);
 
    /* --------------- addi rd, rs, imm[11:0] ---------------- */
    if (INSN(7, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
@@ -369,7 +343,7 @@ static Bool dis_RISCV64_standard_11(/*MB_OUT*/ DisResult* dres,
    }
 
    if (sigill_diag)
-      vex_printf("RISCV64 front end: standard_11\n");
+      vex_printf("RISCV64 front end: standard\n");
    return False;
 #undef INSN
 }
@@ -417,20 +391,14 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
       (compressed) or 32-bit. */
    switch (INSN(1, 0)) {
    case 0b00:
-      dres->len = inst_size = 2;
-      ok = dis_RISCV64_compressed_00(dres, irsb, insn, sigill_diag);
-      break;
    case 0b01:
-      dres->len = inst_size = 2;
-      ok = dis_RISCV64_compressed_01(dres, irsb, insn, sigill_diag);
-      break;
    case 0b10:
       dres->len = inst_size = 2;
-      ok = dis_RISCV64_compressed_10(dres, irsb, insn, sigill_diag);
+      ok = dis_RISCV64_compressed(dres, irsb, insn, sigill_diag);
       break;
    case 0b11:
       dres->len = inst_size = 4;
-      ok = dis_RISCV64_standard_11(dres, irsb, insn, sigill_diag);
+      ok = dis_RISCV64_standard(dres, irsb, insn, sigill_diag);
       break;
    default:
       vassert(0); /* Can't happen. */
