@@ -289,7 +289,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
    vassert(INSN(1, 0) == 0b00 || INSN(1, 0) == 0b01 || INSN(1, 0) == 0b10);
 
-   /* --------------- addi rd, rd, nzimm[5:0] --------------- */
+   /* ---------------- c.addi rd, nzimm[5:0] ---------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
       UInt rd       = INSN(11, 7);
       UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
@@ -298,12 +298,12 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(nzimm5_0, 6);
          putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rd), mkU64(simm)));
-         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rd), simm);
+         DIP("c.addi %s, %lld\n", nameIReg64(rd), simm);
          return True;
       }
    }
 
-   /* ------------- C.LI: addi rd, x0, imm[5:0] ------------- */
+   /* ------------------ c.li rd, imm[5:0] ------------------ */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b010) {
       UInt rd     = INSN(11, 7);
       UInt imm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
@@ -312,12 +312,12 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm5_0, 6);
          putIReg64(irsb, rd, mkU64(simm));
-         DIP("addi %s, x0, %lld\n", nameIReg64(rd), simm);
+         DIP("c.li %s, %lld\n", nameIReg64(rd), simm);
          return True;
       }
    }
 
-   /* ---------------- lui rd, nzimm[17:12] ----------------- */
+   /* --------------- c.lui rd, nzimm[17:12] ---------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b011) {
       UInt rd         = INSN(11, 7);
       UInt nzimm17_12 = INSN(12, 12) << 5 | INSN(6, 2);
@@ -325,16 +325,15 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          /* Invalid C.LUI, fall through. */
       } else {
          putIReg64(irsb, rd, mkU64(sx_to_64(nzimm17_12 << 12, 18)));
-         DIP("lui %s, 0x%x\n", nameIReg64(rd), nzimm17_12);
+         DIP("c.lui %s, 0x%x\n", nameIReg64(rd), nzimm17_12);
          return True;
       }
    }
 
-   /* ---------------- ld rd, uimm[8:3](x2) ----------------- */
+   /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b011) {
       UInt rd      = INSN(11, 7);
       UInt uimm8_3 = INSN(4, 2) << 3 | INSN(12, 12) << 2 | INSN(6, 5);
-
       if (rd == 0) {
          /* Invalid C.LDSP, fall through. */
       } else {
@@ -342,21 +341,20 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd,
                    loadLE(Ity_I64, binop(Iop_Add64, getIReg64(2 /*x2/sp*/),
                                          mkU64(offset))));
-         DIP("ld %s, %lld(sp)\n", nameIReg64(rd), offset);
+         DIP("c.ldsp %s, %lld(sp)\n", nameIReg64(rd), offset);
          return True;
       }
    }
 
-   /* ---------------- sd rs2, uimm[8:3](x2) ---------------- */
+   /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
       UInt rs2     = INSN(6, 2);
       UInt uimm8_3 = INSN(12, 9) << 2 | INSN(8, 7);
-      /* All C.SDSP encodings are valid. */
-
+      /* Note: All C.SDSP encodings are valid. */
       ULong offset = uimm8_3 << 3;
       storeLE(irsb, binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(offset)),
               getIReg64(rs2));
-      DIP("sd %s, %lld(sp)\n", nameIReg64(rs2), offset);
+      DIP("c.sdsp %s, %lld(sp)\n", nameIReg64(rs2), offset);
       return True;
    }
 
@@ -395,15 +393,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt imm20_1 = INSN(31, 31) << 19 | INSN(19, 12) << 11 |
                      INSN(20, 20) << 10 | INSN(30, 21);
-      /* All JAL encodings are valid. */
-
+      /* Note: All JAL encodings are valid. */
       ULong offset = sx_to_64(imm20_1 << 1, 21);
+      ULong dst_pc = guest_pc_curr_instr + offset;
       if (rd != 0)
          putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
-      putPC(irsb, mkU64(guest_pc_curr_instr + offset));
+      putPC(irsb, mkU64(dst_pc));
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_Call;
-      DIP("jal %s, 0x%llx\n", nameIReg64(rd), guest_pc_curr_instr + offset);
+      if (rd != 0)
+         DIP("jal %s, 0x%llx\n", nameIReg64(rd), dst_pc);
+      else
+         DIP("j 0x%llx\n", dst_pc);
       return True;
    }
 
