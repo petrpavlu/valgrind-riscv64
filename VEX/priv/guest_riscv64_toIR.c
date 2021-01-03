@@ -260,6 +260,13 @@ static void putIReg64(/*OUT*/ IRSB* irsb, UInt iregNo, /*IN*/ IRExpr* e)
    stmt(irsb, IRStmt_Put(offsetIReg64(iregNo), e));
 }
 
+/* Write an address into the guest pc. */
+static void putPC(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I64);
+   stmt(irsb, IRStmt_Put(OFFB_PC, e));
+}
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
@@ -450,7 +457,7 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
       vassert(dres.len == 2 || dres.len == 4 || dres.len == 20);
       switch (dres.whatNext) {
       case Dis_Continue:
-         stmt(irsb, IRStmt_Put(OFFB_PC, mkU64(guest_IP + dres.len)));
+         putPC(irsb, mkU64(guest_IP + dres.len));
          break;
       case Dis_StopHere:
          break;
@@ -482,7 +489,7 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
          been executed, and (is currently) the next to be executed. The pc
          register should be up-to-date since it is made so at the start of each
          insn, but nevertheless be paranoid and update it again right now. */
-      stmt(irsb, IRStmt_Put(OFFB_PC, mkU64(guest_IP)));
+      putPC(irsb, mkU64(guest_IP));
       dres.len         = 0;
       dres.whatNext    = Dis_StopHere;
       dres.jk_StopHere = Ijk_NoDecode;
