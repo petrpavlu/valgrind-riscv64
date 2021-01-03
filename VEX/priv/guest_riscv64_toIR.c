@@ -274,6 +274,7 @@ static void putPC(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
 static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
                                    /*OUT*/ IRSB*         irsb,
                                    UInt                  insn,
+                                   Addr                  guest_pc_curr_instr,
                                    Bool                  sigill_diag)
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
@@ -329,6 +330,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
 static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
                                  /*OUT*/ IRSB*         irsb,
                                  UInt                  insn,
+                                 Addr                  guest_pc_curr_instr,
                                  Bool                  sigill_diag)
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
@@ -347,6 +349,23 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs), simm);
          return True;
       }
+   }
+
+   /* ------------------ jal rd, imm[20:1] ------------------ */
+   if (INSN(6, 0) == 0b1101111) {
+      UInt rd      = INSN(11, 7);
+      UInt imm20_1 = INSN(31, 31) << 19 | INSN(19, 12) << 11 |
+                     INSN(20, 20) << 10 | INSN(30, 21);
+      /* All JAL encodings are valid. */
+
+      ULong offset = sx_to_64(imm20_1 << 1, 21);
+      if (rd != 0)
+         putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
+      putPC(irsb, mkU64(guest_pc_curr_instr + offset));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Call;
+      DIP("jal %s, 0x%llx\n", nameIReg64(rd), guest_pc_curr_instr + offset);
+      return True;
    }
 
    if (sigill_diag)
@@ -401,12 +420,18 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
    case 0b01:
    case 0b10:
       dres->len = inst_size = 2;
-      ok = dis_RISCV64_compressed(dres, irsb, insn, sigill_diag);
+
+      ok = dis_RISCV64_compressed(
+         dres, irsb, insn, guest_pc_curr_instr, sigill_diag);
       break;
+
    case 0b11:
       dres->len = inst_size = 4;
-      ok = dis_RISCV64_standard(dres, irsb, insn, sigill_diag);
+
+      ok = dis_RISCV64_standard(
+         dres, irsb, insn, guest_pc_curr_instr, sigill_diag);
       break;
+
    default:
       vassert(0); /* Can't happen. */
    }
