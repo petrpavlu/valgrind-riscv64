@@ -3,19 +3,21 @@ AUTOMAKE_OPTIONS = 1.10
 
 include $(top_srcdir)/Makefile.all.am 
 
-TOOLS = \
-		memcheck \
-		cachegrind \
-		callgrind \
-		helgrind \
-		drd \
-		massif \
-		dhat \
-		lackey \
-		none
+#TOOLS = \
+#		memcheck \
+#		cachegrind \
+#		callgrind \
+#		helgrind \
+#		drd \
+#		massif \
+#		dhat \
+#		lackey \
+#		none
+TOOLS = none
 
-EXP_TOOLS = \
-		exp-bbv
+#EXP_TOOLS = \
+#		exp-bbv
+EXP_TOOLS =
 
 # Put docs last because building the HTML is slow and we want to get
 # everything else working before we try it.
