@@ -1795,6 +1795,10 @@ void VG_(nuke_all_threads_except) ( ThreadId me, VgSchedReturnCode src )
 #elif defined(VGA_mips32) || defined(VGA_mips64) || defined(VGA_nanomips)
 #  define VG_CLREQ_ARGS       guest_r12
 #  define VG_CLREQ_RET        guest_r11
+#elif defined(VGA_riscv64)
+/* TODO Review. */
+#  define VG_CLREQ_ARGS       guest_x11
+#  define VG_CLREQ_RET        guest_x10
 #else
 #  error Unknown arch
 #endif

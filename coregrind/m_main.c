@@ -2444,6 +2444,11 @@ static void final_tidyup(ThreadId tid)
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
             offsetof(VexGuestPPC64State, guest_GPR3),
             sizeof(VG_(threads)[tid].arch.vex.guest_GPR3));
+#  elif defined(VGA_riscv64)
+   VG_(threads)[tid].arch.vex.guest_x10 = to_run;
+   VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
+            offsetof(VexGuestRISCV64State, guest_x10),
+            sizeof(VG_(threads)[tid].arch.vex.guest_x10));
 #  elif defined(VGA_s390x)
    VG_(threads)[tid].arch.vex.guest_r2 = to_run;
    VG_TRACK(post_reg_write, Vg_CoreClientReq, tid,
@@ -2975,6 +2980,34 @@ asm(
     "break                                              \n\t"
     ".set pop                                           \n\t"
 ".previous                                              \n\t"
+);
+#elif defined(VGP_riscv64_linux)
+asm("\n"
+    "\t.text\n"
+    "\t.type _start,@function\n"
+    "\t.global _start\n"
+    "_start:\n"
+#if 0 /* TODO */
+    "\tadrp x0, vgPlain_interim_stack\n"
+    "\tadd  x0, x0, :lo12:vgPlain_interim_stack\n"
+    // The next 2 assume that VG_STACK_GUARD_SZB fits in 32 bits
+    "\tmov  x1, (("VG_STRINGIFY(VG_STACK_GUARD_SZB)") >> 0) & 0xFFFF\n"
+    "\tmovk x1, (("VG_STRINGIFY(VG_STACK_GUARD_SZB)") >> 16) & 0xFFFF,"
+                " lsl 16\n"
+    "\tadd  x0, x0, x1\n"
+    // The next 2 assume that VG_DEFAULT_STACK_ACTIVE_SZB fits in 32 bits
+    "\tmov  x1, (("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)") >> 0) & 0xFFFF\n"
+    "\tmovk x1, (("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)") >> 16) & 0xFFFF,"
+                " lsl 16\n"
+    "\tadd  x0, x0, x1\n"
+    "\tand  x0, x0, -16\n"
+    "\tmov  x1, sp\n"
+    "\tmov  sp, x0\n"
+    "\tmov  x0, x1\n"
+#endif
+    "\tj _start_in_C_linux\n"
+    "\tunimp\n"
+    ".previous\n"
 );
 #else
 #  error "Unknown linux platform"

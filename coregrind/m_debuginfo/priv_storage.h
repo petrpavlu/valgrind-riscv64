@@ -367,6 +367,20 @@ typedef
       Int   fp_off;
    }
    DiCfSI_m;
+#elif defined(VGA_riscv64)
+/* TODO Review. */
+typedef
+   struct {
+      UChar cfa_how; /* a CFIC_ value */
+      UChar ra_how;  /* a CFIR_ value */
+      UChar sp_how;  /* a CFIR_ value */ /*dw31=SP*/
+      UChar fp_how;  /* a CFIR_ value */ /*dw29=FP*/
+      Int   cfa_off;
+      Int   ra_off;
+      Int   sp_off;
+      Int   fp_off;
+   }
+   DiCfSI_m;
 #else
 #  error "Unknown arch"
 #endif

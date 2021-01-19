@@ -1963,7 +1963,8 @@ SizeT get_shm_size ( Int shmid )
 #if defined(__NR_shmctl)
 #  ifdef VKI_IPC_64
    struct vki_shmid64_ds buf;
-#    if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
+#    if defined(VGP_amd64_linux) || defined(VGP_arm64_linux) \
+        || defined(VGP_riscv64_linux)
      /* See bug 222545 comment 7 */
      SysRes __res = VG_(do_syscall3)(__NR_shmctl, shmid, 
                                      VKI_IPC_STAT, (UWord)&buf);
@@ -3348,7 +3349,7 @@ POST(sys_newfstat)
 #endif
 
 #if !defined(VGO_solaris) && !defined(VGP_arm64_linux) && \
-    !defined(VGP_nanomips_linux)
+    !defined(VGP_nanomips_linux) && !defined(VGP_riscv64_linux)
 static vki_sigset_t fork_saved_mask;
 
 // In Linux, the sys_fork() function varies across architectures, but we
@@ -3399,7 +3400,7 @@ PRE(sys_fork)
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
    }
 }
-#endif // !defined(VGO_solaris) && !defined(VGP_arm64_linux)
+#endif
 
 PRE(sys_ftruncate)
 {

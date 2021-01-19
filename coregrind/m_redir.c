@@ -1680,6 +1680,9 @@ void VG_(redir_initialise) ( void )
                          (Addr)&VG_(amd64_solaris_REDIR_FOR_strlen), NULL);
    }
 
+#  elif defined(VGP_riscv64_linux)
+   I_die_here;
+
 #  else
 #    error Unknown platform
 #  endif

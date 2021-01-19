@@ -518,6 +518,22 @@ static UInt local_sys_getpid ( void )
    return a0;
 }
 
+#elif defined(VGP_riscv64_linux)
+
+__attribute__((noinline))
+static UInt local_sys_write_stderr ( const HChar* buf, Int n )
+{
+   /* TODO Implement. */
+   return 0;
+}
+
+__attribute__((noinline))
+static UInt local_sys_getpid ( void )
+{
+   /* TODO Implement. */
+   return 0;
+}
+
 #elif defined(VGP_x86_solaris)
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {

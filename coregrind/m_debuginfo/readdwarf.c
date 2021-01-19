@@ -1730,6 +1730,10 @@ void ML_(read_debuginfo_dwarf1) (
 #  define FP_REG         30
 #  define SP_REG         29
 #  define RA_REG_DEFAULT 31
+#elif defined(VGP_riscv64_linux)
+#  define FP_REG         8
+#  define SP_REG         2
+#  define RA_REG_DEFAULT 1
 #else
 #  error "Unknown platform"
 #endif
@@ -1748,6 +1752,8 @@ void ML_(read_debuginfo_dwarf1) (
 # define N_CFI_REGS 128
 #elif defined(VGP_s390x_linux)
 # define N_CFI_REGS 66
+#elif defined(VGP_riscv64_linux)
+# define N_CFI_REGS 128
 #else
 # define N_CFI_REGS 20
 #endif
@@ -1974,6 +1980,8 @@ static void initUnwindContext ( /*OUT*/UnwindContext* ctx )
          start out as RR_Same. */
       ctx->state[j].reg[29/*FP*/].tag = RR_Same;
       ctx->state[j].reg[30/*LR*/].tag = RR_Same;
+#     elif defined(VGA_riscv64)
+      I_die_here;
 #     endif
    }
 }
@@ -2450,6 +2458,9 @@ static Bool summarise_context(/*OUT*/Addr* base,
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
    /* These don't use CFI based unwinding (is that really true?) */
 
+#  elif defined(VGA_riscv64)
+   I_die_here;
+
 #  else
 #    error "Unknown arch"
 #  endif
@@ -2544,6 +2555,8 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          I_die_here;
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
             || defined(VGA_ppc64le)
+#        elif defined(VGA_riscv64)
+         I_die_here;
 #        else
 #           error "Unknown arch"
 #        endif

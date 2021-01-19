@@ -1432,6 +1432,47 @@ VG_(trampoline_stuff_end):
 #	undef UD2_1024
 #	undef UD2_PAGE
 
+/*---------------- riscv64-linux ----------------*/
+#else
+#if defined(VGP_riscv64_linux)
+
+#	define UD2_4      .word 0
+#	define UD2_16     UD2_4    ; UD2_4    ; UD2_4    ; UD2_4
+#	define UD2_64     UD2_16   ; UD2_16   ; UD2_16   ; UD2_16
+#	define UD2_256    UD2_64   ; UD2_64   ; UD2_64   ; UD2_64
+#	define UD2_1024   UD2_256  ; UD2_256  ; UD2_256  ; UD2_256
+#	define UD2_PAGE   UD2_1024 ; UD2_1024 ; UD2_1024 ; UD2_1024
+
+	/* a leading page of unexecutable code */
+	UD2_PAGE
+
+.global VG_(trampoline_stuff_start)
+VG_(trampoline_stuff_start):
+
+.global VG_(riscv64_linux_SUBST_FOR_rt_sigreturn)
+.type   VG_(riscv64_linux_SUBST_FOR_rt_sigreturn), @function
+VG_(riscv64_linux_SUBST_FOR_rt_sigreturn):
+	.cfi_startproc
+	.cfi_signal_frame
+	li a7, __NR_rt_sigreturn
+	ecall
+	.cfi_endproc
+.size VG_(riscv64_linux_SUBST_FOR_rt_sigreturn), \
+	.-VG_(riscv64_linux_SUBST_FOR_rt_sigreturn)
+
+.global VG_(trampoline_stuff_end)
+VG_(trampoline_stuff_end):
+
+	/* and a trailing page of unexecutable code */
+	UD2_PAGE
+
+#	undef UD2_4
+#	undef UD2_16
+#	undef UD2_64
+#	undef UD2_256
+#	undef UD2_1024
+#	undef UD2_PAGE
+
 /*---------------- x86-solaris ----------------*/
 #else
 #if defined(VGP_x86_solaris)
@@ -1615,6 +1656,7 @@ VG_(trampoline_stuff_end):
 #else
 #  error Unknown platform
 
+#endif
 #endif
 #endif
 #endif

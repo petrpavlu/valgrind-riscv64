@@ -1259,6 +1259,21 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    arch->vex.guest_PC = iifii.initial_client_IP;
    arch->vex.guest_r31 = iifii.initial_client_SP;
 
+#  elif defined(VGP_riscv64_linux)
+   vg_assert(0 == sizeof(VexGuestRISCV64State) % LibVEX_GUEST_STATE_ALIGN);
+
+   /* Zero out the initial state. */
+   LibVEX_GuestRISCV64_initialise(&arch->vex);
+
+   /* Zero out the shadow areas. */
+   VG_(memset)(&arch->vex_shadow1, 0, sizeof(VexGuestRISCV64State));
+   VG_(memset)(&arch->vex_shadow2, 0, sizeof(VexGuestRISCV64State));
+
+   arch->vex.guest_x2 = iifii.initial_client_SP;
+   arch->vex.guest_pc = iifii.initial_client_IP;
+
+   /* TODO Review if PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP should be set. */
+
 #  else
 #    error Unknown platform
 #  endif

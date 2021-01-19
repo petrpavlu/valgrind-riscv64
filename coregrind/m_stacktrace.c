@@ -1479,6 +1479,22 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 #endif
 
+/* ------------------------ riscv64 ------------------------- */
+
+#if defined(VGP_riscv64_linux)
+
+UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
+                               /*OUT*/Addr* ips, UInt max_n_ips,
+                               /*OUT*/Addr* sps, /*OUT*/Addr* fps,
+                               const UnwindStartRegs* startRegs,
+                               Addr fp_max_orig )
+{
+   I_die_here;
+   return 0;
+}
+
+#endif
+
 /*------------------------------------------------------------*/
 /*---                                                      ---*/
 /*--- END platform-dependent unwinder worker functions     ---*/

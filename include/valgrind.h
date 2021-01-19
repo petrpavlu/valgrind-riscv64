@@ -123,6 +123,7 @@
 #undef PLAT_mips32_linux
 #undef PLAT_mips64_linux
 #undef PLAT_nanomips_linux
+#undef PLAT_riscv64_linux
 #undef PLAT_x86_solaris
 #undef PLAT_amd64_solaris
 
@@ -163,6 +164,8 @@
 #  define PLAT_mips32_linux 1
 #elif defined(__linux__) && defined(__nanomips__)
 #  define PLAT_nanomips_linux 1
+#elif defined(__linux__) && defined(__riscv) && (__riscv_xlen == 64)
+#  define PLAT_riscv64_linux 1
 #elif defined(__sun) && defined(__i386__)
 #  define PLAT_x86_solaris 1
 #elif defined(__sun) && defined(__x86_64__)
@@ -1118,6 +1121,23 @@ typedef
  } while (0)
 
 #endif
+
+/* ----------------------- riscv64-linux ------------------------ */
+
+#if defined(PLAT_riscv64_linux)
+
+typedef
+   struct {
+      unsigned long int nraddr; /* where's the code? */
+   }
+   OrigFn;
+
+#define VALGRIND_DO_CLIENT_REQUEST_EXPR(d, r, a1, a2, a3, a4, a5) 0
+#define VALGRIND_VEX_INJECT_IR() do { } while (0)
+/* TODO Implement. */
+
+#endif /* PLAT_riscv64_linux */
+
 /* Insert assembly code for other platforms here... */
 
 #endif /* NVALGRIND */
@@ -6595,6 +6615,14 @@ typedef
 
 #endif /* PLAT_mips64_linux */
 
+/* ----------------------- riscv64-linux ----------------------- */
+
+#if defined(PLAT_riscv64_linux)
+
+/* TODO Implement. */
+
+#endif /* PLAT_riscv64_linux */
+
 /* ------------------------------------------------------------------ */
 /* ARCHITECTURE INDEPENDENT MACROS for CLIENT REQUESTS.               */
 /*                                                                    */
@@ -7151,6 +7179,7 @@ VALGRIND_PRINTF_BACKTRACE(const char *format, ...)
 #undef PLAT_mips32_linux
 #undef PLAT_mips64_linux
 #undef PLAT_nanomips_linux
+#undef PLAT_riscv64_linux
 #undef PLAT_x86_solaris
 #undef PLAT_amd64_solaris
 
