@@ -2987,24 +2987,23 @@ asm("\n"
     "\t.type _start,@function\n"
     "\t.global _start\n"
     "_start:\n"
-#if 0 /* TODO */
-    "\tadrp x0, vgPlain_interim_stack\n"
-    "\tadd  x0, x0, :lo12:vgPlain_interim_stack\n"
-    // The next 2 assume that VG_STACK_GUARD_SZB fits in 32 bits
-    "\tmov  x1, (("VG_STRINGIFY(VG_STACK_GUARD_SZB)") >> 0) & 0xFFFF\n"
-    "\tmovk x1, (("VG_STRINGIFY(VG_STACK_GUARD_SZB)") >> 16) & 0xFFFF,"
-                " lsl 16\n"
-    "\tadd  x0, x0, x1\n"
-    // The next 2 assume that VG_DEFAULT_STACK_ACTIVE_SZB fits in 32 bits
-    "\tmov  x1, (("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)") >> 0) & 0xFFFF\n"
-    "\tmovk x1, (("VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)") >> 16) & 0xFFFF,"
-                " lsl 16\n"
-    "\tadd  x0, x0, x1\n"
-    "\tand  x0, x0, -16\n"
-    "\tmov  x1, sp\n"
-    "\tmov  sp, x0\n"
-    "\tmov  x0, x1\n"
-#endif
+    /* establish the global pointer in gp */
+    ".option push\n"
+    ".option norelax\n"
+    "\tla gp, __global_pointer$\n"
+    ".option pop\n"
+    /* set up the new stack in t0 */
+    "\tla t0, vgPlain_interim_stack\n"
+    "\tli t1, "VG_STRINGIFY(VG_STACK_GUARD_SZB)"\n"
+    "\tadd t0, t0, t1\n"
+    "\tli t1, "VG_STRINGIFY(VG_DEFAULT_STACK_ACTIVE_SZB)"\n"
+    "\tadd t0, t0, t1\n"
+    "\tli t1, 0xFFFFFF00\n"
+    "\tand t0, t0, t1\n"
+    /* install it, and collect the original one */
+    "\tmv a0, sp\n"
+    "\tmv sp, t0\n"
+    /* call _start_in_C_linux, passing it the startup sp */
     "\tj _start_in_C_linux\n"
     "\tunimp\n"
     ".previous\n"
