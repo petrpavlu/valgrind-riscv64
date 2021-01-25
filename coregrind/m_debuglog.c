@@ -520,18 +520,30 @@ static UInt local_sys_getpid ( void )
 
 #elif defined(VGP_riscv64_linux)
 
-__attribute__((noinline))
 static UInt local_sys_write_stderr ( const HChar* buf, Int n )
 {
-   /* TODO Implement. */
-   return 0;
+   register RegWord a0 asm("a0") = 2; /* stderr */
+   register RegWord a1 asm("a1") = (RegWord)buf;
+   register RegWord a2 asm("a2") = n;
+   register RegWord a7 asm("a7") = __NR_write;
+   __asm__ volatile (
+      "ecall\n"
+      : "+r" (a0)
+      : "r" (a1), "r" (a2), "r" (a7)
+   );
+   return a0 >= 0 ? (UInt)a0 : -1;
 }
 
-__attribute__((noinline))
 static UInt local_sys_getpid ( void )
 {
-   /* TODO Implement. */
-   return 0;
+   register RegWord a0 asm("a0");
+   register RegWord a7 asm("a7") = __NR_getpid;
+   __asm__ volatile (
+      "ecall\n"
+      : "=r" (a0)
+      : "r" (a7)
+   );
+   return (UInt)a0;
 }
 
 #elif defined(VGP_x86_solaris)
