@@ -1646,6 +1646,9 @@ void VG_(redir_initialise) ( void )
       );
    }
 
+#  elif defined(VGP_riscv64_linux)
+   /* No early intercepts are needed at this time. */
+
 #  elif defined(VGP_x86_solaris)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */
@@ -1679,9 +1682,6 @@ void VG_(redir_initialise) ( void )
       add_hardwired_spec("/lib/amd64/ld.so.1", "strlen",
                          (Addr)&VG_(amd64_solaris_REDIR_FOR_strlen), NULL);
    }
-
-#  elif defined(VGP_riscv64_linux)
-   I_die_here;
 
 #  else
 #    error Unknown platform
