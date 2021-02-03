@@ -2236,7 +2236,16 @@ Bool VG_(machine_get_hwcaps)( void )
 
 #elif defined(VGA_riscv64)
    {
-     I_die_here;
+     va = VexArchRISCV64;
+     vai.endness = VexEndnessLE;
+
+     /* Hardware baseline is RV64GC. */
+     vai.hwcaps = 0;
+
+     VG_(debugLog)(1, "machine", "hwcaps = 0x%x\n", vai.hwcaps);
+
+     VG_(machine_get_cache_info)(&vai);
+
      return True;
    }
 
