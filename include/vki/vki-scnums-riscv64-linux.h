@@ -89,6 +89,7 @@
 #define __NR_execve 221
 #define __NR3264_mmap 222
 #define __NR_mprotect 226
+#define __NR_arch_specific_syscall 244
 #define __NR_wait4 260
 #define __NR_prlimit64 261
 #define __NR_renameat2 276
@@ -97,6 +98,8 @@
 #define __NR_fcntl __NR3264_fcntl
 #define __NR_lseek __NR3264_lseek
 #define __NR_mmap __NR3264_mmap
+
+#define __NR_riscv_flush_icache (__NR_arch_specific_syscall + 15)
 
 #endif /* __VKI_SCNUMS_RISCV64_LINUX_H */
 

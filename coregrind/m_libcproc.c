@@ -1272,12 +1272,15 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
                                  (UWord) nbytes, (UWord) 3);
    vg_assert( !sr_isError(sres) );
 
-# elif defined(VGA_nanomips)
-
+#  elif defined(VGA_nanomips)
    __builtin___clear_cache(ptr, (char*)ptr + nbytes);
 
 #  elif defined(VGP_riscv64_linux)
-   I_die_here;
+   Addr startaddr = (Addr)ptr;
+   Addr endaddr   = startaddr + nbytes;
+   SysRes sres = VG_(do_syscall3)(__NR_riscv_flush_icache, startaddr, endaddr,
+                                  0 /*flags*/);
+   vg_assert( !sr_isError(sres) );
 
 #  endif
 }
