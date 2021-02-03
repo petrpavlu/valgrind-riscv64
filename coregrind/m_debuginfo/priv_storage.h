@@ -235,6 +235,8 @@ typedef
               CFIR_S390X_F5  -> old value of %f5
               CFIR_S390X_F6  -> old value of %f6
               CFIR_S390X_F7  -> old value of %f7
+
+TODO riscv64
 */
 
 #define CFIC_IA_SPREL     ((UChar)1)
@@ -368,13 +370,12 @@ typedef
    }
    DiCfSI_m;
 #elif defined(VGA_riscv64)
-/* TODO Review. */
 typedef
    struct {
       UChar cfa_how; /* a CFIC_ value */
       UChar ra_how;  /* a CFIR_ value */
-      UChar sp_how;  /* a CFIR_ value */ /*dw31=SP*/
-      UChar fp_how;  /* a CFIR_ value */ /*dw29=FP*/
+      UChar sp_how;  /* a CFIR_ value */
+      UChar fp_how;  /* a CFIR_ value */
       Int   cfa_off;
       Int   ra_off;
       Int   sp_off;
