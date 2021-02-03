@@ -70,7 +70,37 @@ asm(
 ".text\n"
 ".globl vgModuleLocal_call_on_new_stack_0_1\n"
 "vgModuleLocal_call_on_new_stack_0_1:\n"
-"   unimp\n"
+"   mv    sp, a0\n\t" /* Stack pointer */
+"   mv    ra, a1\n\t" /* Return address */
+"   mv    a0, a3\n\t" /* First argument */
+"   li    t0, 0\n\t"  /* Clear our GPRs */
+"   li    t1, 0\n\t"
+"   li    t2, 0\n\t"
+"   li    s0, 0\n\t"
+"   li    s1, 0\n\t"
+/* don't zero out a0, already set to the first argument */
+"   li    a1, 0\n\t"
+/* don't zero out a2, holds the target function f() */
+"   li    a3, 0\n\t"
+"   li    a4, 0\n\t"
+"   li    a5, 0\n\t"
+"   li    a6, 0\n\t"
+"   li    a7, 0\n\t"
+"   li    s2, 0\n\t"
+"   li    s3, 0\n\t"
+"   li    s4, 0\n\t"
+"   li    s5, 0\n\t"
+"   li    s6, 0\n\t"
+"   li    s7, 0\n\t"
+"   li    s8, 0\n\t"
+"   li    s9, 0\n\t"
+"   li    s10, 0\n\t"
+"   li    s11, 0\n\t"
+"   li    t3, 0\n\t"
+"   li    t4, 0\n\t"
+"   li    t5, 0\n\t"
+"   li    t6, 0\n\t"
+"   jr    a2\n\t"
 ".previous\n"
 );
 
