@@ -462,7 +462,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
 #  undef DO
 #elif defined(VGP_riscv64_linux)
-   I_die_here;
+   /* TODO Implement. */
 #else
 #  error Unknown ELF platform
 #endif
@@ -590,7 +590,7 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #elif defined(VGP_nanomips_linux)
 
 #elif defined(VGP_riscv64_linux)
-   I_die_here;
+   /* TODO Implement. */
 
 #else
 #  error Unknown ELF platform
