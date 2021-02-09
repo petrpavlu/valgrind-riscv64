@@ -3150,7 +3150,12 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
          cfa = cfsi_m->cfa_off + uregs->x29;
          break;
 #     elif defined(VGP_riscv64_linux)
-      I_die_here;
+      case CFIC_IA_SPREL:
+         cfa = cfsi_m->cfa_off + uregs->sp;
+         break;
+      case CFIC_IA_BPREL:
+         cfa = cfsi_m->cfa_off + uregs->fp;
+         break;
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -3446,10 +3451,14 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);
    COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi_m->x29_how, cfsi_m->x29_off);
 #  elif defined(VGP_riscv64_linux)
-   I_die_here;
-   COMPUTE(uregsPrev.pc, uregsHere->pc, cfsi_m->ra_how, cfsi_m->ra_off);
+   /* Compute register values in the caller's frame. Notice that the previous
+      pc is equal to the previous ra and is calculated as such. The previous ra
+      is however set to 0 here as this helps to promptly fail cases where an
+      inner frame uses the CFIR_SAME rule for ra which is bogus. */
+   COMPUTE(uregsPrev.pc, uregsHere->ra, cfsi_m->ra_how, cfsi_m->ra_off);
    COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
-   COMPUTE(uregsPrev.ra, uregsHere->ra, cfsi_m->fp_how, cfsi_m->fp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
+   uregsPrev.ra = 0;
 #  else
 #    error "Unknown arch"
 #  endif
