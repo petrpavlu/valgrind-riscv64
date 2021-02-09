@@ -56,7 +56,70 @@ void VG_(disp_run_translations)( UWord* two_words,
 .text
 .global VG_(disp_run_translations)
 VG_(disp_run_translations):
-	unimp
+	/* a0 holds two_words
+	   a1 holds guest_state
+	   a2 holds host_addr
+	*/
+	/* Push the callee-saved registers. Note this sequence maintains
+	   16-alignment of sp. Also save a0 since it will be needed in the
+	   postamble. */
+	addi sp, sp, -112
+	sd ra, 104(sp)
+	sd s0, 96(sp)
+	sd s1, 88(sp)
+	sd s2, 80(sp)
+	sd s3, 72(sp)
+	sd s4, 64(sp)
+	sd s5, 56(sp)
+	sd s6, 48(sp)
+	sd s7, 40(sp)
+	sd s8, 32(sp)
+	sd s9, 24(sp)
+	sd s10, 16(sp)
+	sd s11, 8(sp)
+	sd a0, 0(sp)
+
+	/* Set up the guest state pointer. */
+	li a0, 2048
+	add s0, a1, a0
+
+	/* and jump into the code cache. Chained translations in the code cache
+	   run, until for whatever reason, they can't continue. When that
+	   happens, the translation in question will jump (or call) to one of
+	   the continuation points VG_(cp_...) below. */
+	jr a2
+	/* NOTREACHED */
+
+/*----------------------------------------------------*/
+/*--- Postamble and exit.                          ---*/
+/*----------------------------------------------------*/
+
+postamble:
+	/* At this point, a1 and a2 contain two words to be returned to the
+	   caller. a1 holds a TRC value, and a2 optionally may hold another
+	   word (for CHAIN_ME exits, the address of the place to patch.) */
+
+	/* Restore int regs, including importantly a0 (two_words). */
+	ld ra, 104(sp)
+	ld s0, 96(sp)
+	ld s1, 88(sp)
+	ld s2, 80(sp)
+	ld s3, 72(sp)
+	ld s4, 64(sp)
+	ld s5, 56(sp)
+	ld s6, 48(sp)
+	ld s7, 40(sp)
+	ld s8, 32(sp)
+	ld s9, 24(sp)
+	ld s10, 16(sp)
+	ld s11, 8(sp)
+	ld a0, 0(sp)
+	addi sp, sp, 112
+
+	/* Stash return values. */
+	sd a1, 0(a0)
+	sd a2, 8(a0)
+	ret
 
 /*----------------------------------------------------*/
 /*--- Continuation points                          ---*/
@@ -80,12 +143,19 @@ VG_(disp_cp_xindir):
 /* ------ Assisted jump ------ */
 .global VG_(disp_cp_xassisted)
 VG_(disp_cp_xassisted):
-	unimp
+	/* s0 contains the TRC. */
+	mv a1, s0
+	li a2, 0
+	j postamble
 
 /* ------ Event check failed ------ */
 .global VG_(disp_cp_evcheck_fail)
 VG_(disp_cp_evcheck_fail):
-	unimp
+	li a1, VG_TRC_INNER_COUNTERZERO
+	li a2, 0
+	j postamble
+
+.size VG_(disp_run_translations), .-VG_(disp_run_translations)
 
 #endif // defined(VGP_riscv64_linux)
 
