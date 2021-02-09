@@ -893,6 +893,10 @@ static void do_pre_run_checks ( volatile ThreadState* tst )
 #  if defined(VGA_mips32) || defined(VGA_mips64)
    /* no special requirements */
 #  endif
+
+#  if defined(VGA_riscv64)
+   /* no special requirements */
+#  endif
 }
 
 // NO_VGDB_POLL value ensures vgdb is not polled, while
