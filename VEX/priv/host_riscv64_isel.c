@@ -330,6 +330,20 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       break;
    }
 
+   /* ------------------------- TMP ------------------------- */
+   /* Assign value to temporary. */
+   case Ist_WrTmp: {
+      IRType ty = typeOfIRTemp(env->type_env, stmt->Ist.WrTmp.tmp);
+      if (ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8) {
+         HReg dst = lookupIRTemp(env, stmt->Ist.WrTmp.tmp);
+         HReg src = iselIntExpr_R(env, stmt->Ist.WrTmp.data);
+         addInstr(env, RISCV64Instr_MV(dst, src));
+         return;
+      }
+      break;
+   }
+
+
    /* --------------------- INSTR MARK ---------------------- */
    /* Doesn't generate any executable code ... */
    case Ist_IMark:
