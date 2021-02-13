@@ -101,6 +101,13 @@ typedef struct {
    IRExpr* previous_rm;
 } ISelEnv;
 
+static HReg lookupIRTemp(ISelEnv* env, IRTemp tmp)
+{
+   vassert(tmp >= 0);
+   vassert(tmp < env->n_vregmap);
+   return env->vregmap[tmp];
+}
+
 static void addInstr(ISelEnv* env, RISCV64Instr* instr)
 {
    addHInstr(env->code, instr);
@@ -160,6 +167,11 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
 
    switch (e->tag) {
+   /* ------------------------ TEMP ------------------------- */
+   case Iex_RdTmp: {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
    /* ------------------------ LOAD ------------------------- */
    case Iex_Load: {
       if (e->Iex.Load.end != Iend_LE)
