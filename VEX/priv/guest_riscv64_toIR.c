@@ -289,6 +289,21 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
    vassert(INSN(1, 0) == 0b00 || INSN(1, 0) == 0b01 || INSN(1, 0) == 0b10);
 
+   /* ------------- c.addi4spn rd, nzuimm[9:2] -------------- */
+   if (INSN(1, 0) == 0b00 && INSN(15, 13) == 0b000) {
+      UInt rd        = INSN(4, 2) + 8;
+      UInt nzuimm9_2 = INSN(10, 7) << 4 | INSN(12, 11) << 2 | INSN(5, 5) << 1 |
+                       INSN(6, 6);
+      if (nzuimm9_2 == 0) {
+         /* Invalid C.ADDI4SPN, fall through. */
+      } else {
+         ULong uimm = nzuimm9_2 << 2;
+         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(2), mkU64(uimm)));
+         DIP("c.addi4spn %s, %llu\n", nameIReg64(rd), uimm);
+         return True;
+      }
+   }
+
    /* ---------------- c.addi rd, nzimm[5:0] ---------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
       UInt rd       = INSN(11, 7);
@@ -313,6 +328,21 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          ULong simm = sx_to_64(imm5_0, 6);
          putIReg64(irsb, rd, mkU64(simm));
          DIP("c.li %s, %lld\n", nameIReg64(rd), (Long)simm);
+         return True;
+      }
+   }
+
+   /* -------------- c.addi16sp x2, nzimm[9:4] -------------- */
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b011) {
+      UInt rd       = INSN(11, 7);
+      UInt nzimm9_4 = INSN(12, 12) << 5 | INSN(4, 3) << 3 | INSN(5, 5) << 2 |
+                      INSN(2, 2) << 1 | INSN(6, 6);
+      if (rd != 2 || nzimm9_4 == 0) {
+         /* Invalid C.ADDI16SP, fall through. */
+      } else {
+         ULong simm = sx_to_64(nzimm9_4 << 4, 10);
+         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rd), mkU64(simm)));
+         DIP("c.addi16sp %s, %lld\n", nameIReg64(rd), (Long)simm);
          return True;
       }
    }
