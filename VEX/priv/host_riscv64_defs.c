@@ -86,6 +86,15 @@ RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src)
+{
+   RISCV64Instr* i     = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag              = RISCV64in_MV;
+   i->RISCV64in.MV.dst = dst;
+   i->RISCV64in.MV.src = src;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2)
 {
    RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -222,6 +231,12 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf("li      ");
       ppHRegRISCV64(i->RISCV64in.LI.dst);
       vex_printf(", 0x%llx", i->RISCV64in.LI.imm64);
+      return;
+   case RISCV64in_MV:
+      vex_printf("mv      ");
+      ppHRegRISCV64(i->RISCV64in.MV.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.MV.src);
       return;
    case RISCV64in_ADD:
       vex_printf("add     ");
@@ -391,6 +406,10 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
    case RISCV64in_LI:
       addHRegUse(u, HRmWrite, i->RISCV64in.LI.dst);
       return;
+   case RISCV64in_MV:
+      addHRegUse(u, HRmWrite, i->RISCV64in.MV.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.MV.src);
+      return;
    case RISCV64in_ADD:
       addHRegUse(u, HRmWrite, i->RISCV64in.ADD.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.ADD.src1);
@@ -466,6 +485,10 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    switch (i->tag) {
    case RISCV64in_LI:
       mapReg(m, &i->RISCV64in.LI.dst);
+      return;
+   case RISCV64in_MV:
+      mapReg(m, &i->RISCV64in.MV.dst);
+      mapReg(m, &i->RISCV64in.MV.src);
       return;
    case RISCV64in_ADD:
       mapReg(m, &i->RISCV64in.ADD.dst);
@@ -739,6 +762,24 @@ static UChar* emit_U(UChar* p, UInt opcode, UInt rd, UInt imm31_12)
    return emit32(p, the_insn);
 }
 
+/* Emit a CR-type instruction. */
+static UChar* emit_CR(UChar* p, UInt opcode, UInt rs2, UInt rd, UInt funct4)
+{
+   vassert(opcode >> 2 == 0);
+   vassert(rs2 >> 5 == 0);
+   vassert(rd >> 5 == 0);
+   vassert(funct4 >> 4 == 0);
+
+   UShort the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= rs2 << 2;
+   the_insn |= rd << 7;
+   the_insn |= funct4 << 12;
+
+   return emit16(p, the_insn);
+}
+
 /* Emit a CI-type instruction. */
 static UChar* emit_CI(UChar* p, UInt opcode, UInt imm5_0, UInt rd, UInt funct3)
 {
@@ -818,6 +859,14 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
    case RISCV64in_LI:
       p = imm64_to_ireg(p, iregEnc(i->RISCV64in.LI.dst), i->RISCV64in.LI.imm64);
       goto done;
+   case RISCV64in_MV: {
+      /* c.mv dst, src */
+      UInt dst = iregEnc(i->RISCV64in.MV.dst);
+      UInt src = iregEnc(i->RISCV64in.MV.src);
+
+      p = emit_CR(p, 0b10, src, dst, 0b1000);
+      goto done;
+   }
    case RISCV64in_ADD: {
       /* add dst, src1, src2 */
       UInt dst  = iregEnc(i->RISCV64in.ADD.dst);
