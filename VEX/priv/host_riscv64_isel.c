@@ -322,7 +322,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    case Ist_Put: {
       IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.Put.data);
       if (tyd == Ity_I64 || tyd == Ity_I32 || tyd == Ity_I16 || tyd == Ity_I8) {
-         HReg src = iselIntExpr_R(env, stmt->Ist.Put.data);
+         HReg src  = iselIntExpr_R(env, stmt->Ist.Put.data);
          HReg base = get_baseblock_register();
          Int  off  = stmt->Ist.Put.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
          vassert(off >= -2048 && off < 2048);
@@ -354,7 +354,6 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       }
       break;
    }
-
 
    /* --------------------- INSTR MARK ---------------------- */
    /* Doesn't generate any executable code ... */
@@ -474,9 +473,10 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
                             Bool               addProfInc,
                             Addr               max_ga)
 {
-   Int           i, j;
-   HReg          hreg, hregHI;
-   ISelEnv*      env;
+   Int      i, j;
+   HReg     hreg, hregHI;
+   ISelEnv* env;
+
    /* TODO */
 #if 0
    RISCV64AMode *amCounter, *amFailAddr;

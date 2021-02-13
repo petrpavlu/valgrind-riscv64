@@ -291,9 +291,9 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
 
    /* ------------- c.addi4spn rd, nzuimm[9:2] -------------- */
    if (INSN(1, 0) == 0b00 && INSN(15, 13) == 0b000) {
-      UInt rd        = INSN(4, 2) + 8;
-      UInt nzuimm9_2 = INSN(10, 7) << 4 | INSN(12, 11) << 2 | INSN(5, 5) << 1 |
-                       INSN(6, 6);
+      UInt rd = INSN(4, 2) + 8;
+      UInt nzuimm9_2 =
+         INSN(10, 7) << 4 | INSN(12, 11) << 2 | INSN(5, 5) << 1 | INSN(6, 6);
       if (nzuimm9_2 == 0) {
          /* Invalid C.ADDI4SPN, fall through. */
       } else {
