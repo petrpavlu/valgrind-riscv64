@@ -366,6 +366,19 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------------- c.mv rd, rs2 --------------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs2 = INSN(6, 2);
+      if (rs2 == 0) {
+         /* Invalid C.MV, fall through. */
+      } else {
+         putIReg64(irsb, rd, getIReg64(rs2));
+         DIP("c.mv %s, %s\n", nameIReg64(rd), nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
       UInt rs2     = INSN(6, 2);
