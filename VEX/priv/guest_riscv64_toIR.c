@@ -298,7 +298,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(nzimm5_0, 6);
          putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rd), mkU64(simm)));
-         DIP("c.addi %s, %lld\n", nameIReg64(rd), simm);
+         DIP("c.addi %s, %lld\n", nameIReg64(rd), (Long)simm);
          return True;
       }
    }
@@ -312,7 +312,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm5_0, 6);
          putIReg64(irsb, rd, mkU64(simm));
-         DIP("c.li %s, %lld\n", nameIReg64(rd), simm);
+         DIP("c.li %s, %lld\n", nameIReg64(rd), (Long)simm);
          return True;
       }
    }
@@ -341,7 +341,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd,
                    loadLE(Ity_I64, binop(Iop_Add64, getIReg64(2 /*x2/sp*/),
                                          mkU64(offset))));
-         DIP("c.ldsp %s, %lld(sp)\n", nameIReg64(rd), offset);
+         DIP("c.ldsp %s, %lld(sp)\n", nameIReg64(rd), (Long)offset);
          return True;
       }
    }
@@ -374,7 +374,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong offset = uimm8_3 << 3;
       storeLE(irsb, binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(offset)),
               getIReg64(rs2));
-      DIP("c.sdsp %s, %lld(sp)\n", nameIReg64(rs2), offset);
+      DIP("c.sdsp %s, %lld(sp)\n", nameIReg64(rs2), (Long)offset);
       return True;
    }
 
@@ -403,7 +403,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rs), mkU64(simm)));
-         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs), simm);
+         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs), (Long)simm);
          return True;
       }
    }
