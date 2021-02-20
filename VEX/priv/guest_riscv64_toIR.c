@@ -387,6 +387,23 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------- c.beqz rs1, imm ------------------- */
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b110) {
+      UInt rs1    = INSN(9, 7) + 8;
+      UInt imm8_1 = INSN(12, 12) << 7 | INSN(6, 5) << 5 | INSN(2, 2) << 4 |
+                    INSN(11, 10) << 2 | INSN(4, 3);
+      /* Note: All C.BEQZ encodings are valid. */
+      ULong simm = sx_to_64(imm8_1 << 1, 9);
+      stmt(irsb,
+           IRStmt_Exit(binop(Iop_CmpEQ64, getIReg64(rs1), mkU64(0)), Ijk_Boring,
+                       IRConst_U64(guest_pc_curr_instr + simm), OFFB_PC));
+      putPC(irsb, mkU64(guest_pc_curr_instr + 2));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Boring;
+      DIP("c.beqz %s, 0x%llx\n", nameIReg64(rs1), guest_pc_curr_instr + simm);
+      return True;
+   }
+
    /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b011) {
       UInt rd      = INSN(11, 7);
