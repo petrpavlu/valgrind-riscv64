@@ -385,7 +385,7 @@ static void iselNext(ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP)
 
    HReg base   = get_baseblock_register();
    Int  soff12 = offsIP - BASEBLOCK_OFFSET_ADJUSTMENT;
-   vassert(soff12 >= -2048 && offsIP < 2048);
+   vassert(soff12 >= -2048 && soff12 < 2048);
 
    /* Case: boring transfer to known address. */
    if (next->tag == Iex_Const) {
