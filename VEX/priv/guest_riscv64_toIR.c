@@ -115,6 +115,9 @@ static IRExpr* loadLE(IRType ty, IRExpr* addr)
    return IRExpr_Load(Iend_LE, ty, addr);
 }
 
+/* Create an unary-operation expression. */
+static IRExpr* unop(IROp op, IRExpr* a) { return IRExpr_Unop(op, a); }
+
 /* Create a binary-operation expression. */
 static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
 {
@@ -448,6 +451,131 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
    vassert(INSN(1, 0) == 0b11);
+
+   /* ---------------- lb rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b000) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LB, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd,
+                   unop(Iop_8Uto64,
+                        loadLE(Ity_I8,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
+         DIP("lb %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
+   /* ---------------- lh rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b001) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LH, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd,
+                   unop(Iop_16Uto64,
+                        loadLE(Ity_I16,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
+         DIP("lh %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
+   /* ---------------- lw rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b010) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LW, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd,
+                   unop(Iop_32Uto64,
+                        loadLE(Ity_I32,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
+         DIP("lw %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
+   /* ---------------- ld rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b011) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LD, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(
+            irsb, rd,
+            loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(simm))));
+         DIP("ld %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
+   /* --------------- lbu rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b100) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LBU, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd,
+                   unop(Iop_8Sto64,
+                        loadLE(Ity_I8,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
+         DIP("lbu %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
+   /* --------------- lhu rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b101) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LHU, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd,
+                   unop(Iop_16Sto64,
+                        loadLE(Ity_I16,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
+         DIP("lhu %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
+   /* --------------- lwu rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b110) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LWU, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd,
+                   unop(Iop_32Sto64,
+                        loadLE(Ity_I32,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
+         DIP("lwu %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+   }
 
    /* --------------- addi rd, rs, imm[11:0] ---------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
