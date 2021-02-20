@@ -862,6 +862,56 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
    return p;
 }
 
+/* Get a 48-bit address into a register, using only that register, and
+   generating a constant number of instructions with 18 bytes in size,
+   regardless of the value of the address. This is used when generating
+   sections of code that need to be patched later, so as to guarantee a
+   specific size.
+
+   Notice that this function is designed to support target systems that use the
+   Sv39 or Sv48 virtual-memory system. The input address is checked to be in
+   the Sv48 format, that is bits [63:48] must be all equal to bit 47.
+   Utilizing the fact that the address is only 48-bits in size allows to save 2
+   instructions compared to materializing a full 64-bit address.
+
+   TODO Review if generating instead 'c.ld dst, 1f; c.j 2f; .align 3;
+   1: .quad imm; 2:' is possible and would be better.
+   */
+static UChar* addr48_to_ireg_EXACTLY_18B(UChar* p, UInt dst, ULong imm48)
+{
+   vassert(imm48 >> 47 == 0 || imm48 >> 47 == 0x1ffff);
+
+   ULong rem = imm48;
+   ULong imm47_28, imm27_16, imm15_4, imm3_0;
+   imm3_0   = rem & 0xf;
+   rem      = ((rem >> 3) + 1) >> 1;
+   imm15_4  = rem & 0xfff;
+   rem      = ((rem >> 11) + 1) >> 1;
+   imm27_16 = rem & 0xfff;
+   rem      = ((rem >> 11) + 1) >> 1;
+   imm47_28 = rem & 0xfffff;
+
+   /* lui dst, imm47_28 */
+   p = emit_U(p, 0b0110111, dst, imm47_28);
+   /* addiw dst, dst, imm27_16 */
+   p = emit_I(p, 0b0011011, dst, 0b000, dst, imm27_16);
+   /* c.slli dst, 12 */
+   p = emit_CI(p, 0b10, 12, dst, 0b000);
+   /* addi dst, dst, imm15_4 */
+   p = emit_I(p, 0b0010011, dst, 0b000, dst, imm15_4);
+   /* c.slli dst, 4 */
+   p = emit_CI(p, 0b10, 4, dst, 0b000);
+   if (imm3_0 != 0) {
+      /* c.addi dst, imm3_0 */
+      p = emit_CI(p, 0b01, imm3_0 | (imm3_0 >> 3 != 0 ? 0x30 : 0), dst, 0b000);
+   } else {
+      /* c.nop */
+      p = emit_CI(p, 0b01, 0, 0, 0b000);
+   }
+
+   return p;
+}
+
 /* Emit an instruction into buf and return the number of bytes used. Note that
    buf is not the insn's final place, and therefore it is imperative to emit
    position-independent code. If the emitted instruction was a profiler inc, set
@@ -1038,12 +1088,12 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       /* VG_(disp_cp_chain_me_to_{slowEP,fastEP}) (where we're calling to) backs
          up the return address, so as to find the address of the first patchable
          byte. So: don't change the number of instructions (3) below. */
-      /* TODO Make the number of instructions always constant. */
       /* li t0, VG_(disp_cp_chain_me_to_{slowEP,fastEP}) */
       const void* disp_cp_chain_me = i->RISCV64in.XDirect.toFastEP
                                         ? disp_cp_chain_me_to_fastEP
                                         : disp_cp_chain_me_to_slowEP;
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_chain_me);
+      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/,
+                                     (ULong)(Addr)disp_cp_chain_me);
 
       /* jalr zero, t0(0) */
       p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
