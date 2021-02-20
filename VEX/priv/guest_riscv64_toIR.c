@@ -577,6 +577,58 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------- sb rs2, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0100011 && INSN(14, 12) == 0b000) {
+      UInt rs1     = INSN(19, 15);
+      UInt rs2     = INSN(24, 20);
+      UInt imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
+      /* Note: All SB encodings are valid. */
+      ULong simm = sx_to_64(imm11_0, 12);
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
+              unop(Iop_64to8, getIReg64(rs2)));
+      DIP("sb %s, %lld(%s)\n", nameIReg64(rs2), (Long)simm, nameIReg64(rs1));
+      return True;
+   }
+
+   /* --------------- sh rs2, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0100011 && INSN(14, 12) == 0b001) {
+      UInt rs1     = INSN(19, 15);
+      UInt rs2     = INSN(24, 20);
+      UInt imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
+      /* Note: All SH encodings are valid. */
+      ULong simm = sx_to_64(imm11_0, 12);
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
+              unop(Iop_64to16, getIReg64(rs2)));
+      DIP("sh %s, %lld(%s)\n", nameIReg64(rs2), (Long)simm, nameIReg64(rs1));
+      return True;
+   }
+
+   /* --------------- sw rs2, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0100011 && INSN(14, 12) == 0b010) {
+      UInt rs1     = INSN(19, 15);
+      UInt rs2     = INSN(24, 20);
+      UInt imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
+      /* Note: All SW encodings are valid. */
+      ULong simm = sx_to_64(imm11_0, 12);
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
+              unop(Iop_64to32, getIReg64(rs2)));
+      DIP("sw %s, %lld(%s)\n", nameIReg64(rs2), (Long)simm, nameIReg64(rs1));
+      return True;
+   }
+
+   /* --------------- sd rs2, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0100011 && INSN(14, 12) == 0b011) {
+      UInt rs1     = INSN(19, 15);
+      UInt rs2     = INSN(24, 20);
+      UInt imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
+      /* Note: All SD encodings are valid. */
+      ULong simm = sx_to_64(imm11_0, 12);
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
+              getIReg64(rs2));
+      DIP("sd %s, %lld(%s)\n", nameIReg64(rs2), (Long)simm, nameIReg64(rs1));
+      return True;
+   }
+
    /* --------------- addi rd, rs, imm[11:0] ---------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
       UInt rd      = INSN(11, 7);
