@@ -374,6 +374,61 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    case Ist_IMark:
       return;
 
+   /* ------------------------ EXIT ------------------------- */
+   case Ist_Exit: {
+      if (stmt->Ist.Exit.dst->tag != Ico_U64)
+         vpanic("iselStmt(riscv64): Ist_Exit: dst is not a 64-bit value");
+
+      HReg cond   = iselIntExpr_R(env, stmt->Ist.Exit.guard);
+      HReg base   = get_baseblock_register();
+      Int  soff12 = stmt->Ist.Exit.offsIP - BASEBLOCK_OFFSET_ADJUSTMENT;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+
+      /* Case: boring transfer to known address. */
+      if (stmt->Ist.Exit.jk == Ijk_Boring) {
+         if (env->chainingAllowed) {
+            /* .. almost always true .. */
+            /* Skip the event check at the dst if this is a forwards edge. */
+            Bool toFastEP = (Addr64)stmt->Ist.Exit.dst->Ico.U64 > env->max_ga;
+            if (0)
+               vex_printf("%s", toFastEP ? "Y" : ",");
+            addInstr(env, RISCV64Instr_XDirect(stmt->Ist.Exit.dst->Ico.U64,
+                                               base, soff12, cond, toFastEP));
+         } else {
+            /* .. very occasionally .. */
+            /* We can't use chaining, so ask for an assisted transfer, as
+               that's the only alternative that is allowable. */
+            HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+            addInstr(env,
+                     RISCV64Instr_XAssisted(r, base, soff12, cond, Ijk_Boring));
+         }
+         return;
+      }
+
+      /* Case: assisted transfer to arbitrary address. */
+      switch (stmt->Ist.Exit.jk) {
+      /* Keep this list in sync with that for iselNext below. */
+      case Ijk_ClientReq:
+      case Ijk_NoDecode:
+      case Ijk_NoRedir:
+      case Ijk_Sys_syscall:
+      case Ijk_InvalICache:
+      case Ijk_FlushDCache:
+      case Ijk_SigTRAP:
+      case Ijk_Yield: {
+         HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
+         addInstr(env, RISCV64Instr_XAssisted(r, base, soff12, cond,
+                                              stmt->Ist.Exit.jk));
+         return;
+      }
+      default:
+         break;
+      }
+
+      /* Do we ever expect to see any other kind? */
+      goto stmt_fail;
+   }
+
    default:
       break;
    }
