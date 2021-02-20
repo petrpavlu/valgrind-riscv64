@@ -1104,8 +1104,9 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          /* beq cond, zero, delta */
          UInt cond  = iregEnc(i->RISCV64in.XDirect.cond);
          UInt delta = p - ptmp;
-         /* TODO Fix assert. */
-         vassert(delta >= 16 && delta < 4096 && (delta & 1) == 0);
+         /* delta_min = 4 (beq) + 2 (c.li) + 4 (sd) + 18 (addr48) + 2 (c.jalr)
+                      = 30 */
+         vassert(delta >= 30 && delta < 4096 && (delta & 1) == 0);
          UInt imm12_1 = (delta >> 1) & 0x7ff;
 
          p = emit_B(p, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
@@ -1154,7 +1155,8 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          /* beq cond, zero, delta */
          UInt cond  = iregEnc(i->RISCV64in.XIndir.cond);
          UInt delta = p - ptmp;
-         vassert(delta >= 16 && delta < 4096 && (delta & 1) == 0);
+         /* delta_min = 4 (beq) + 4 (sd) + 2 (c.li) + 2 (c.jr) = 12 */
+         vassert(delta >= 12 && delta < 4096 && (delta & 1) == 0);
          UInt imm12_1 = (delta >> 1) & 0x7ff;
 
          p = emit_B(p, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
@@ -1245,7 +1247,9 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          /* beq cond, zero, delta */
          UInt cond  = iregEnc(i->RISCV64in.XAssisted.cond);
          UInt delta = p - ptmp;
-         vassert(delta >= 20 && delta < 4096 && (delta & 1) == 0);
+         /* delta_min = 4 (beq) + 4 (sd) + 2 (c.li) + 2 (c.li) + 2 (c.jr)
+                      = 14 */
+         vassert(delta >= 14 && delta < 4096 && (delta & 1) == 0);
          UInt imm12_1 = (delta >> 1) & 0x7ff;
 
          p = emit_B(p, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
@@ -1264,7 +1268,7 @@ bad:
    /*NOTREACHED*/
 
 done:
-   vassert(p - &buf[0] <= 32);
+   vassert(p - &buf[0] <= 44);
    return p - &buf[0];
 }
 
