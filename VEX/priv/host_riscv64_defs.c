@@ -360,7 +360,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.XAssisted.dstGA);
       vex_printf(", %d(", i->RISCV64in.XAssisted.soff12);
       ppHRegRISCV64(i->RISCV64in.XAssisted.base);
-      vex_printf("); mov s0, $IRJumpKind_to_TRCVAL(%d)",
+      vex_printf("); mv s0, $IRJumpKind_to_TRCVAL(%d)",
                  (Int)i->RISCV64in.XAssisted.jk);
       vex_printf("; li t0, <disp_cp_xassisted>; ");
       vex_printf("jr t0(0); 1:");
