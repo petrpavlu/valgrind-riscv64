@@ -164,7 +164,8 @@ static HReg get_baseblock_register(void) { return hregRISCV64_x8(); }
 static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
 {
    IRType ty = typeOfIRExpr(env->type_env, e);
-   vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8);
+   vassert(ty == Ity_I64 || ty == Ity_I32 || ty == Ity_I16 || ty == Ity_I8 ||
+           ty == Ity_I1);
 
    switch (e->tag) {
    /* ------------------------ TEMP ------------------------- */
@@ -209,6 +210,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          /* TODO Optimize for small imms by generating addi. */
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_SUB(dst, argL, argR));
+         return dst;
+      }
+      case Iop_CmpEQ64: {
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, RISCV64Instr_SUB(dst, argL, argR));
          return dst;
