@@ -678,6 +678,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ---------------- auipc rd, imm[31:12] ----------------- */
+   if (INSN(6, 0) == 0b0010111) {
+      UInt rd         = INSN(11, 7);
+      UInt nzimm31_12 = INSN(31, 12);
+      if (rd == 0) {
+         /* Invalid AUIPC, fall through. */
+      } else {
+         putIReg64(irsb, rd,
+                   binop(Iop_Add64, mkU64(guest_pc_curr_instr),
+                         mkU64(sx_to_64(nzimm31_12 << 12, 32))));
+         DIP("auipc %s, 0x%x\n", nameIReg64(rd), nzimm31_12);
+         return True;
+      }
+   }
+
    /* ------------------ jal rd, imm[20:1] ------------------ */
    if (INSN(6, 0) == 0b1101111) {
       UInt rd      = INSN(11, 7);
