@@ -333,7 +333,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf("); li t0, <%s>; ", i->RISCV64in.XDirect.toFastEP
                                         ? "disp_cp_chain_me_to_fastEP"
                                         : "disp_cp_chain_me_to_slowEP");
-      vex_printf("jalr zero, 0(t0); 1:");
+      vex_printf("jalr x1, 0(t0); 1:");
       return;
    case RISCV64in_XIndir:
       vex_printf("(xIndir) ");
@@ -347,7 +347,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf(", %d(", i->RISCV64in.XIndir.soff12);
       ppHRegRISCV64(i->RISCV64in.XIndir.base);
       vex_printf("); li t0, <disp_cp_xindir>; ");
-      vex_printf("jalr zero, 0(t0); 1:");
+      vex_printf("jr 0(t0); 1:");
       return;
    case RISCV64in_XAssisted:
       vex_printf("(xAssisted) ");
@@ -363,7 +363,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf("); mov s0, $IRJumpKind_to_TRCVAL(%d)",
                  (Int)i->RISCV64in.XAssisted.jk);
       vex_printf("; li t0, <disp_cp_xassisted>; ");
-      vex_printf("jalr zero, t0(0); 1:");
+      vex_printf("jr t0(0); 1:");
       return;
    default:
       vpanic("ppRISCV64Instr");
@@ -1095,8 +1095,8 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/,
                                      (ULong)(Addr)disp_cp_chain_me);
 
-      /* jalr zero, t0(0) */
-      p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
+      /* c.jalr t0(0) */
+      p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1001);
       /* --- END of PATCHABLE BYTES --- */
 
       /* Fix up the conditional jump, if there was one. */
@@ -1146,8 +1146,8 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       /* li t0, VG_(disp_cp_xindir) */
       p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_xindir);
 
-      /* jalr zero, t0(0) */
-      p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
+      /* c.jr t0(0) */
+      p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
 
       /* Fix up the conditional jump, if there was one. */
       if (!hregIsInvalid(i->RISCV64in.XIndir.cond)) {
@@ -1237,8 +1237,8 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       /* li t0, VG_(disp_cp_xassisted) */
       p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_xassisted);
 
-      /* jalr zero, t0(0) */
-      p = emit_I(p, 0b1100111, 0 /*x0/zero*/, 0b000, 5 /*x5/t0*/, 0);
+      /* c.jr t0(0) */
+      p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
 
       /* Fix up the conditional jump, if there was one. */
       if (!hregIsInvalid(i->RISCV64in.XAssisted.cond)) {
