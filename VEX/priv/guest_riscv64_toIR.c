@@ -444,7 +444,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1000) {
       UInt rd  = INSN(11, 7);
       UInt rs2 = INSN(6, 2);
-      if (rs2 == 0) {
+      if (rd == 0 || rs2 == 0) {
          /* Invalid C.MV, fall through. */
       } else {
          putIReg64(irsb, rd, getIReg64(rs2));
