@@ -190,7 +190,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       else if (ty == Ity_I8)
          addInstr(env, RISCV64Instr_LB(dst, addr, 0));
       else
-         vassert(0);
+         goto irreducible;
       return dst;
    }
 
@@ -229,7 +229,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       else if (ty == Ity_I8)
          addInstr(env, RISCV64Instr_LB(dst, base, off));
       else
-         vassert(0);
+         goto irreducible;
       return dst;
    }
 
@@ -252,8 +252,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          u = e->Iex.Const.con->Ico.U8;
          break;
       default:
-         ppIRExpr(e);
-         vpanic("iselIntExpr_R.Iex_Const(riscv64)");
+         goto irreducible;
       }
       addInstr(env, RISCV64Instr_LI(dst, u));
       return dst;
