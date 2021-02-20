@@ -301,7 +301,8 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          /* Invalid C.ADDI4SPN, fall through. */
       } else {
          ULong uimm = nzuimm9_2 << 2;
-         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(2), mkU64(uimm)));
+         putIReg64(irsb, rd,
+                   binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(uimm)));
          DIP("c.addi4spn %s, %llu\n", nameIReg64(rd), uimm);
          return True;
       }
@@ -320,16 +321,17 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* ---------------- c.addi rd, nzimm[5:0] ---------------- */
+   /* -------------- c.addi rd_rs1, nzimm[5:0] -------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
-      UInt rd       = INSN(11, 7);
+      UInt rd_rs1   = INSN(11, 7);
       UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
-      if (rd == 0 || nzimm5_0 == 0) {
+      if (rd_rs1 == 0 || nzimm5_0 == 0) {
          /* Invalid C.ADDI, fall through. */
       } else {
          ULong simm = sx_to_64(nzimm5_0, 6);
-         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rd), mkU64(simm)));
-         DIP("c.addi %s, %lld\n", nameIReg64(rd), (Long)simm);
+         putIReg64(irsb, rd_rs1,
+                   binop(Iop_Add64, getIReg64(rd_rs1), mkU64(simm)));
+         DIP("c.addi %s, %lld\n", nameIReg64(rd_rs1), (Long)simm);
          return True;
       }
    }
@@ -348,17 +350,18 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- c.addi16sp x2, nzimm[9:4] -------------- */
+   /* ---------------- c.addi16sp nzimm[9:4] ---------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b011) {
-      UInt rd       = INSN(11, 7);
+      UInt rd_rs1   = INSN(11, 7);
       UInt nzimm9_4 = INSN(12, 12) << 5 | INSN(4, 3) << 3 | INSN(5, 5) << 2 |
                       INSN(2, 2) << 1 | INSN(6, 6);
-      if (rd != 2 || nzimm9_4 == 0) {
+      if (rd_rs1 != 2 || nzimm9_4 == 0) {
          /* Invalid C.ADDI16SP, fall through. */
       } else {
          ULong simm = sx_to_64(nzimm9_4 << 4, 10);
-         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rd), mkU64(simm)));
-         DIP("c.addi16sp %s, %lld\n", nameIReg64(rd), (Long)simm);
+         putIReg64(irsb, rd_rs1,
+                   binop(Iop_Add64, getIReg64(rd_rs1), mkU64(simm)));
+         DIP("c.addi16sp %lld\n", (Long)simm);
          return True;
       }
    }
@@ -407,15 +410,16 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
    /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b011) {
       UInt rd      = INSN(11, 7);
+      UInt rs1     = 2; /* base=x2/sp */
       UInt uimm8_3 = INSN(4, 2) << 3 | INSN(12, 12) << 2 | INSN(6, 5);
       if (rd == 0) {
          /* Invalid C.LDSP, fall through. */
       } else {
-         ULong offset = uimm8_3 << 3;
-         putIReg64(irsb, rd,
-                   loadLE(Ity_I64, binop(Iop_Add64, getIReg64(2 /*x2/sp*/),
-                                         mkU64(offset))));
-         DIP("c.ldsp %s, %lld(sp)\n", nameIReg64(rd), (Long)offset);
+         ULong uimm = uimm8_3 << 3;
+         putIReg64(
+            irsb, rd,
+            loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
+         DIP("c.ldsp %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
          return True;
       }
    }
@@ -455,13 +459,14 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
 
    /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
+      UInt rs1     = 2; /* base=x2/sp */
       UInt rs2     = INSN(6, 2);
       UInt uimm8_3 = INSN(12, 9) << 2 | INSN(8, 7);
       /* Note: All C.SDSP encodings are valid. */
-      ULong offset = uimm8_3 << 3;
-      storeLE(irsb, binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(offset)),
+      ULong uimm = uimm8_3 << 3;
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               getIReg64(rs2));
-      DIP("c.sdsp %s, %lld(sp)\n", nameIReg64(rs2), (Long)offset);
+      DIP("c.sdsp %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
       return True;
    }
 
@@ -657,17 +662,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* --------------- addi rd, rs, imm[11:0] ---------------- */
+   /* --------------- addi rd, rs1, imm[11:0] --------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
       UInt rd      = INSN(11, 7);
-      UInt rs      = INSN(19, 15);
+      UInt rs1     = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
       if (rd == 0) {
          /* Invalid ADDI, fall through. */
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
-         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rs), mkU64(simm)));
-         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs), (Long)simm);
+         putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)));
+         DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs1),
+             (Long)simm);
          return True;
       }
    }
@@ -678,8 +684,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt imm20_1 = INSN(31, 31) << 19 | INSN(19, 12) << 11 |
                      INSN(20, 20) << 10 | INSN(30, 21);
       /* Note: All JAL encodings are valid. */
-      ULong offset = sx_to_64(imm20_1 << 1, 21);
-      ULong dst_pc = guest_pc_curr_instr + offset;
+      ULong simm   = sx_to_64(imm20_1 << 1, 21);
+      ULong dst_pc = guest_pc_curr_instr + simm;
       if (rd != 0)
          putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
       putPC(irsb, mkU64(dst_pc));
