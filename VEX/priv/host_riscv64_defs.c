@@ -853,8 +853,8 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
       p = emit_U(p, 0b0110111, dst, ((imm64 + 0x800) >> 12) & 0xfffff);
       if ((imm64 & 0xfff) == 0)
          return p;
-      /* addi dst, dst, simm64[11:0] */
-      return emit_I(p, 0b0010011, dst, 0b000, dst, imm64 & 0xfff);
+      /* addiw dst, dst, simm64[11:0] */
+      return emit_I(p, 0b0011011, dst, 0b000, dst, imm64 & 0xfff);
    }
 
    /* TODO Implement support for >32-bit constants. */
