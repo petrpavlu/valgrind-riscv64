@@ -304,6 +304,19 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------- c.ld rd, uimm[7:3](rs1) --------------- */
+   if (INSN(1, 0) == 0b00 && INSN(15, 13) == 0b011) {
+      UInt rd      = INSN(4, 2) + 8;
+      UInt rs1     = INSN(9, 7) + 8;
+      UInt uimm7_3 = INSN(6, 5) << 3 | INSN(12, 10);
+      /* Note: All C.LD encodings are valid. */
+      ULong uimm = uimm7_3 << 3;
+      putIReg64(irsb, rd,
+                loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
+      DIP("c.ld %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+      return True;
+   }
+
    /* ---------------- c.addi rd, nzimm[5:0] ---------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
       UInt rd       = INSN(11, 7);
