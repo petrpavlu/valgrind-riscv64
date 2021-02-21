@@ -678,6 +678,19 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ----------------- lui rd, imm[31:12] ------------------ */
+   if (INSN(6, 0) == 0b0110111) {
+      UInt rd       = INSN(11, 7);
+      UInt imm31_12 = INSN(31, 12);
+      if (rd == 0) {
+         /* Invalid LUI, fall through. */
+      } else {
+         putIReg64(irsb, rd, mkU64(sx_to_64(imm31_12 << 12, 32)));
+         DIP("lui %s, 0x%x\n", nameIReg64(rd), imm31_12);
+         return True;
+      }
+   }
+
    /* ---------------- auipc rd, imm[31:12] ----------------- */
    if (INSN(6, 0) == 0b0010111) {
       UInt rd         = INSN(11, 7);
