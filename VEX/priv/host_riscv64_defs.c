@@ -55,7 +55,7 @@ UInt ppHRegRISCV64(HReg reg)
    switch (hregClass(reg)) {
    case HRcInt64: {
       UInt r = hregEncoding(reg);
-      vassert(r >= 0 && r <= 31);
+      vassert(r < 32);
       return vex_printf("%s", names[r]);
    }
    default:
@@ -69,7 +69,7 @@ static inline UInt iregEnc(HReg r)
    vassert(!hregIsVirtual(r));
 
    UInt n = hregEncoding(r);
-   vassert(n > 0 && n <= 31);
+   vassert(n < 32);
    return n;
 }
 
@@ -405,6 +405,7 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
 
    /* Add the registers that are not available for allocation. */
    /* TODO */
+   ru->regs[ru->size++] = hregRISCV64_x0();
    ru->regs[ru->size++] = hregRISCV64_x8();
 
    initialised = True;

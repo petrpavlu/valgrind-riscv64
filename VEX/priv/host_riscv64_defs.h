@@ -55,7 +55,8 @@ ST_IN HReg hregRISCV64_x25(void) { return mkHReg(False, HRcInt64, 25, 7); }
 ST_IN HReg hregRISCV64_x26(void) { return mkHReg(False, HRcInt64, 26, 8); }
 ST_IN HReg hregRISCV64_x27(void) { return mkHReg(False, HRcInt64, 27, 9); }
 
-ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 10); }
+ST_IN HReg hregRISCV64_x0(void) { return mkHReg(False, HRcInt64, 0, 10); }
+ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 11); }
 #undef ST_IN
 
 /*------------------------------------------------------------*/
