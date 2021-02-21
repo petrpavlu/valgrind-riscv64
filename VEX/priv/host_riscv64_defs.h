@@ -66,9 +66,9 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 11); }
 /* The kind of instructions. */
 typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
-   RISCV64in_MV,              /* Copy of a value in one register to another. */
-   RISCV64in_ADD,             /* Addition of values in two registers. */
-   RISCV64in_SUB,             /* Subtraction of values in two registers. */
+   RISCV64in_MV,              /* Copy one register to another. */
+   RISCV64in_ADD,             /* Addition of two registers. */
+   RISCV64in_SUB,             /* Subtraction of one register from another. */
    RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
    RISCV64in_SLTIU,           /* Unsigned comparison of a register and
                                  a sx-12-bit immediate. */
@@ -93,18 +93,18 @@ typedef struct {
          HReg  dst;
          ULong imm64;
       } LI;
-      /* Copy of a value in one register to another. */
+      /* Copy one register to another. */
       struct {
          HReg dst;
          HReg src;
       } MV;
-      /* Addition of values in two registers. */
+      /* Addition of two registers. */
       struct {
          HReg dst;
          HReg src1;
          HReg src2;
       } ADD;
-      /* Subtraction of values in two registers. */
+      /* Subtraction of one register from another. */
       struct {
          HReg dst;
          HReg src1;

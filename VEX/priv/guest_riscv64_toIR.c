@@ -390,7 +390,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* ------------------- c.beqz rs1, imm ------------------- */
+   /* ---------------- c.beqz rs1, imm[8:1] ----------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b110) {
       UInt rs1    = INSN(9, 7) + 8;
       UInt imm8_1 = INSN(12, 12) << 7 | INSN(6, 5) << 5 | INSN(2, 2) << 4 |
@@ -727,15 +727,15 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
 
    /* ---------------- auipc rd, imm[31:12] ----------------- */
    if (INSN(6, 0) == 0b0010111) {
-      UInt rd         = INSN(11, 7);
-      UInt nzimm31_12 = INSN(31, 12);
+      UInt rd       = INSN(11, 7);
+      UInt imm31_12 = INSN(31, 12);
       if (rd == 0) {
          /* Invalid AUIPC, fall through. */
       } else {
          putIReg64(irsb, rd,
                    binop(Iop_Add64, mkU64(guest_pc_curr_instr),
-                         mkU64(sx_to_64(nzimm31_12 << 12, 32))));
-         DIP("auipc %s, 0x%x\n", nameIReg64(rd), nzimm31_12);
+                         mkU64(sx_to_64(imm31_12 << 12, 32))));
+         DIP("auipc %s, 0x%x\n", nameIReg64(rd), imm31_12);
          return True;
       }
    }

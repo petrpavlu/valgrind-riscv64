@@ -143,7 +143,7 @@ VG_(disp_cp_chain_me_to_fastEP):
 	   2 = c.slli t0, 12
 	   4 = addi t0, t0, disp_cp_chain_me_to_fastEP[15:4]'
 	   2 = c.slli t0, 4
-	   2 = c.addi t0, disp_cp_chain_me_to_fastEP[3:0]
+	   2 = c.addi t0, disp_cp_chain_me_to_fastEP[3:0]'
 	   2 = c.jalr t0(0)
 	*/
 	addi a2, a2, -(4+4+2+4+2+2+2)

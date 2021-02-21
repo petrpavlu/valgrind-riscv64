@@ -1187,8 +1187,8 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       const void* disp_cp_chain_me = i->RISCV64in.XDirect.toFastEP
                                         ? disp_cp_chain_me_to_fastEP
                                         : disp_cp_chain_me_to_slowEP;
-      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/,
-                                     (ULong)(Addr)disp_cp_chain_me);
+
+      p = addr48_to_ireg_EXACTLY_18B(p, 5 /*x5/t0*/, (ULong)disp_cp_chain_me);
 
       /* c.jalr t0(0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1001);
@@ -1240,7 +1240,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       }
 
       /* li t0, VG_(disp_cp_xindir) */
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_xindir);
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)disp_cp_xindir);
 
       /* c.jr t0(0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
@@ -1332,7 +1332,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = imm64_to_ireg(p, 8 /*x8/s0*/, trcval);
 
       /* li t0, VG_(disp_cp_xassisted) */
-      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)(Addr)disp_cp_xassisted);
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, (ULong)disp_cp_xassisted);
 
       /* c.jr t0(0) */
       p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);

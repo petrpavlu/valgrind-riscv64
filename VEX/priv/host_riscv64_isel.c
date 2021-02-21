@@ -283,7 +283,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    }
 
    /* ----------------------- LITERAL ----------------------- */
-   /* 64-bit literals. */
+   /* 64/32/16/8-bit literals. */
    case Iex_Const: {
       ULong u;
       HReg  dst = newVRegI(env);
