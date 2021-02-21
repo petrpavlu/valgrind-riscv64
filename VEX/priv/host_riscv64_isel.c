@@ -215,10 +215,12 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          return dst;
       }
       case Iop_CmpEQ64: {
-         HReg dst  = newVRegI(env);
+         HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_SUB(dst, argL, argR));
+         addInstr(env, RISCV64Instr_SUB(tmp, argL, argR));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_SLTIU(dst, tmp, 1));
          return dst;
       }
       default:
