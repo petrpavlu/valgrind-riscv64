@@ -246,6 +246,22 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       break;
    }
 
+   /* ---------------------- UNARY OP ----------------------- */
+   case Iex_Unop: {
+      switch (e->Iex.Unop.op) {
+      case Iop_Not1: {
+         HReg dst = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), src));
+         return dst;
+      }
+      default:
+         break;
+      }
+
+      break;
+   }
+
    /* ------------------------- GET ------------------------- */
    case Iex_Get: {
       HReg dst  = newVRegI(env);
