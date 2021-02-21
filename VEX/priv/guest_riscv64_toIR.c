@@ -485,6 +485,40 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
    vassert(INSN(1, 0) == 0b11);
 
+   /* -------------- b<x> rs1, rs2, imm[12:1] --------------- */
+   if (INSN(6, 0) == 0b1100011) {
+      UInt funct3  = INSN(14, 12);
+      UInt rs1     = INSN(19, 15);
+      UInt rs2     = INSN(24, 20);
+      UInt imm12_1 = INSN(31, 31) << 11 | INSN(7, 7) << 10 | INSN(30, 25) << 4 |
+                     INSN(11, 8);
+      /* Note: All B<x> encodings are valid. */
+      ULong        simm = sx_to_64(imm12_1 << 1, 13);
+      const HChar* name = NULL;
+      IRExpr*      cond = NULL;
+      switch (funct3) {
+      case 0b001:
+         name = "bne";
+         cond = binop(Iop_CmpNE64, getIReg64(rs1), getIReg64(rs2));
+         break;
+      case 0b111:
+         name = "bgeu";
+         cond = binop(Iop_CmpLT64U, getIReg64(rs2), getIReg64(rs1));
+         break;
+      }
+      if (name != NULL && cond != NULL) {
+         stmt(irsb,
+              IRStmt_Exit(cond, Ijk_Boring,
+                          IRConst_U64(guest_pc_curr_instr + simm), OFFB_PC));
+         putPC(irsb, mkU64(guest_pc_curr_instr + 4));
+         dres->whatNext    = Dis_StopHere;
+         dres->jk_StopHere = Ijk_Boring;
+         DIP("%s %s, %s, 0x%llx\n", name, nameIReg64(rs1), nameIReg64(rs2),
+             guest_pc_curr_instr + simm);
+         return True;
+      }
+   }
+
    /* ---------------- lb rd, imm[11:0](rs1) ---------------- */
    if (INSN(6, 0) == 0b0000011 && INSN(14, 12) == 0b000) {
       UInt rd      = INSN(11, 7);
