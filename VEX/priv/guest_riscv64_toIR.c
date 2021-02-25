@@ -265,18 +265,34 @@ static const HChar* nameIReg64(UInt iregNo)
    return names[iregNo];
 }
 
-/* Read a value of a guest integer register. */
+/* Read a 64-bit value from a guest integer register. */
 static IRExpr* getIReg64(UInt iregNo)
 {
    vassert(iregNo < 32);
    return IRExpr_Get(offsetIReg64(iregNo), Ity_I64);
 }
 
-/* Write a value into a guest integer register. */
+/* Write a 64-bit value into a guest integer register. */
 static void putIReg64(/*OUT*/ IRSB* irsb, UInt iregNo, /*IN*/ IRExpr* e)
 {
+   vassert(iregNo > 0 && iregNo < 32);
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I64);
    stmt(irsb, IRStmt_Put(offsetIReg64(iregNo), e));
+}
+
+/* Read a 32-bit value from a guest integer register. */
+static IRExpr* getIReg32(UInt iregNo)
+{
+   vassert(iregNo < 32);
+   return unop(Iop_64to32, IRExpr_Get(offsetIReg64(iregNo), Ity_I64));
+}
+
+/* Write a 32-bit value into a guest integer register. */
+static void putIReg32(/*OUT*/ IRSB *irsb, UInt iregNo, /*IN*/ IRExpr* e)
+{
+   vassert(iregNo > 0 && iregNo < 32);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
+   stmt(irsb, IRStmt_Put(offsetIReg64(iregNo), unop(Iop_32Uto64, e)));
 }
 
 /* Write an address into the guest pc. */
@@ -863,6 +879,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          DIP("j 0x%llx\n", dst_pc);
       }
       return True;
+   }
+
+   /* --------------- slliw rd, rs1, nzimm5_0 --------------- */
+   if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b001 && INSN(31, 25) == 0b0000000) {
+      UInt rd     = INSN(11, 7);
+      UInt rs1    = INSN(19, 15);
+      UInt imm4_0 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SLLIW, fall through. */
+      } else {
+         putIReg32(irsb, rd,
+                   binop(Iop_Shl32, getIReg32(rs1), mkU8(imm4_0)));
+         DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm4_0);
+         return True;
+      }
    }
 
    if (sigill_diag)
