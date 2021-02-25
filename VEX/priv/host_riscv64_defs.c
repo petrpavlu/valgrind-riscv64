@@ -1406,7 +1406,8 @@ done:
 
 /* Return the number of bytes emitted for an RISCV64_INSN_EVCHECK. See
    riscv64_insn_evcheck_emit(). */
-Int evCheckSzB_RISCV64(void) { return 8; }
+/* FIXME */
+Int evCheckSzB_RISCV64(void) { return 0; }
 
 /* NB: what goes on here has to be very closely coordinated with the emitInstr
    case for XDirect, above. */
