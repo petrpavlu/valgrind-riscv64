@@ -425,13 +425,14 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
                     INSN(11, 10) << 2 | INSN(4, 3);
       /* Note: All C.BEQZ encodings are valid. */
       ULong simm = sx_to_64(imm8_1 << 1, 9);
+      ULong dst_pc = guest_pc_curr_instr + simm;
       stmt(irsb,
            IRStmt_Exit(binop(Iop_CmpEQ64, getIReg64(rs1), mkU64(0)), Ijk_Boring,
-                       IRConst_U64(guest_pc_curr_instr + simm), OFFB_PC));
+                       IRConst_U64(dst_pc), OFFB_PC));
       putPC(irsb, mkU64(guest_pc_curr_instr + 2));
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_Boring;
-      DIP("c.beqz %s, 0x%llx\n", nameIReg64(rs1), guest_pc_curr_instr + simm);
+      DIP("c.beqz %s, 0x%llx\n", nameIReg64(rs1), dst_pc);
       return True;
    }
 
@@ -536,6 +537,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
                      INSN(11, 8);
       /* Note: All B<x> encodings are valid. */
       ULong        simm = sx_to_64(imm12_1 << 1, 13);
+      ULong      dst_pc = guest_pc_curr_instr + simm;
       const HChar* name = NULL;
       IRExpr*      cond = NULL;
       switch (funct3) {
@@ -551,12 +553,12 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (name != NULL && cond != NULL) {
          stmt(irsb,
               IRStmt_Exit(cond, Ijk_Boring,
-                          IRConst_U64(guest_pc_curr_instr + simm), OFFB_PC));
+                          IRConst_U64(dst_pc), OFFB_PC));
          putPC(irsb, mkU64(guest_pc_curr_instr + 4));
          dres->whatNext    = Dis_StopHere;
          dres->jk_StopHere = Ijk_Boring;
          DIP("%s %s, %s, 0x%llx\n", name, nameIReg64(rs1), nameIReg64(rs2),
-             guest_pc_curr_instr + simm);
+             dst_pc);
          return True;
       }
    }
