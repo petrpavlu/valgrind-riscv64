@@ -403,6 +403,21 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* -------------------- c.j imm[11:1] -------------------- */
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b101) {
+      UInt imm11_1 = INSN(12, 12) << 10 | INSN(8, 8) << 9 | INSN(10, 9) << 7 |
+                     INSN(6, 6) << 6 | INSN(7, 7) << 5 | INSN(2, 2) << 4 |
+                     INSN(11, 11) << 3 | INSN(5, 3);
+      /* Note: All C.J encodings are valid. */
+      ULong simm   = sx_to_64(imm11_1 << 1, 12);
+      ULong dst_pc = guest_pc_curr_instr + simm;
+      putPC(irsb, mkU64(dst_pc));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Boring;
+      DIP("c.j 0x%llx\n", dst_pc);
+      return True;
+   }
+
    /* ---------------- c.beqz rs1, imm[8:1] ----------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b110) {
       UInt rs1    = INSN(9, 7) + 8;
