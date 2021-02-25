@@ -128,7 +128,21 @@ postamble:
 /* ------ Chain me to slow entry point ------ */
 .global VG_(disp_cp_chain_me_to_slowEP)
 VG_(disp_cp_chain_me_to_slowEP):
-	unimp
+	/* We got called. The return address indicates where the patching needs
+	   to happen. Collect the return address and, exit back to C land,
+	   handing the caller the pair (Chain_me_F, RA). */
+	li a1, VG_TRC_CHAIN_ME_TO_SLOW_EP
+	mv a2, ra
+	/* 4 = lui t0, disp_cp_chain_me_to_slowEP[47:28]'
+	   4 = addiw t0, t0, disp_cp_chain_me_to_slowEP[27:16]'
+	   2 = c.slli t0, 12
+	   4 = addi t0, t0, disp_cp_chain_me_to_slowEP[15:4]'
+	   2 = c.slli t0, 4
+	   2 = c.addi t0, disp_cp_chain_me_to_slowEP[3:0]'
+	   2 = c.jalr 0(t0)
+	*/
+	addi a2, a2, -(4+4+2+4+2+2+2)
+	j postamble
 
 /* ------ Chain me to fast entry point ------ */
 .global VG_(disp_cp_chain_me_to_fastEP)
