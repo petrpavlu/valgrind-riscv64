@@ -288,7 +288,7 @@ static IRExpr* getIReg32(UInt iregNo)
 }
 
 /* Write a 32-bit value into a guest integer register. */
-static void putIReg32(/*OUT*/ IRSB *irsb, UInt iregNo, /*IN*/ IRExpr* e)
+static void putIReg32(/*OUT*/ IRSB* irsb, UInt iregNo, /*IN*/ IRExpr* e)
 {
    vassert(iregNo > 0 && iregNo < 32);
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
@@ -447,11 +447,10 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       UInt imm8_1 = INSN(12, 12) << 7 | INSN(6, 5) << 5 | INSN(2, 2) << 4 |
                     INSN(11, 10) << 2 | INSN(4, 3);
       /* Note: All C.BEQZ encodings are valid. */
-      ULong simm = sx_to_64(imm8_1 << 1, 9);
+      ULong simm   = sx_to_64(imm8_1 << 1, 9);
       ULong dst_pc = guest_pc_curr_instr + simm;
-      stmt(irsb,
-           IRStmt_Exit(binop(Iop_CmpEQ64, getIReg64(rs1), mkU64(0)), Ijk_Boring,
-                       IRConst_U64(dst_pc), OFFB_PC));
+      stmt(irsb, IRStmt_Exit(binop(Iop_CmpEQ64, getIReg64(rs1), mkU64(0)),
+                             Ijk_Boring, IRConst_U64(dst_pc), OFFB_PC));
       putPC(irsb, mkU64(guest_pc_curr_instr + 2));
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_Boring;
@@ -466,11 +465,10 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       UInt imm8_1 = INSN(12, 12) << 7 | INSN(6, 5) << 5 | INSN(2, 2) << 4 |
                     INSN(11, 10) << 2 | INSN(4, 3);
       /* Note: All C.BNEZ encodings are valid. */
-      ULong simm = sx_to_64(imm8_1 << 1, 9);
+      ULong simm   = sx_to_64(imm8_1 << 1, 9);
       ULong dst_pc = guest_pc_curr_instr + simm;
-      stmt(irsb,
-           IRStmt_Exit(binop(Iop_CmpNE64, getIReg64(rs1), mkU64(0)), Ijk_Boring,
-                       IRConst_U64(dst_pc), OFFB_PC));
+      stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, getIReg64(rs1), mkU64(0)),
+                             Ijk_Boring, IRConst_U64(dst_pc), OFFB_PC));
       putPC(irsb, mkU64(guest_pc_curr_instr + 2));
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_Boring;
@@ -592,10 +590,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt imm12_1 = INSN(31, 31) << 11 | INSN(7, 7) << 10 | INSN(30, 25) << 4 |
                      INSN(11, 8);
       /* Note: All B<x> encodings are valid. */
-      ULong        simm = sx_to_64(imm12_1 << 1, 13);
-      ULong      dst_pc = guest_pc_curr_instr + simm;
-      const HChar* name = NULL;
-      IRExpr*      cond = NULL;
+      ULong        simm   = sx_to_64(imm12_1 << 1, 13);
+      ULong        dst_pc = guest_pc_curr_instr + simm;
+      const HChar* name   = NULL;
+      IRExpr*      cond   = NULL;
       switch (funct3) {
       case 0b001:
          name = "bne";
@@ -612,8 +610,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
       if (name != NULL && cond != NULL) {
          stmt(irsb,
-              IRStmt_Exit(cond, Ijk_Boring,
-                          IRConst_U64(dst_pc), OFFB_PC));
+              IRStmt_Exit(cond, Ijk_Boring, IRConst_U64(dst_pc), OFFB_PC));
          putPC(irsb, mkU64(guest_pc_curr_instr + 4));
          dres->whatNext    = Dis_StopHere;
          dres->jk_StopHere = Ijk_Boring;
@@ -817,16 +814,17 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    }
 
    /* ------------------ sub rd, rs1, rs2 ------------------- */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b000 && INSN(31, 25) == 0b0100000) {
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b000 &&
+       INSN(31, 25) == 0b0100000) {
       UInt rd  = INSN(11, 7);
       UInt rs1 = INSN(19, 15);
       UInt rs2 = INSN(24, 20);
       if (rd == 0) {
          /* Invalid SUB, fall through. */
       } else {
-         putIReg64(irsb, rd,
-                   binop(Iop_Sub64, getIReg64(rs1), getIReg64(rs2)));
-         DIP("sub %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1), nameIReg64(rs2));
+         putIReg64(irsb, rd, binop(Iop_Sub64, getIReg64(rs1), getIReg64(rs2)));
+         DIP("sub %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
          return True;
       }
    }
@@ -870,7 +868,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rd != 0)
          putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
       putPC(irsb, mkU64(dst_pc));
-      dres->whatNext    = Dis_StopHere;
+      dres->whatNext = Dis_StopHere;
       if (rd != 0) {
          dres->jk_StopHere = Ijk_Call;
          DIP("jal %s, 0x%llx\n", nameIReg64(rd), dst_pc);
@@ -882,15 +880,15 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    }
 
    /* --------------- slliw rd, rs1, nzimm5_0 --------------- */
-   if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b001 && INSN(31, 25) == 0b0000000) {
+   if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b001 &&
+       INSN(31, 25) == 0b0000000) {
       UInt rd     = INSN(11, 7);
       UInt rs1    = INSN(19, 15);
       UInt imm4_0 = INSN(24, 20);
       if (rd == 0) {
          /* Invalid SLLIW, fall through. */
       } else {
-         putIReg32(irsb, rd,
-                   binop(Iop_Shl32, getIReg32(rs1), mkU8(imm4_0)));
+         putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(imm4_0)));
          DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm4_0);
          return True;
       }
