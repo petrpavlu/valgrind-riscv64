@@ -811,11 +811,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
       putPC(irsb, mkU64(dst_pc));
       dres->whatNext    = Dis_StopHere;
-      dres->jk_StopHere = Ijk_Call;
-      if (rd != 0)
+      if (rd != 0) {
+         dres->jk_StopHere = Ijk_Call;
          DIP("jal %s, 0x%llx\n", nameIReg64(rd), dst_pc);
-      else
+      } else {
+         dres->jk_StopHere = Ijk_Boring;
          DIP("j 0x%llx\n", dst_pc);
+      }
       return True;
    }
 
