@@ -124,7 +124,14 @@ static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
    return IRExpr_Binop(op, a1, a2);
 }
 
-/* Create an expression to produce a constant. */
+/* Create an expression to produce an 8-bit constant. */
+static IRExpr* mkU8(UInt i)
+{
+   vassert(i < 256);
+   return IRExpr_Const(IRConst_U8((UChar)i));
+}
+
+/* Create an expression to produce a 64-bit constant. */
 static IRExpr* mkU64(ULong i) { return IRExpr_Const(IRConst_U64(i)); }
 
 /*------------------------------------------------------------*/
@@ -453,6 +460,20 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       dres->jk_StopHere = Ijk_Boring;
       DIP("c.bnez %s, 0x%llx\n", nameIReg64(rs1), dst_pc);
       return True;
+   }
+
+   /* --------------- c.slli rd_rs1, nzimm5_0 --------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b000) {
+      UInt rd_rs1   = INSN(11, 7);
+      UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd_rs1 == 0 || nzimm5_0 == 0) {
+         /* Invalid C.SLLI, fall through. */
+      } else {
+         putIReg64(irsb, rd_rs1,
+                   binop(Iop_Shl64, getIReg64(rd_rs1), mkU8(nzimm5_0)));
+         DIP("c.slli %s, %u\n", nameIReg64(rd_rs1), nzimm5_0);
+         return True;
+      }
    }
 
    /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
