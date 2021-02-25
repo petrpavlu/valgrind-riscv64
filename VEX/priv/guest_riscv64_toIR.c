@@ -564,6 +564,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          name = "bne";
          cond = binop(Iop_CmpNE64, getIReg64(rs1), getIReg64(rs2));
          break;
+      case 0b110:
+         name = "bltu";
+         cond = binop(Iop_CmpLT64U, getIReg64(rs1), getIReg64(rs2));
+         break;
       case 0b111:
          name = "bgeu";
          cond = binop(Iop_CmpLT64U, getIReg64(rs2), getIReg64(rs1));
