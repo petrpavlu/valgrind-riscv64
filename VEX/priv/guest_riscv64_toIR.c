@@ -436,6 +436,25 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* TODO Merge with the above. */
+   /* ---------------- c.bnez rs1, imm[8:1] ----------------- */
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b111) {
+      UInt rs1    = INSN(9, 7) + 8;
+      UInt imm8_1 = INSN(12, 12) << 7 | INSN(6, 5) << 5 | INSN(2, 2) << 4 |
+                    INSN(11, 10) << 2 | INSN(4, 3);
+      /* Note: All C.BNEZ encodings are valid. */
+      ULong simm = sx_to_64(imm8_1 << 1, 9);
+      ULong dst_pc = guest_pc_curr_instr + simm;
+      stmt(irsb,
+           IRStmt_Exit(binop(Iop_CmpNE64, getIReg64(rs1), mkU64(0)), Ijk_Boring,
+                       IRConst_U64(dst_pc), OFFB_PC));
+      putPC(irsb, mkU64(guest_pc_curr_instr + 2));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Boring;
+      DIP("c.bnez %s, 0x%llx\n", nameIReg64(rs1), dst_pc);
+      return True;
+   }
+
    /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b011) {
       UInt rd      = INSN(11, 7);
