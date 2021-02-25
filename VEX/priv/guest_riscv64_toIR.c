@@ -485,6 +485,20 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ c.add rd_rs1, rs2 ------------------ */
+   if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1001) {
+      UInt rd_rs1 = INSN(11, 7);
+      UInt rs2    = INSN(6, 2);
+      if (rd_rs1 == 0 || rs2 == 0) {
+         /* Invalid C.ADD, fall through. */
+      } else {
+         putIReg64(irsb, rd_rs1,
+                   binop(Iop_Add64, getIReg64(rd_rs1), getIReg64(rs2)));
+         DIP("c.add %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
       UInt rs1     = 2; /* base=x2/sp */
