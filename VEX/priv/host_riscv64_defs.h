@@ -69,6 +69,7 @@ typedef enum {
    RISCV64in_MV,              /* Copy one register to another. */
    RISCV64in_ADD,             /* Addition of two registers. */
    RISCV64in_SUB,             /* Subtraction of one register from another. */
+   RISCV64in_SLL,             /* Logical left shift on a register. */
    RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
    RISCV64in_SLTIU,           /* Unsigned comparison of a register and
                                  a sx-12-bit immediate. */
@@ -110,6 +111,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } SUB;
+      /* Logical left shift on a register. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } SLL;
       /* Unsigned comparison of two registers. */
       struct {
          HReg dst;
@@ -203,6 +210,7 @@ RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
 RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SUB(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src);
 RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
