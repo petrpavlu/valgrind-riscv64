@@ -144,6 +144,7 @@ RISCV64Instr* RISCV64Instr_AND(HReg dst, HReg src1, HReg src2)
    i->RISCV64in.AND.src2 = src2;
    return i;
 }
+
 RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2)
 {
    RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -151,6 +152,36 @@ RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2)
    i->RISCV64in.SLL.dst  = dst;
    i->RISCV64in.SLL.src1 = src1;
    i->RISCV64in.SLL.src2 = src2;
+   return i;
+}
+
+RISCV64Instr* RISCV64Instr_SRL(HReg dst, HReg src1, HReg src2)
+{
+   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                = RISCV64in_SRL;
+   i->RISCV64in.SRL.dst  = dst;
+   i->RISCV64in.SRL.src1 = src1;
+   i->RISCV64in.SRL.src2 = src2;
+   return i;
+}
+
+RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2)
+{
+   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                 = RISCV64in_SLLW;
+   i->RISCV64in.SLLW.dst  = dst;
+   i->RISCV64in.SLLW.src1 = src1;
+   i->RISCV64in.SLLW.src2 = src2;
+   return i;
+}
+
+RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2)
+{
+   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                 = RISCV64in_SRAW;
+   i->RISCV64in.SRAW.dst  = dst;
+   i->RISCV64in.SRAW.src1 = src1;
+   i->RISCV64in.SRAW.src2 = src2;
    return i;
 }
 
@@ -353,6 +384,30 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.SLL.src1);
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.SLL.src2);
+      return;
+   case RISCV64in_SRL:
+      vex_printf("srl     ");
+      ppHRegRISCV64(i->RISCV64in.SRL.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.SRL.src1);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.SRL.src2);
+      return;
+   case RISCV64in_SLLW:
+      vex_printf("sllw    ");
+      ppHRegRISCV64(i->RISCV64in.SLLW.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.SLLW.src1);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.SLLW.src2);
+      return;
+   case RISCV64in_SRAW:
+      vex_printf("sraw    ");
+      ppHRegRISCV64(i->RISCV64in.SRAW.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.SRAW.src1);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.SRAW.src2);
       return;
    case RISCV64in_SLTU:
       vex_printf("sltu    ");
@@ -563,6 +618,21 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.SLL.src1);
       addHRegUse(u, HRmRead, i->RISCV64in.SLL.src2);
       return;
+   case RISCV64in_SRL:
+      addHRegUse(u, HRmWrite, i->RISCV64in.SRL.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.SRL.src1);
+      addHRegUse(u, HRmRead, i->RISCV64in.SRL.src2);
+      return;
+   case RISCV64in_SLLW:
+      addHRegUse(u, HRmWrite, i->RISCV64in.SLLW.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.SLLW.src1);
+      addHRegUse(u, HRmRead, i->RISCV64in.SLLW.src2);
+      return;
+   case RISCV64in_SRAW:
+      addHRegUse(u, HRmWrite, i->RISCV64in.SRAW.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.SRAW.src1);
+      addHRegUse(u, HRmRead, i->RISCV64in.SRAW.src2);
+      return;
    case RISCV64in_SLTU:
       addHRegUse(u, HRmWrite, i->RISCV64in.SLTU.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.SLTU.src1);
@@ -675,6 +745,21 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.SLL.dst);
       mapReg(m, &i->RISCV64in.SLL.src1);
       mapReg(m, &i->RISCV64in.SLL.src2);
+      return;
+   case RISCV64in_SRL:
+      mapReg(m, &i->RISCV64in.SRL.dst);
+      mapReg(m, &i->RISCV64in.SRL.src1);
+      mapReg(m, &i->RISCV64in.SRL.src2);
+      return;
+   case RISCV64in_SLLW:
+      mapReg(m, &i->RISCV64in.SLLW.dst);
+      mapReg(m, &i->RISCV64in.SLLW.src1);
+      mapReg(m, &i->RISCV64in.SLLW.src2);
+      return;
+   case RISCV64in_SRAW:
+      mapReg(m, &i->RISCV64in.SRAW.dst);
+      mapReg(m, &i->RISCV64in.SRAW.src1);
+      mapReg(m, &i->RISCV64in.SRAW.src2);
       return;
    case RISCV64in_SLTU:
       mapReg(m, &i->RISCV64in.SLTU.dst);
@@ -1182,6 +1267,33 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt src2 = iregEnc(i->RISCV64in.SLL.src2);
 
       p = emit_R(p, 0b0110011, dst, 0b001, src1, src2, 0b0000000);
+      goto done;
+   }
+   case RISCV64in_SRL: {
+      /* srl dst, src1, src2 */
+      UInt dst  = iregEnc(i->RISCV64in.SRL.dst);
+      UInt src1 = iregEnc(i->RISCV64in.SRL.src1);
+      UInt src2 = iregEnc(i->RISCV64in.SRL.src2);
+
+      p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0000000);
+      goto done;
+   }
+   case RISCV64in_SLLW: {
+      /* sllw dst, src1, src2 */
+      UInt dst   = iregEnc(i->RISCV64in.SLLW.dst);
+      UInt src1  = iregEnc(i->RISCV64in.SLLW.src1);
+      UInt src2  = iregEnc(i->RISCV64in.SLLW.src2);
+
+      p = emit_R(p, 0b0111011, dst, 0b001, src1, src2, 0b0000000);
+      goto done;
+   }
+   case RISCV64in_SRAW: {
+      /* sraw dst, src1, src2 */
+      UInt dst   = iregEnc(i->RISCV64in.SRAW.dst);
+      UInt src1  = iregEnc(i->RISCV64in.SRAW.src1);
+      UInt src2  = iregEnc(i->RISCV64in.SRAW.src2);
+
+      p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0100000);
       goto done;
    }
    case RISCV64in_SLTU: {
