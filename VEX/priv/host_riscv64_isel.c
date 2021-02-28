@@ -298,6 +298,22 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), src));
          return dst;
       }
+      case Iop_8Uto64: {
+         HReg dst = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         HReg mask = newVRegI(env);
+         addInstr(env, RISCV64Instr_LI(mask, 0xff));
+         addInstr(env, RISCV64Instr_AND(dst, src, mask));
+         return dst;
+      }
+      case Iop_16Uto64: {
+         HReg dst = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         HReg mask = newVRegI(env);
+         addInstr(env, RISCV64Instr_LI(mask, 0xffff));
+         addInstr(env, RISCV64Instr_AND(dst, src, mask));
+         return dst;
+      }
       default:
          break;
       }
