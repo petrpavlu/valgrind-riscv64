@@ -832,7 +832,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    }
 
    /* --------------- addi rd, rs1, imm[11:0] --------------- */
-   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b00) {
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b000) {
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
@@ -1005,7 +1005,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* --------------- slliw rd, rs1, nzimm5_0 --------------- */
+   /* ---------------- slliw rd, rs1, imm4_0 ---------------- */
    if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b001 &&
        INSN(31, 25) == 0b0000000) {
       UInt rd     = INSN(11, 7);
