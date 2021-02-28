@@ -292,7 +292,7 @@ static void putIReg32(/*OUT*/ IRSB* irsb, UInt iregNo, /*IN*/ IRExpr* e)
 {
    vassert(iregNo > 0 && iregNo < 32);
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
-   stmt(irsb, IRStmt_Put(offsetIReg64(iregNo), unop(Iop_32Uto64, e)));
+   stmt(irsb, IRStmt_Put(offsetIReg64(iregNo), unop(Iop_32Sto64, e)));
 }
 
 /* Write an address into the guest pc. */
