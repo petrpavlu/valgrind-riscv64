@@ -415,6 +415,21 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ---------------- c.andi rd_rs1, imm5_0 ---------------- */
+   if (INSN(1, 0) == 0b01 && INSN(11, 10) == 0b10 && INSN(15, 13) == 0b100) {
+      UInt rd_rs1 = INSN(9, 7) + 8;
+      UInt imm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd_rs1 == 0) {
+         /* Invalid C.ANDI, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm5_0, 6);
+         putIReg64(irsb, rd_rs1,
+                   binop(Iop_And64, getIReg64(rd_rs1), mkU64(simm)));
+         DIP("c.andi %s, 0x%llx\n", nameIReg64(rd_rs1), simm);
+         return True;
+      }
+   }
+
    /* ------------------ c.sub rd_rs1, rs2 ------------------ */
    if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b00 && INSN(15, 10) == 0b100011) {
       UInt rd_rs1 = INSN(9, 7) + 8;
@@ -809,6 +824,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)));
          DIP("addi %s, %s, %lld\n", nameIReg64(rd), nameIReg64(rs1),
              (Long)simm);
+         return True;
+      }
+   }
+
+   /* --------------- andi rd, rs1, imm[11:0] --------------- */
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b111) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid ANDI, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd, binop(Iop_And64, getIReg64(rs1), mkU64(simm)));
+         DIP("andi %s, %s, 0x%llx\n", nameIReg64(rd), nameIReg64(rs1), simm);
          return True;
       }
    }
