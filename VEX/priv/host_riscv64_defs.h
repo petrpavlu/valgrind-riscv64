@@ -68,6 +68,8 @@ typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
    RISCV64in_MV,              /* Copy one register to another. */
    RISCV64in_ADD,             /* Addition of two registers. */
+   RISCV64in_ADDIW,           /* 32-bit addition of a register and a sx-12-bit
+                                 immediate. */
    RISCV64in_SUB,             /* Subtraction of one register from another. */
    RISCV64in_SLL,             /* Logical left shift on a register. */
    RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
@@ -105,6 +107,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } ADD;
+      /* 32-bit addition of a register and a sx-12-bit immediate. */
+      struct {
+         HReg dst;
+         HReg src;
+         Int  simm12;
+      } ADDIW;
       /* Subtraction of one register from another. */
       struct {
          HReg dst;
@@ -209,6 +217,7 @@ typedef struct {
 RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
 RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_ADDIW(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_SUB(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src);
