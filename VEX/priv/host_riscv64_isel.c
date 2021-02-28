@@ -320,6 +320,11 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_ADDIW(dst, src, 0));
          return dst;
       }
+      case Iop_64to8:
+      case Iop_64to16:
+      case Iop_64to32:
+         /* These are no-ops. */
+         return iselIntExpr_R(env, e->Iex.Unop.arg);
       default:
          break;
       }
