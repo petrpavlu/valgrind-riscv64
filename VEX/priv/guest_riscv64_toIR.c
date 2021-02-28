@@ -625,6 +625,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       const HChar* name   = NULL;
       IRExpr*      cond   = NULL;
       switch (funct3) {
+      case 0b000:
+         name = "beq";
+         cond = binop(Iop_CmpEQ64, getIReg64(rs1), getIReg64(rs2));
+         break;
       case 0b001:
          name = "bne";
          cond = binop(Iop_CmpNE64, getIReg64(rs1), getIReg64(rs2));
