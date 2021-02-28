@@ -166,7 +166,110 @@ VG_(disp_cp_chain_me_to_fastEP):
 /* ------ Indirect but boring jump ------ */
 .global VG_(disp_cp_xindir)
 VG_(disp_cp_xindir):
-	unimp
+	/* Where are we going? */
+	ld t0, OFFSET_riscv64_pc-2048(s0)
+
+	/* Stats only. */
+	lw t1, VG_(stats__n_xIndirs_32)
+	addi t1, t1, 1
+	sw t1, VG_(stats__n_xIndirs_32), t2
+
+	/* LIVE: s0 (guest state ptr), t0 (guest address to go to).
+	   We use 6 temporaries:
+	     t6 (to point at the relevant FastCacheSet),
+	     t1, t2, t3 (scratch, for swapping entries within a set)
+	     t4, t5 (other scratch) */
+
+	/* Try a fast lookup in the translation cache. This is pretty much
+	   a handcoded version of VG_(lookupInFastCache). */
+
+	/* Compute t6 = VG_TT_FAST_HASH(guest). */
+	srli t6, t0, 2                       /* g2 = guest >> 2 */
+	srli t4, t6, VG_TT_FAST_BITS         /* g2 >> VG_TT_FAST_BITS */
+	xor t6, t4, t6                       /* (g2 >> VG_TT_FAST_BITS) ^ g2 */
+	li t4, VG_TT_FAST_MASK               /* VG_TT_FAST_MASK */
+	and t6, t6, t4                       /* setNo */
+
+	/* Compute t6 = &VG_(tt_fast)[t6]. */
+	la t4, VG_(tt_fast)                  /* &VG_(tt_fast)[0] */
+	slli t6, t6, VG_FAST_CACHE_SET_BITS
+	add t6, t4, t6                       /* &VG_(tt_fast)[setNo] */
+
+	/* LIVE: s0 (guest state ptr), t0 (guest addr), t6 (cache set). */
+	/* Try way 0. */
+	ld t4, FCS_g0(t6)                    /* t4 = .guest0 */
+	bne t4, t0, 1f                       /* cmp against .guest0 */
+	/* Hit at way 0. */
+	/* Go to .host0. */
+	ld t5, FCS_h0(t6)                    /* t5 = .host0 */
+	jr t5
+	/*NOTREACHED*/
+
+1:	/* Try way 1. */
+	ld t4, FCS_g1(t6)
+	bne t4, t0, 2f                       /* cmp against .guest1 */
+	/* Hit at way 1; swap upwards. */
+	ld t1, FCS_g0(t6)                    /* t1 = old .guest0 */
+	ld t2, FCS_h0(t6)                    /* t2 = old .host0 */
+	ld t3, FCS_h1(t6)                    /* t3 = old .host1 */
+	sd t0, FCS_g0(t6)                    /* new .guest0 = guest */
+	sd t3, FCS_h0(t6)                    /* new .host0 = old .host1 */
+	sd t1, FCS_g1(t6)                    /* new .guest1 = old .guest0 */
+	sd t2, FCS_h1(t6)                    /* new .host1 = old .host0 */
+	/* Stats only. */
+	lw t4, VG_(stats__n_xIndir_hits1_32)
+	addi t4, t4, 1
+	sw t4, VG_(stats__n_xIndir_hits1_32), t5
+	/* Go to old .host1 a.k.a. new .host0. */
+	jr t3
+	/*NOTREACHED*/
+
+2:	/* Try way 2. */
+	ld t4, FCS_g2(t6)
+	bne t4, t0, 3f                       /* cmp against .guest2 */
+	/* Hit at way 2; swap upwards. */
+	ld t1, FCS_g1(t6)
+	ld t2, FCS_h1(t6)
+	ld t3, FCS_h2(t6)
+	sd t0, FCS_g1(t6)
+	sd t3, FCS_h1(t6)
+	sd t1, FCS_g2(t6)
+	sd t2, FCS_h2(t6)
+	/* Stats only. */
+	lw t4, VG_(stats__n_xIndir_hits2_32)
+	addi t4, t4, 1
+	sw t4, VG_(stats__n_xIndir_hits2_32), t5
+	/* Go to old .host2 a.k.a. new .host1. */
+	jr t3
+	/*NOTREACHED*/
+
+3:	/* Try way 3. */
+	ld t4, FCS_g3(t6)
+	bne t4, t0, 4f                       /* cmp against .guest3 */
+	/* Hit at way 3; swap upwards. */
+	ld t1, FCS_g2(t6)
+	ld t2, FCS_h2(t6)
+	ld t3, FCS_h3(t6)
+	sd t0, FCS_g2(t6)
+	sd t3, FCS_h2(t6)
+	sd t1, FCS_g3(t6)
+	sd t2, FCS_h3(t6)
+	/* Stats only. */
+	lw t4, VG_(stats__n_xIndir_hits3_32)
+	addi t4, t4, 1
+	sw t4, VG_(stats__n_xIndir_hits3_32), t5
+	/* Go to old .host3 a.k.a. new .host2. */
+	jr t3
+	/*NOTREACHED*/
+
+4:	/* Fast lookup failed. */
+	lw t4, VG_(stats__n_xIndir_misses_32)
+	addi t4, t4, 1
+	sw t4, VG_(stats__n_xIndir_misses_32), t5
+
+	li t0, VG_TRC_INNER_FASTMISS
+	li t1, 0
+	j postamble
 
 /* ------ Assisted jump ------ */
 .global VG_(disp_cp_xassisted)
