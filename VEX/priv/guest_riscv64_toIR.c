@@ -630,7 +630,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd,
-                   unop(Iop_8Uto64,
+                   unop(Iop_8Sto64,
                         loadLE(Ity_I8,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
          DIP("lb %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
@@ -648,7 +648,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd,
-                   unop(Iop_16Uto64,
+                   unop(Iop_16Sto64,
                         loadLE(Ity_I16,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
          DIP("lh %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
@@ -666,7 +666,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd,
-                   unop(Iop_32Uto64,
+                   unop(Iop_32Sto64,
                         loadLE(Ity_I32,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
          DIP("lw %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
@@ -701,7 +701,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd,
-                   unop(Iop_8Sto64,
+                   unop(Iop_8Uto64,
                         loadLE(Ity_I8,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
          DIP("lbu %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
@@ -719,7 +719,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd,
-                   unop(Iop_16Sto64,
+                   unop(Iop_16Uto64,
                         loadLE(Ity_I16,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
          DIP("lhu %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
@@ -737,7 +737,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = sx_to_64(imm11_0, 12);
          putIReg64(irsb, rd,
-                   unop(Iop_32Sto64,
+                   unop(Iop_32Uto64,
                         loadLE(Ity_I32,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(simm)))));
          DIP("lwu %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
