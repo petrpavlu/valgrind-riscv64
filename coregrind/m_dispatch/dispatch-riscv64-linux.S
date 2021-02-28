@@ -80,8 +80,8 @@ VG_(disp_run_translations):
 	sd a0, 0(sp)
 
 	/* Set up the guest state pointer. */
-	li a0, 2048
-	add s0, a1, a0
+	li t0, 2048
+	add s0, a1, t0
 
 	/* and jump into the code cache. Chained translations in the code cache
 	   run, until for whatever reason, they can't continue. When that
@@ -95,8 +95,8 @@ VG_(disp_run_translations):
 /*----------------------------------------------------*/
 
 postamble:
-	/* At this point, a1 and a2 contain two words to be returned to the
-	   caller. a1 holds a TRC value, and a2 optionally may hold another
+	/* At this point, t0 and t1 contain two words to be returned to the
+	   caller. t0 holds a TRC value, and t1 optionally may hold another
 	   word (for CHAIN_ME exits, the address of the place to patch.) */
 
 	/* Restore int regs, including importantly a0 (two_words). */
@@ -117,8 +117,8 @@ postamble:
 	addi sp, sp, 112
 
 	/* Stash return values. */
-	sd a1, 0(a0)
-	sd a2, 8(a0)
+	sd t0, 0(a0)
+	sd t1, 8(a0)
 	ret
 
 /*----------------------------------------------------*/
@@ -131,8 +131,8 @@ VG_(disp_cp_chain_me_to_slowEP):
 	/* We got called. The return address indicates where the patching needs
 	   to happen. Collect the return address and, exit back to C land,
 	   handing the caller the pair (Chain_me_F, RA). */
-	li a1, VG_TRC_CHAIN_ME_TO_SLOW_EP
-	mv a2, ra
+	li t0, VG_TRC_CHAIN_ME_TO_SLOW_EP
+	mv t1, ra
 	/* 4 = lui t0, disp_cp_chain_me_to_slowEP[47:28]'
 	   4 = addiw t0, t0, disp_cp_chain_me_to_slowEP[27:16]'
 	   2 = c.slli t0, 12
@@ -141,7 +141,7 @@ VG_(disp_cp_chain_me_to_slowEP):
 	   2 = c.addi t0, disp_cp_chain_me_to_slowEP[3:0]'
 	   2 = c.jalr 0(t0)
 	*/
-	addi a2, a2, -(4+4+2+4+2+2+2)
+	addi t1, t1, -(4+4+2+4+2+2+2)
 	j postamble
 
 /* ------ Chain me to fast entry point ------ */
@@ -150,8 +150,8 @@ VG_(disp_cp_chain_me_to_fastEP):
 	/* We got called. The return address indicates where the patching needs
 	   to happen. Collect the return address and, exit back to C land,
 	   handing the caller the pair (Chain_me_F, RA). */
-	li a1, VG_TRC_CHAIN_ME_TO_FAST_EP
-	mv a2, ra
+	li t0, VG_TRC_CHAIN_ME_TO_FAST_EP
+	mv t1, ra
 	/* 4 = lui t0, disp_cp_chain_me_to_fastEP[47:28]'
 	   4 = addiw t0, t0, disp_cp_chain_me_to_fastEP[27:16]'
 	   2 = c.slli t0, 12
@@ -160,7 +160,7 @@ VG_(disp_cp_chain_me_to_fastEP):
 	   2 = c.addi t0, disp_cp_chain_me_to_fastEP[3:0]'
 	   2 = c.jalr 0(t0)
 	*/
-	addi a2, a2, -(4+4+2+4+2+2+2)
+	addi t1, t1, -(4+4+2+4+2+2+2)
 	j postamble
 
 /* ------ Indirect but boring jump ------ */
@@ -172,15 +172,15 @@ VG_(disp_cp_xindir):
 .global VG_(disp_cp_xassisted)
 VG_(disp_cp_xassisted):
 	/* s0 contains the TRC. */
-	mv a1, s0
-	li a2, 0
+	mv t0, s0
+	li t1, 0
 	j postamble
 
 /* ------ Event check failed ------ */
 .global VG_(disp_cp_evcheck_fail)
 VG_(disp_cp_evcheck_fail):
-	li a1, VG_TRC_INNER_COUNTERZERO
-	li a2, 0
+	li t0, VG_TRC_INNER_COUNTERZERO
+	li t1, 0
 	j postamble
 
 .size VG_(disp_run_translations), .-VG_(disp_run_translations)
