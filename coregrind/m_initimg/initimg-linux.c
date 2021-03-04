@@ -848,9 +848,14 @@ Addr setup_client_stack( void*  init_sp,
 #        if !defined(VGP_ppc32_linux) && !defined(VGP_ppc64be_linux) \
             && !defined(VGP_ppc64le_linux) \
             && !defined(VGP_mips32_linux) && !defined(VGP_mips64_linux) \
-            && !defined(VGP_nanomips_linux)
+            && !defined(VGP_nanomips_linux) && !defined(VGP_riscv64_linux)
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
+            /* riscv64-linux: Keep the VDSO mapping on this platform present.
+               It contains __kernel_rt_sigreturn() which the kernel sets the ra
+               register to point to on a signal delivery. */
+            /* TODO (riscv64-linux): Export this mapping to the client? Can its
+               code be translated? */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);
             vg_assert(ehdrseg);
             VG_(am_munmap_valgrind)(ehdrseg->start, ehdrseg->end - ehdrseg->start);
