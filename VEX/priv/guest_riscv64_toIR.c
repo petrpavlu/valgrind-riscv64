@@ -95,27 +95,17 @@ static ULong sx_to_64(ULong x, UInt n)
 /*--- Helpers for constructing IR.                         ---*/
 /*------------------------------------------------------------*/
 
-/* Add a statement to the list held by irsb. */
-static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
+/* Create an expression to produce a 64-bit constant. */
+static IRExpr* mkU64(ULong i) { return IRExpr_Const(IRConst_U64(i)); }
+
 /* Create an expression to produce a 32-bit constant. */
 static IRExpr* mkU32(UInt i) { return IRExpr_Const(IRConst_U32(i)); }
 
+/* Create an expression to produce an 8-bit constant. */
+static IRExpr* mkU8(UInt i)
 {
-   addStmtToIRSB(irsb, st);
-}
-
-/* Generate a statement to store a value in memory (in the little-endian
-   order). */
-static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
-{
-   stmt(irsb, IRStmt_Store(Iend_LE, addr, data));
-}
-
-/* Create an expression to load a value from memory (in the little-endian
-   order). */
-static IRExpr* loadLE(IRType ty, IRExpr* addr)
-{
-   return IRExpr_Load(Iend_LE, ty, addr);
+   vassert(i < 256);
+   return IRExpr_Const(IRConst_U8((UChar)i));
 }
 
 /* Create an unary-operation expression. */
@@ -127,15 +117,25 @@ static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
    return IRExpr_Binop(op, a1, a2);
 }
 
-/* Create an expression to produce an 8-bit constant. */
-static IRExpr* mkU8(UInt i)
+/* Create an expression to load a value from memory (in the little-endian
+   order). */
+static IRExpr* loadLE(IRType ty, IRExpr* addr)
 {
-   vassert(i < 256);
-   return IRExpr_Const(IRConst_U8((UChar)i));
+   return IRExpr_Load(Iend_LE, ty, addr);
 }
 
-/* Create an expression to produce a 64-bit constant. */
-static IRExpr* mkU64(ULong i) { return IRExpr_Const(IRConst_U64(i)); }
+/* Add a statement to the list held by irsb. */
+static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
+{
+   addStmtToIRSB(irsb, st);
+}
+
+/* Generate a statement to store a value in memory (in the little-endian
+   order). */
+static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
+{
+   stmt(irsb, IRStmt_Store(Iend_LE, addr, data));
+}
 
 /*------------------------------------------------------------*/
 /*--- Offsets of various parts of the riscv64 guest state  ---*/
