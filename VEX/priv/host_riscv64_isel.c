@@ -199,14 +199,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    case Iex_Binop: {
       /* TODO Optimize for small imms by generating <instr>i. */
       switch (e->Iex.Binop.op) {
-      case Iop_Add64: {
+      case Iop_Add64:
+      case Iop_Add32: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, RISCV64Instr_ADD(dst, argL, argR));
          return dst;
       }
-      case Iop_Sub64: {
+      case Iop_Sub64:
+      case Iop_Sub32: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
