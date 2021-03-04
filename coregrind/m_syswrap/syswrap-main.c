@@ -1658,7 +1658,7 @@ void bad_before ( ThreadId              tid,
 
    SET_STATUS_Failure(VKI_ENOSYS);
 
-#  if defined(VGO_solaris)
+#  if defined(VGO_solaris) || defined(VGP_riscv64_linux)
    VG_(exit)(1);
 #  endif
 }
