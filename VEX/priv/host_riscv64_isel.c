@@ -312,6 +312,14 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_AND(dst, src, mask));
          return dst;
       }
+      case Iop_32Uto64: {
+         HReg tmp = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_SLLI(tmp, src, 32));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_SRLI(dst, tmp, 32));
+         return dst;
+      }
       case Iop_32Sto64: {
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
