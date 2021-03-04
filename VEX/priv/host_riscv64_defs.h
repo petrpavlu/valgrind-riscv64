@@ -84,6 +84,8 @@ typedef enum {
    RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
    RISCV64in_SLTIU,           /* Unsigned comparison of a register and
                                  a sx-12-bit immediate. */
+   RISCV64in_MUL,             /* Multiplication of two registers, producing the
+                                 lower 64 bits. */
    RISCV64in_LD,              /* 64-bit load. */
    RISCV64in_LW,              /* sx-32-to-64-bit load. */
    RISCV64in_LH,              /* sx-16-to-64-bit load. */
@@ -188,6 +190,12 @@ typedef struct {
          HReg src;
          Int  simm12;
       } SLTIU;
+      /* Multiplication of two registers, producing the lower 64 bits. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } MUL;
       /* 64-bit load. */
       struct {
          HReg dst;
@@ -280,6 +288,7 @@ RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src);
 RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
+RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LH(HReg dst, HReg base, Int soff12);
