@@ -1093,6 +1093,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- addiw rd, rs1, imm[11:0] --------------- */
+   if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b000) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid ADDIW, fall through. */
+      } else {
+         UInt simm = (UInt)sx_to_64(imm11_0, 12);
+         putIReg32(irsb, rd, binop(Iop_Add32, getIReg32(rs1), mkU32(simm)));
+         DIP("addiw %s, %s, %d\n", nameIReg64(rd), nameIReg64(rs1), (Int)simm);
+         return True;
+      }
+   }
+
    /* ---------------- slliw rd, rs1, imm4_0 ---------------- */
    if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b001 &&
        INSN(31, 25) == 0b0000000) {
@@ -1104,6 +1119,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(imm4_0)));
          DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm4_0);
+         return True;
+      }
+   }
+
+   /* ------------------ subw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b000 &&
+       INSN(31, 25) == 0b0100000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SUBW, fall through. */
+      } else {
+         putIReg32(irsb, rd, binop(Iop_Sub32, getIReg32(rs1), getIReg32(rs2)));
+         DIP("subw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
          return True;
       }
    }
