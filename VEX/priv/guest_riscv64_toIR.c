@@ -1154,6 +1154,15 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------------ ecall ------------------------ */
+   if (INSN(31, 0) == 0b00000000000000000000000001110011) {
+      putPC(irsb, mkU64(guest_pc_curr_instr + 4));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_Sys_syscall;
+      DIP("ecall\n");
+      return True;
+   }
+
    if (sigill_diag)
       vex_printf("RISCV64 front end: standard\n");
    return False;
