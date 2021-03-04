@@ -475,7 +475,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ---------------- c.andi rd_rs1, imm5_0 ---------------- */
+   /* --------------- c.andi rd_rs1, imm[5:0] --------------- */
    if (INSN(1, 0) == 0b01 && INSN(11, 10) == 0b10 && INSN(15, 13) == 0b100) {
       UInt rd_rs1 = INSN(9, 7) + 8;
       UInt imm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
@@ -562,16 +562,16 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* --------------- c.slli rd_rs1, nzimm5_0 --------------- */
+   /* ------------- c.slli rd_rs1, nzuimm[5:0] -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b000) {
-      UInt rd_rs1   = INSN(11, 7);
-      UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
-      if (rd_rs1 == 0 || nzimm5_0 == 0) {
+      UInt rd_rs1    = INSN(11, 7);
+      UInt nzuimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd_rs1 == 0 || nzuimm5_0 == 0) {
          /* Invalid C.SLLI, fall through. */
       } else {
          putIReg64(irsb, rd_rs1,
-                   binop(Iop_Shl64, getIReg64(rd_rs1), mkU8(nzimm5_0)));
-         DIP("c.slli %s, %u\n", nameIReg64(rd_rs1), nzimm5_0);
+                   binop(Iop_Shl64, getIReg64(rd_rs1), mkU8(nzuimm5_0)));
+         DIP("c.slli %s, %u\n", nameIReg64(rd_rs1), nzuimm5_0);
          return True;
       }
    }
@@ -949,32 +949,32 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ---------------- slli rd, rs1, imm5_0 ----------------- */
+   /* --------------- slli rd, rs1, uimm[5:0] --------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b001 &&
        INSN(31, 26) == 0b000000) {
-      UInt rd     = INSN(11, 7);
-      UInt rs1    = INSN(19, 15);
-      UInt imm5_0 = INSN(25, 20);
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt uimm5_0 = INSN(25, 20);
       if (rd == 0) {
          /* Invalid SLLI, fall through. */
       } else {
-         putIReg64(irsb, rd, binop(Iop_Shl64, getIReg64(rs1), mkU8(imm5_0)));
-         DIP("slli %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm5_0);
+         putIReg64(irsb, rd, binop(Iop_Shl64, getIReg64(rs1), mkU8(uimm5_0)));
+         DIP("slli %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm5_0);
          return True;
       }
    }
 
-   /* ---------------- srli rd, rs1, imm5_0 ----------------- */
+   /* --------------- srli rd, rs1, uimm[5:0] --------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b101 &&
        INSN(31, 26) == 0b000000) {
-      UInt rd     = INSN(11, 7);
-      UInt rs1    = INSN(19, 15);
-      UInt imm5_0 = INSN(25, 20);
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt uimm5_0 = INSN(25, 20);
       if (rd == 0) {
          /* Invalid SRLI, fall through. */
       } else {
-         putIReg64(irsb, rd, binop(Iop_Shr64, getIReg64(rs1), mkU8(imm5_0)));
-         DIP("srli %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm5_0);
+         putIReg64(irsb, rd, binop(Iop_Shr64, getIReg64(rs1), mkU8(uimm5_0)));
+         DIP("srli %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm5_0);
          return True;
       }
    }
@@ -1108,17 +1108,17 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ---------------- slliw rd, rs1, imm4_0 ---------------- */
+   /* -------------- slliw rd, rs1, uimm[4:0] --------------- */
    if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b001 &&
        INSN(31, 25) == 0b0000000) {
-      UInt rd     = INSN(11, 7);
-      UInt rs1    = INSN(19, 15);
-      UInt imm4_0 = INSN(24, 20);
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt uimm4_0 = INSN(24, 20);
       if (rd == 0) {
          /* Invalid SLLIW, fall through. */
       } else {
-         putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(imm4_0)));
-         DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm4_0);
+         putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(uimm4_0)));
+         DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm4_0);
          return True;
       }
    }
@@ -1139,17 +1139,17 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ---------------- sraiw rd, rs1, imm4_0 ---------------- */
+   /* -------------- sraiw rd, rs1, uimm[4:0] --------------- */
    if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b101 &&
        INSN(31, 25) == 0b0100000) {
-      UInt rd     = INSN(11, 7);
-      UInt rs1    = INSN(19, 15);
-      UInt imm4_0 = INSN(24, 20);
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt uimm4_0 = INSN(24, 20);
       if (rd == 0) {
          /* Invalid SRAIW, fall through. */
       } else {
-         putIReg32(irsb, rd, binop(Iop_Sar32, getIReg32(rs1), mkU8(imm4_0)));
-         DIP("sraiw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), imm4_0);
+         putIReg32(irsb, rd, binop(Iop_Sar32, getIReg32(rs1), mkU8(uimm4_0)));
+         DIP("sraiw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm4_0);
          return True;
       }
    }
