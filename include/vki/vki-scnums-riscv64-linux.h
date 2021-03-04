@@ -83,6 +83,7 @@
 #define __NR_sendto 206
 #define __NR_setsockopt 208
 #define __NR_getsockopt 209
+#define __NR_brk 214
 #define __NR_munmap 215
 #define __NR_mremap 216
 #define __NR_clone 220

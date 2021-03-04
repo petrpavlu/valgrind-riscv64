@@ -125,6 +125,7 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
 /* This table maps from __NR_xxx syscall numbers to the appropriate PRE/POST
    sys_foo() wrappers on riscv64. */
 static SyscallTableEntry syscall_main_table[] = {
+   GENX_(__NR_brk, sys_brk), /* 214 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)
