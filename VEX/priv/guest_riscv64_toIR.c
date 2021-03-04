@@ -97,6 +97,9 @@ static ULong sx_to_64(ULong x, UInt n)
 
 /* Add a statement to the list held by irsb. */
 static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
+/* Create an expression to produce a 32-bit constant. */
+static IRExpr* mkU32(UInt i) { return IRExpr_Const(IRConst_U32(i)); }
+
 {
    addStmtToIRSB(irsb, st);
 }
@@ -396,6 +399,21 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd_rs1,
                    binop(Iop_Add64, getIReg64(rd_rs1), mkU64(simm)));
          DIP("c.addi %s, %lld\n", nameIReg64(rd_rs1), (Long)simm);
+         return True;
+      }
+   }
+
+   /* -------------- c.addiw rd_rs1, imm[5:0] --------------- */
+   if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b001) {
+      UInt rd_rs1 = INSN(11, 7);
+      UInt imm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (rd_rs1 == 0) {
+         /* Invalid C.ADDIW, fall through. */
+      } else {
+         UInt simm = (UInt)sx_to_64(imm5_0, 6);
+         putIReg32(irsb, rd_rs1,
+                   binop(Iop_Add32, getIReg32(rd_rs1), mkU32(simm)));
+         DIP("c.addiw %s, %d\n", nameIReg64(rd_rs1), (Int)simm);
          return True;
       }
    }
