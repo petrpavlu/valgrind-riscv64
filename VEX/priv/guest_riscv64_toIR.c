@@ -626,6 +626,22 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------------- c.jalr rs1 ---------------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1001) {
+      UInt rs1 = INSN(11, 7);
+      UInt rs2 = INSN(6, 2);
+      if (rs1 == 0 || rs2 != 0) {
+         /* Invalid C.JALR, fall through. */
+      } else {
+         putIReg64(irsb, 1 /*x1/ra*/, mkU64(guest_pc_curr_instr + 2));
+         putPC(irsb, getIReg64(rs1));
+         dres->whatNext    = Dis_StopHere;
+         dres->jk_StopHere = Ijk_Call;
+         DIP("c.jalr %s\n", nameIReg64(rs1));
+         return True;
+      }
+   }
+
    /* ------------------ c.add rd_rs1, rs2 ------------------ */
    if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1001) {
       UInt rd_rs1 = INSN(11, 7);
