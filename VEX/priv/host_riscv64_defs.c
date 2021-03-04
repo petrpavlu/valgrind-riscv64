@@ -1384,18 +1384,18 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
    }
    case RISCV64in_SLLW: {
       /* sllw dst, src1, src2 */
-      UInt dst   = iregEnc(i->RISCV64in.SLLW.dst);
-      UInt src1  = iregEnc(i->RISCV64in.SLLW.src1);
-      UInt src2  = iregEnc(i->RISCV64in.SLLW.src2);
+      UInt dst  = iregEnc(i->RISCV64in.SLLW.dst);
+      UInt src1 = iregEnc(i->RISCV64in.SLLW.src1);
+      UInt src2 = iregEnc(i->RISCV64in.SLLW.src2);
 
       p = emit_R(p, 0b0111011, dst, 0b001, src1, src2, 0b0000000);
       goto done;
    }
    case RISCV64in_SRAW: {
       /* sraw dst, src1, src2 */
-      UInt dst   = iregEnc(i->RISCV64in.SRAW.dst);
-      UInt src1  = iregEnc(i->RISCV64in.SRAW.src1);
-      UInt src2  = iregEnc(i->RISCV64in.SRAW.src2);
+      UInt dst  = iregEnc(i->RISCV64in.SRAW.dst);
+      UInt src1 = iregEnc(i->RISCV64in.SRAW.src1);
+      UInt src2 = iregEnc(i->RISCV64in.SRAW.src2);
 
       p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0100000);
       goto done;

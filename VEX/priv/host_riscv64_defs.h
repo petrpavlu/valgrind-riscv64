@@ -286,7 +286,7 @@ RISCV64Instr* RISCV64Instr_SLLI(HReg dst, HReg src, UInt uimm6);
 RISCV64Instr* RISCV64Instr_SRLI(HReg dst, HReg src, UInt uimm6);
 RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src);
+RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
