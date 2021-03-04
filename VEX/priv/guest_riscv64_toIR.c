@@ -606,7 +606,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
             dres->jk_StopHere = Ijk_Ret;
             DIP("c.ret\n");
          } else {
-            dres->jk_StopHere = Ijk_Call;
+            dres->jk_StopHere = Ijk_Boring;
             DIP("c.jr %s\n", nameIReg64(rs1));
          }
          return True;
