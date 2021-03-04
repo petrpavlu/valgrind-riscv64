@@ -114,9 +114,34 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
 {
 }
 
-SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )
+/* ---------------------------------------------------------------------
+   The riscv64/Linux syscall table
+   ------------------------------------------------------------------ */
+
+/* Add a riscv64-linux specific wrapper to a syscall table. */
+#define PLAX_(sysno, name) WRAPPER_ENTRY_X_(riscv64_linux, sysno, name)
+#define PLAXY(sysno, name) WRAPPER_ENTRY_XY(riscv64_linux, sysno, name)
+
+/* This table maps from __NR_xxx syscall numbers to the appropriate PRE/POST
+   sys_foo() wrappers on riscv64. */
+static SyscallTableEntry syscall_main_table[] = {
+};
+
+SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)
 {
-   /* Can't find a wrapper */
+   const UInt syscall_main_table_size =
+      sizeof(syscall_main_table) / sizeof(syscall_main_table[0]);
+
+   /* Is it in the contiguous initial section of the table? */
+   if (sysno < syscall_main_table_size) {
+      SyscallTableEntry* sys = &syscall_main_table[sysno];
+      if (sys->before == NULL)
+         return NULL; /* no entry */
+      else
+         return sys;
+   }
+
+   /* Can't find a wrapper. */
    return NULL;
 }
 
