@@ -523,6 +523,17 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ----------------- c.addw rd_rs1, rs2 ------------------ */
+   if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b01 && INSN(15, 10) == 0b100111) {
+      UInt rd_rs1 = INSN(9, 7) + 8;
+      UInt rs2    = INSN(4, 2) + 8;
+      /* Note: All C.ADDW encodings are valid. */
+      putIReg32(irsb, rd_rs1,
+                binop(Iop_Add32, getIReg32(rd_rs1), getIReg32(rs2)));
+      DIP("c.addw %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
+      return True;
+   }
+
    /* -------------------- c.j imm[11:1] -------------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b101) {
       UInt imm11_1 = INSN(12, 12) << 10 | INSN(8, 8) << 9 | INSN(10, 9) << 7 |
@@ -1130,6 +1141,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(uimm4_0)));
          DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm4_0);
+         return True;
+      }
+   }
+
+   /* ------------------ addw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b000 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid ADDW, fall through. */
+      } else {
+         putIReg32(irsb, rd, binop(Iop_Add32, getIReg32(rs1), getIReg32(rs2)));
+         DIP("addw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
          return True;
       }
    }
