@@ -678,6 +678,19 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- c.swsp rs2, uimm[7:2](x2) -------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b110) {
+      UInt rs1     = 2; /* base=x2/sp */
+      UInt rs2     = INSN(6, 2);
+      UInt uimm7_2 = INSN(9, 7) << 3 | INSN(12, 10);
+      /* Note: All C.SWSP encodings are valid. */
+      ULong uimm = uimm7_2 << 2;
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
+              unop(Iop_64to32, getIReg64(rs2)));
+      DIP("c.swsp %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+      return True;
+   }
+
    /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b111) {
       UInt rs1     = 2; /* base=x2/sp */
