@@ -501,6 +501,17 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------ c.or rd_rs1, rs2 ------------------- */
+   if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b10 && INSN(15, 10) == 0b100011) {
+      UInt rd_rs1 = INSN(9, 7) + 8;
+      UInt rs2    = INSN(4, 2) + 8;
+      /* Note: All C.OR encodings are valid. */
+      putIReg64(irsb, rd_rs1,
+                binop(Iop_Or64, getIReg64(rd_rs1), getIReg64(rs2)));
+      DIP("c.or %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
+      return True;
+   }
+
    /* ------------------ c.and rd_rs1, rs2 ------------------ */
    if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b11 && INSN(15, 10) == 0b100011) {
       UInt rd_rs1 = INSN(9, 7) + 8;
