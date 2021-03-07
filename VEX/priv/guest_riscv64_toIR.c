@@ -1216,6 +1216,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ sllw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b001 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SLLW, fall through. */
+      } else {
+         putIReg32(
+            irsb, rd,
+            binop(Iop_Shl32, getIReg32(rs1), unop(Iop_64to8, getIReg64(rs2))));
+         DIP("sllw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* -------------- sraiw rd, rs1, uimm[4:0] --------------- */
    if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b101 &&
        INSN(31, 25) == 0b0100000) {
