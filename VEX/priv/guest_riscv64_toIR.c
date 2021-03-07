@@ -1054,6 +1054,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ sltu rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b011 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SLTU, fall through. */
+      } else {
+         putIReg64(irsb, rd,
+                   unop(Iop_1Uto64,
+                        binop(Iop_CmpLT64U, getIReg64(rs1), getIReg64(rs2))));
+         DIP("sltu %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ----------------- lui rd, imm[31:12] ------------------ */
    if (INSN(6, 0) == 0b0110111) {
       UInt rd       = INSN(11, 7);
