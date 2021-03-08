@@ -1131,8 +1131,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          /* Invalid AUIPC, fall through. */
       } else {
          putIReg64(irsb, rd,
-                   binop(Iop_Add64, mkU64(guest_pc_curr_instr),
-                         mkU64(sx_to_64(imm31_12 << 12, 32))));
+                   mkU64(guest_pc_curr_instr + sx_to_64(imm31_12 << 12, 32)));
          DIP("auipc %s, 0x%x\n", nameIReg64(rd), imm31_12);
          return True;
       }
