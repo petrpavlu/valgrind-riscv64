@@ -720,7 +720,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b110) {
       UInt rs1     = 2; /* base=x2/sp */
       UInt rs2     = INSN(6, 2);
-      UInt uimm7_2 = INSN(9, 7) << 3 | INSN(12, 10);
+      UInt uimm7_2 = INSN(8, 7) << 4 | INSN(12, 9);
       /* Note: All C.SWSP encodings are valid. */
       ULong uimm = uimm7_2 << 2;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
