@@ -334,6 +334,22 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- c.fld rd, uimm[7:3](rs1) --------------- */
+   if (INSN(1, 0) == 0b00 && INSN(15, 13) == 0b001) {
+      /* TODO Implement. */
+#if 0
+      UInt rd      = INSN(4, 2) + 8;
+      UInt rs1     = INSN(9, 7) + 8;
+      UInt uimm7_3 = INSN(6, 5) << 3 | INSN(12, 10);
+      /* Note: All C.LD encodings are valid. */
+      ULong uimm = uimm7_3 << 3;
+      putIReg64(irsb, rd,
+                loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
+      DIP("c.ld %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+#endif
+      return True;
+   }
+
    /* --------------- c.lw rd, uimm[6:2](rs1) --------------- */
    if (INSN(1, 0) == 0b00 && INSN(15, 13) == 0b010) {
       UInt rd      = INSN(4, 2) + 8;
@@ -359,6 +375,22 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       putIReg64(irsb, rd,
                 loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
       DIP("c.ld %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+      return True;
+   }
+
+   /* -------------- c.fsd rs2, uimm[7:3](rs1) -------------- */
+   if (INSN(1, 0) == 0b00 && INSN(15, 13) == 0b101) {
+      /* TODO Implement. */
+#if 0
+      UInt rs1     = INSN(9, 7) + 8;
+      UInt rs2     = INSN(4, 2) + 8;
+      UInt uimm7_3 = INSN(6, 5) << 3 | INSN(12, 10);
+      /* Note: All C.FSD encodings are valid. */
+      ULong uimm = uimm7_3 << 3;
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
+              getIReg64(rs2));
+      DIP("c.fsd %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+#endif
       return True;
    }
 
@@ -1274,6 +1306,45 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
              nameIReg64(rs2));
          return True;
       }
+   }
+
+   /* -------------- RV32D Standard Extension --------------- */
+
+   /* --------------- fld rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b011) {
+      /* TODO Implement. */
+#if 0
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid LD, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(
+            irsb, rd,
+            loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(simm))));
+         DIP("ld %s, %lld(%s)\n", nameIReg64(rd), (Long)simm, nameIReg64(rs1));
+         return True;
+      }
+#endif
+      return True;
+   }
+
+   /* --------------- fsd rs2, imm[11:0](rs1) --------------- */
+   if (INSN(6, 0) == 0b0100111 && INSN(14, 12) == 0b011) {
+      /* TODO Implement. */
+#if 0
+      UInt rs1     = INSN(19, 15);
+      UInt rs2     = INSN(24, 20);
+      UInt imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
+      /* Note: All FSD encodings are valid. */
+      ULong simm = sx_to_64(imm11_0, 12);
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
+              getIReg64(rs2));
+      DIP("sd %s, %lld(%s)\n", nameIReg64(rs2), (Long)simm, nameIReg64(rs1));
+#endif
+      return True;
    }
 
    if (sigill_diag)
