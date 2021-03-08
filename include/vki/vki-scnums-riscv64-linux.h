@@ -50,9 +50,11 @@
 #define __NR3264_lseek 62
 #define __NR_read 63
 #define __NR_write 64
+#define __NR_writev 66
 #define __NR_pread64 67
 #define __NR_ppoll 73
 #define __NR_readlinkat 78
+#define __NR3264_fstatat 79
 #define __NR_exit_group 94
 #define __NR_futex 98
 #define __NR_clock_gettime 113
@@ -66,6 +68,7 @@
 #define __NR_rt_sigreturn 139
 #define __NR_getpgid 155
 #define __NR_getgroups 158
+#define __NR_uname 160
 #define __NR_getrusage 165
 #define __NR_prctl 167
 #define __NR_gettimeofday 169
@@ -98,6 +101,7 @@
 
 #define __NR_fcntl __NR3264_fcntl
 #define __NR_lseek __NR3264_lseek
+#define __NR_newfstatat __NR3264_fstatat
 #define __NR_mmap __NR3264_mmap
 
 #define __NR_riscv_flush_icache (__NR_arch_specific_syscall + 15)

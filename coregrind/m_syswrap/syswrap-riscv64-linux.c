@@ -156,8 +156,16 @@ PRE(sys_mmap)
 /* This table maps from __NR_xxx syscall numbers to the appropriate PRE/POST
    sys_foo() wrappers on riscv64. */
 static SyscallTableEntry syscall_main_table[] = {
-   GENX_(__NR_brk, sys_brk), /* 214 */
+   LINX_(__NR_faccessat, sys_faccessat),   /* 48 */
+   LINXY(__NR_openat, sys_openat),         /* 56 */
+   GENXY(__NR_close, sys_close),           /* 57 */
+   GENXY(__NR_read, sys_read),             /* 63 */
+   GENX_(__NR_writev, sys_writev),         /* 66 */
+   LINXY(__NR_newfstatat, sys_newfstatat), /* 79 */
+   GENXY(__NR_uname, sys_newuname),        /* 160 */
+   GENX_(__NR_brk, sys_brk),               /* 214 */
    PLAX_(__NR_mmap, sys_mmap),             /* 222 */
+   GENXY(__NR_mprotect, sys_mprotect),     /* 226 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)
