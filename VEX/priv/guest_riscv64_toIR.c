@@ -647,6 +647,24 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- c.lwsp rd, uimm[7:2](x2) --------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b010) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = 2; /* base=x2/sp */
+      UInt uimm7_2 = INSN(3, 2) << 4 | INSN(12, 12) << 3 | INSN(6, 4);
+      if (rd == 0) {
+         /* Invalid C.LWSP, fall through. */
+      } else {
+         ULong uimm = uimm7_2 << 2;
+         putIReg64(irsb, rd,
+                   unop(Iop_32Sto64,
+                        loadLE(Ity_I32,
+                               binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)))));
+         DIP("c.lwsp %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+         return True;
+      }
+   }
+
    /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b011) {
       UInt rd      = INSN(11, 7);
