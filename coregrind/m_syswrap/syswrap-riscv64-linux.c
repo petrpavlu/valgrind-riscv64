@@ -115,6 +115,37 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
 }
 
 /* ---------------------------------------------------------------------
+   PRE/POST wrappers for riscv64/Linux-specific syscalls
+   ------------------------------------------------------------------ */
+
+#define PRE(name)  DEFN_PRE_TEMPLATE(riscv64_linux, name)
+#define POST(name) DEFN_POST_TEMPLATE(riscv64_linux, name)
+
+/* Add prototypes for the wrappers declared here, so that gcc doesn't
+   harass us for not having prototypes.  Really this is a kludge --
+   the right thing to do is to make these wrappers 'static' since they
+   aren't visible outside this file, but that requires even more macro
+   magic. */
+
+DECL_TEMPLATE(riscv64_linux, sys_mmap);
+
+PRE(sys_mmap)
+{
+   PRINT("sys_mmap ( %#lx, %lu, %lu, %#lx, %lu, %lu )", ARG1, ARG2, ARG3, ARG4,
+         ARG5, ARG6);
+   PRE_REG_READ6(long, "mmap", unsigned long, start, unsigned long, length,
+                 unsigned long, prot, unsigned long, flags, unsigned long, fd,
+                 unsigned long, offset);
+
+   SysRes r =
+      ML_(generic_PRE_sys_mmap)(tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   SET_STATUS_from_SysRes(r);
+}
+
+#undef PRE
+#undef POST
+
+/* ---------------------------------------------------------------------
    The riscv64/Linux syscall table
    ------------------------------------------------------------------ */
 
@@ -126,6 +157,7 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
    sys_foo() wrappers on riscv64. */
 static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_brk, sys_brk), /* 214 */
+   PLAX_(__NR_mmap, sys_mmap),             /* 222 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)
