@@ -539,6 +539,17 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------ c.xor rd_rs1, rs2 ------------------ */
+   if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b01 && INSN(15, 10) == 0b100011) {
+      UInt rd_rs1 = INSN(9, 7) + 8;
+      UInt rs2    = INSN(4, 2) + 8;
+      /* Note: All C.XOR encodings are valid. */
+      putIReg64(irsb, rd_rs1,
+                binop(Iop_Xor64, getIReg64(rd_rs1), getIReg64(rs2)));
+      DIP("c.xor %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
+      return True;
+   }
+
    /* ------------------ c.or rd_rs1, rs2 ------------------- */
    if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b10 && INSN(15, 10) == 0b100011) {
       UInt rd_rs1 = INSN(9, 7) + 8;
@@ -1000,6 +1011,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------- xori rd, rs1, imm[11:0] --------------- */
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b100) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid XORI, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(irsb, rd, binop(Iop_Xor64, getIReg64(rs1), mkU64(simm)));
+         DIP("xori %s, %s, 0x%llx\n", nameIReg64(rd), nameIReg64(rs1), simm);
+         return True;
+      }
+   }
+
    /* --------------- ori rd, rs1, imm[11:0] ---------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b110) {
       UInt rd      = INSN(11, 7);
@@ -1157,6 +1183,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          DIP("j 0x%llx\n", dst_pc);
       }
       return True;
+   }
+
+   /* ------------------ xor rd, rs1, rs2 ------------------- */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b100 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid XOR, fall through. */
+      } else {
+         putIReg64(irsb, rd, binop(Iop_Xor64, getIReg64(rs1), getIReg64(rs2)));
+         DIP("xor %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
    }
 
    /* ------------------- or rd, rs1, rs2 ------------------- */
