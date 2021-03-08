@@ -1155,6 +1155,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ sll rd, rs1, rs2 ------------------- */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b001 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SLL, fall through. */
+      } else {
+         putIReg64(
+            irsb, rd,
+            binop(Iop_Shl64, getIReg64(rs1), unop(Iop_64to8, getIReg64(rs2))));
+         DIP("sll %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ------------------ sltu rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b011 &&
        INSN(31, 25) == 0b0000000) {
@@ -1233,6 +1251,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg64(irsb, rd, binop(Iop_Xor64, getIReg64(rs1), getIReg64(rs2)));
          DIP("xor %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
+   /* ------------------ srl rd, rs1, rs2 ------------------- */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b101 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SRL, fall through. */
+      } else {
+         putIReg64(
+            irsb, rd,
+            binop(Iop_Shr64, getIReg64(rs1), unop(Iop_64to8, getIReg64(rs2))));
+         DIP("srl %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
              nameIReg64(rs2));
          return True;
       }
@@ -1345,6 +1381,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             irsb, rd,
             binop(Iop_Shl32, getIReg32(rs1), unop(Iop_64to8, getIReg64(rs2))));
          DIP("sllw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
+   /* ------------------ sraw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b101 &&
+       INSN(31, 25) == 0b0100000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SRAW, fall through. */
+      } else {
+         putIReg32(
+            irsb, rd,
+            binop(Iop_Sar32, getIReg32(rs1), unop(Iop_64to8, getIReg64(rs2))));
+         DIP("sraw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
              nameIReg64(rs2));
          return True;
       }
