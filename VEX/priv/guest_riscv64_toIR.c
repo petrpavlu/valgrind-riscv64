@@ -1473,6 +1473,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ divu rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b101 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid DIVU, fall through. */
+      } else {
+         putIReg64(irsb, rd, binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2)));
+         DIP("divu %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* -------------- RV32D Standard Extension --------------- */
 
    /* --------------- fld rd, imm[11:0](rs1) ---------------- */
