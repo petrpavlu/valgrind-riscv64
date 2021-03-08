@@ -1029,6 +1029,25 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- sltiu rd, rs1, imm[11:0] --------------- */
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b011) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid SLTIU, fall through. */
+      } else {
+         /* Note that the comparison itself is unsigned but the immediate is
+            sign-extended. */
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(
+            irsb, rd,
+            unop(Iop_1Uto64, binop(Iop_CmpLT64U, getIReg64(rs1), mkU64(simm))));
+         DIP("sltiu %s, %s, %llu\n", nameIReg64(rd), nameIReg64(rs1), simm);
+         return True;
+      }
+   }
+
    /* --------------- xori rd, rs1, imm[11:0] --------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b100) {
       UInt rd      = INSN(11, 7);
