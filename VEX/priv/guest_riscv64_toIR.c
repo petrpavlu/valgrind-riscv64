@@ -420,6 +420,12 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------------ c.nop ------------------------ */
+   if (INSN(15, 0) == 0b0000000000000001) {
+      DIP("c.nop\n");
+      return True;
+   }
+
    /* -------------- c.addi rd_rs1, nzimm[5:0] -------------- */
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
       UInt rd_rs1   = INSN(11, 7);
