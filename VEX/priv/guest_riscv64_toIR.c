@@ -1302,7 +1302,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          /* Invalid MUL, fall through. */
       } else {
          putIReg64(irsb, rd, binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2)));
-         DIP("or %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+         DIP("mul %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
              nameIReg64(rs2));
          return True;
       }
