@@ -1240,6 +1240,33 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* --------------- jalr rd, imm[11:0](rs1) --------------- */
+   if (INSN(6, 0) == 0b1100111 && INSN(14, 12) == 0b000) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      /* Note: All JALR encodings are valid. */
+      ULong simm = sx_to_64(imm11_0, 12);
+      if (rd != 0)
+         putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
+      putPC(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)));
+      dres->whatNext = Dis_StopHere;
+      if (rd == 0) {
+         if (rs1 == 1 /*x1/ra*/ && simm == 0) {
+            dres->jk_StopHere = Ijk_Ret;
+            DIP("ret\n");
+         } else {
+            dres->jk_StopHere = Ijk_Boring;
+            DIP("jr %lld(%s)\n", (Long)simm, nameIReg64(rs1));
+         }
+      } else {
+         dres->jk_StopHere = Ijk_Call;
+         DIP("jalr %s, %lld(%s)\n", nameIReg64(rd), (Long)simm,
+             nameIReg64(rs1));
+      }
+      return True;
+   }
+
    /* ------------------ xor rd, rs1, rs2 ------------------- */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b100 &&
        INSN(31, 25) == 0b0000000) {
