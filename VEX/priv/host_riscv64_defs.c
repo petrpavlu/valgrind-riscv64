@@ -345,6 +345,13 @@ RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_FENCE(void)
+{
+   RISCV64Instr* i = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag          = RISCV64in_FENCE;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP)
 {
@@ -586,6 +593,9 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.SB.base);
       vex_printf(")");
       return;
+   case RISCV64in_FENCE:
+      vex_printf("fence");
+      return;
    case RISCV64in_XDirect:
       vex_printf("(xDirect) ");
       if (!hregIsInvalid(i->RISCV64in.XDirect.cond)) {
@@ -808,6 +818,8 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.SB.src);
       addHRegUse(u, HRmRead, i->RISCV64in.SB.base);
       return;
+   case RISCV64in_FENCE:
+      return;
    /* XDirect/XIndir/XAssisted are also a bit subtle. They conditionally exit
       the block. Hence we only need to list (1) the registers that they read,
       and (2) the registers that they write in the case where the block is not
@@ -963,6 +975,8 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    case RISCV64in_SB:
       mapReg(m, &i->RISCV64in.SB.src);
       mapReg(m, &i->RISCV64in.SB.base);
+      return;
+   case RISCV64in_FENCE:
       return;
    case RISCV64in_XDirect:
       mapReg(m, &i->RISCV64in.XDirect.base);
@@ -1626,6 +1640,11 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt imm11_0 = soff12 & 0xfff;
 
       p = emit_S(p, 0b0100011, imm11_0, 0b000, base, src);
+      goto done;
+   }
+   case RISCV64in_FENCE: {
+      /* fence */
+      p = emit_I(p, 0b0001111, 0b00000, 0b000, 0b00000, 0b000011111111);
       goto done;
    }
 

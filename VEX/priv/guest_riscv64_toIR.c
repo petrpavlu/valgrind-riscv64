@@ -1455,6 +1455,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------------ fence ------------------------ */
+   if (INSN(31, 0) == 0b00001111111100000000000000001111) {
+      stmt(irsb, IRStmt_MBE(Imbe_Fence));
+      DIP("fence\n");
+      return True;
+   }
+
    /* -------------- RV32M Standard Extension --------------- */
 
    /* ------------------ mul rd, rs1, rs2 ------------------- */

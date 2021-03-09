@@ -98,6 +98,7 @@ typedef enum {
    RISCV64in_SW,              /* 32-bit store. */
    RISCV64in_SH,              /* 16-bit store. */
    RISCV64in_SB,              /* 8-bit store. */
+   RISCV64in_FENCE,           /* Device I/O and memory fence. */
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
    RISCV64in_XAssisted,       /* Assisted transfer to guest address. */
@@ -266,6 +267,9 @@ typedef struct {
          HReg base;
          Int  soff12; /* -2048 .. +2047 */
       } SB;
+      /* Device I/O and memory fence. */
+      struct {
+      } FENCE;
       /* Update the guest pc value, then exit requesting to chain to it. May be
          conditional. */
       struct {
@@ -322,6 +326,7 @@ RISCV64Instr* RISCV64Instr_SD(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);
 RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond);
