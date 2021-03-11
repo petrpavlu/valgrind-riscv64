@@ -1123,6 +1123,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------- srai rd, rs1, uimm[5:0] --------------- */
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b101 &&
+       INSN(31, 26) == 0b010000) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt uimm5_0 = INSN(25, 20);
+      if (rd == 0) {
+         /* Invalid SRAI, fall through. */
+      } else {
+         putIReg64(irsb, rd, binop(Iop_Sar64, getIReg64(rs1), mkU8(uimm5_0)));
+         DIP("srai %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm5_0);
+         return True;
+      }
+   }
+
    /* ------------------ add rd, rs1, rs2 ------------------- */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b000 &&
        INSN(31, 25) == 0b0000000) {
