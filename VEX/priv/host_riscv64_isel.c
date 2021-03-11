@@ -341,7 +341,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_Not1: {
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), src));
+         addInstr(env, RISCV64Instr_SLTIU(dst, src, 1));
          return dst;
       }
       case Iop_1Uto64: {
