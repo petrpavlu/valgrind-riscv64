@@ -134,6 +134,7 @@ static HReg newVRegI(ISelEnv* env)
    You should not call the _wrk version directly. */
 
 static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
+static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
 
 /*------------------------------------------------------------*/
 /*--- ISEL: Misc helpers                                   ---*/
@@ -387,6 +388,11 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_64to32:
          /* These are no-ops. */
          return iselIntExpr_R(env, e->Iex.Unop.arg);
+      case Iop_128HIto64: {
+         HReg rHi, rLo;
+         iselInt128Expr(&rHi, &rLo, env, e->Iex.Unop.arg);
+         return rHi; /* and abandon rLo */
+      }
       default:
          break;
       }
@@ -458,6 +464,51 @@ static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e)
    vassert(hregIsVirtual(r));
 
    return r;
+}
+
+/*------------------------------------------------------------*/
+/*--- ISEL: Integer expressions (128 bit)                  ---*/
+/*------------------------------------------------------------*/
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
+{
+   vassert(typeOfIRExpr(env->type_env, e) == Ity_I128);
+
+   /* ---------------------- BINARY OP ---------------------- */
+   if (e->tag == Iex_Binop) {
+      switch (e->Iex.Binop.op) {
+      case Iop_DivModU64to64: {
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         *rHi      = newVRegI(env);
+         *rLo      = newVRegI(env);
+         addInstr(env, RISCV64Instr_REMU(*rHi, argL, argR));
+         addInstr(env, RISCV64Instr_DIVU(*rLo, argL, argR));
+         return;
+      }
+      default:
+         break;
+      }
+   }
+
+   ppIRExpr(e);
+   vpanic("iselInt128Expr(riscv64)");
+}
+
+/* Compute a 128-bit value into a register pair, which is returned as the first
+   two parameters. As with iselIntExpr_R, these may be either real or virtual
+   regs; in any case they must not be changed by subsequent code emitted by the
+   caller. */
+static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
+{
+   iselInt128Expr_wrk(rHi, rLo, env, e);
+
+   /* Sanity checks ... */
+   vassert(hregClass(*rHi) == HRcInt64);
+   vassert(hregIsVirtual(*rHi));
+   vassert(hregClass(*rLo) == HRcInt64);
+   vassert(hregIsVirtual(*rLo));
 }
 
 /*------------------------------------------------------------*/
