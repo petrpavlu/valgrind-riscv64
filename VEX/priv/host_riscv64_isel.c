@@ -641,6 +641,22 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          }
       } else {
          /* SC */
+         IRType tyd = typeOfIRExpr(env->type_env, stmt->Ist.LLSC.storedata);
+         if (tyd == Ity_I32) {
+            HReg r_tmp  = newVRegI(env);
+            HReg r_src  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
+            HReg r_addr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            addInstr(env, RISCV64Instr_SC_W(r_tmp, r_src, r_addr));
+
+            /* Now r_tmp is non-zero if failed, 0 if success. Change to IR
+               conventions (0 is fail, 1 is success). */
+            IRTemp res   = stmt->Ist.LLSC.result;
+            HReg   r_res = lookupIRTemp(env, res);
+            IRType ty    = typeOfIRTemp(env->type_env, res);
+            vassert(ty == Ity_I1);
+            addInstr(env, RISCV64Instr_SLTIU(r_res, r_tmp, 1));
+            return;
+         }
       }
       break;
    }

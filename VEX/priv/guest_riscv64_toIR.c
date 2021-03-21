@@ -1731,6 +1731,49 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ----------------- sc.w rd, rs2, (rs1) ----------------- */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 12) == 0b010 &&
+       INSN(31, 27) == 0b00011) {
+      UInt rd   = INSN(11, 7);
+      UInt rs1  = INSN(19, 15);
+      UInt rs2  = INSN(24, 20);
+      UInt aqrl = INSN(26, 25);
+      if (rd == 0) {
+         /* Invalid SC.W, fall through. */
+      } else {
+         /* TODO Implement support for abiinfo->guest__use_fallback_LLSC? */
+         if (aqrl & 0x1)
+            stmt(irsb, IRStmt_MBE(Imbe_Fence));
+         IRTemp res = newTemp(irsb, Ity_I1);
+         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), getIReg32(rs2)));
+         /* IR semantics: res is 1 if store succeeds, 0 if it fails. Need to
+            set rd to 1 on failure, 0 on success. */
+         putIReg64(irsb, rd,
+                   binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)), mkU64(1)));
+         if (aqrl & 0x2)
+            stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+         const HChar* suffix;
+         switch (aqrl) {
+         case 0b00:
+            suffix = "";
+            break;
+         case 0b01:
+            suffix = ".rl";
+            break;
+         case 0b10:
+            suffix = ".aq";
+            break;
+         case 0b11:
+            suffix = ".aqrl";
+            break;
+         }
+         DIP("sc.w%s %s, %s, (%s)\n", suffix, nameIReg64(rd), nameIReg64(rs2),
+             nameIReg64(rs1));
+         return True;
+      }
+   }
+
    if (sigill_diag)
       vex_printf("RISCV64 front end: standard\n");
    return False;
