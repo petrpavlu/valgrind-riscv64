@@ -1080,6 +1080,23 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------- slti rd, rs1, imm[11:0] --------------- */
+   if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b010) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt imm11_0 = INSN(31, 20);
+      if (rd == 0) {
+         /* Invalid SLTI, fall through. */
+      } else {
+         ULong simm = sx_to_64(imm11_0, 12);
+         putIReg64(
+            irsb, rd,
+            unop(Iop_1Uto64, binop(Iop_CmpLT64S, getIReg64(rs1), mkU64(simm))));
+         DIP("slti %s, %s, %llu\n", nameIReg64(rd), nameIReg64(rs1), simm);
+         return True;
+      }
+   }
+
    /* -------------- sltiu rd, rs1, imm[11:0] --------------- */
    if (INSN(6, 0) == 0b0010011 && INSN(14, 12) == 0b011) {
       UInt rd      = INSN(11, 7);
