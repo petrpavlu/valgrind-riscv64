@@ -627,6 +627,24 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       break;
    }
 
+   /* ---------- Load Linked and Store Conditional ---------- */
+   case Ist_LLSC: {
+      if (stmt->Ist.LLSC.storedata == NULL) {
+         /* LL */
+         IRTemp res = stmt->Ist.LLSC.result;
+         IRType ty  = typeOfIRTemp(env->type_env, res);
+         if (ty == Ity_I32) {
+            HReg r_dst  = lookupIRTemp(env, res);
+            HReg r_addr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
+            addInstr(env, RISCV64Instr_LR_W(r_dst, r_addr));
+            return;
+         }
+      } else {
+         /* SC */
+      }
+      break;
+   }
+
    /* ---------------------- MEM FENCE ---------------------- */
    case Ist_MBE:
       switch (stmt->Ist.MBE.event) {

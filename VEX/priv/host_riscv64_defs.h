@@ -106,6 +106,7 @@ typedef enum {
    RISCV64in_SW,              /* 32-bit store. */
    RISCV64in_SH,              /* 16-bit store. */
    RISCV64in_SB,              /* 8-bit store. */
+   RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
@@ -305,6 +306,11 @@ typedef struct {
          HReg base;
          Int  soff12; /* -2048 .. +2047 */
       } SB;
+      /* sx-32-to-64-bit load-reserved. */
+      struct {
+         HReg dst;
+         HReg addr;
+      } LR_W;
       /* Device I/O and memory fence. */
       struct {
       } FENCE;
@@ -369,6 +375,7 @@ RISCV64Instr* RISCV64Instr_SD(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);

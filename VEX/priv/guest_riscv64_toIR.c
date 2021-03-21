@@ -108,6 +108,9 @@ static IRExpr* mkU8(UInt i)
    return IRExpr_Const(IRConst_U8((UChar)i));
 }
 
+/* Create an expression to read a temporary. */
+static IRExpr* mkexpr(IRTemp tmp) { return IRExpr_RdTmp(tmp); }
+
 /* Create an unary-operation expression. */
 static IRExpr* unop(IROp op, IRExpr* a) { return IRExpr_Unop(op, a); }
 
@@ -135,6 +138,13 @@ static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
 static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
 {
    stmt(irsb, IRStmt_Store(Iend_LE, addr, data));
+}
+
+/* Generate a new temporary of the given type. */
+static IRTemp newTemp(/*MOD*/ IRSB* irsb, IRType ty)
+{
+   vassert(isPlausibleIRType(ty));
+   return newIRTemp(irsb->tyenv, ty);
 }
 
 /*------------------------------------------------------------*/
@@ -1678,6 +1688,47 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       DIP("sd %s, %lld(%s)\n", nameIReg64(rs2), (Long)simm, nameIReg64(rs1));
 #endif
       return True;
+   }
+
+   /* -------------- RV32A Standard Extension --------------- */
+
+   /* ------------------- lr.w rd, (rs1) -------------------- */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 12) == 0b010 &&
+       INSN(31, 27) == 0b00010) {
+      UInt rd   = INSN(11, 7);
+      UInt rs1  = INSN(19, 15);
+      UInt rs2  = INSN(24, 20);
+      UInt aqrl = INSN(26, 25);
+      if (rd == 0 || rs2 != 0) {
+         /* Invalid LR.W, fall through. */
+      } else {
+         /* TODO Implement support for abiinfo->guest__use_fallback_LLSC? */
+         if (aqrl & 0x1)
+            stmt(irsb, IRStmt_MBE(Imbe_Fence));
+         IRTemp res = newTemp(irsb, Ity_I32);
+         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), NULL /*LL*/));
+         putIReg32(irsb, rd, mkexpr(res));
+         if (aqrl & 0x2)
+            stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+         const HChar* suffix;
+         switch (aqrl) {
+         case 0b00:
+            suffix = "";
+            break;
+         case 0b01:
+            suffix = ".rl";
+            break;
+         case 0b10:
+            suffix = ".aq";
+            break;
+         case 0b11:
+            suffix = ".aqrl";
+            break;
+         }
+         DIP("lr.w%s %s, (%s)\n", suffix, nameIReg64(rd), nameIReg64(rs1));
+         return True;
+      }
    }
 
    if (sigill_diag)

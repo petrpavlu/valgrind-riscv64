@@ -395,6 +395,15 @@ RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr)
+{
+   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                 = RISCV64in_LR_W;
+   i->RISCV64in.LR_W.dst  = dst;
+   i->RISCV64in.LR_W.addr = addr;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_FENCE(void)
 {
    RISCV64Instr* i = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -683,6 +692,13 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.SB.base);
       vex_printf(")");
       return;
+   case RISCV64in_LR_W:
+      vex_printf("lr.w    ");
+      ppHRegRISCV64(i->RISCV64in.LR_W.dst);
+      vex_printf(", (");
+      ppHRegRISCV64(i->RISCV64in.LR_W.addr);
+      vex_printf(")");
+      return;
    case RISCV64in_FENCE:
       vex_printf("fence");
       return;
@@ -933,6 +949,10 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.SB.src);
       addHRegUse(u, HRmRead, i->RISCV64in.SB.base);
       return;
+   case RISCV64in_LR_W:
+      addHRegUse(u, HRmWrite, i->RISCV64in.LR_W.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.LR_W.addr);
+      return;
    case RISCV64in_FENCE:
       return;
    /* XDirect/XIndir/XAssisted are also a bit subtle. They conditionally exit
@@ -1115,6 +1135,10 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    case RISCV64in_SB:
       mapReg(m, &i->RISCV64in.SB.src);
       mapReg(m, &i->RISCV64in.SB.base);
+      return;
+   case RISCV64in_LR_W:
+      mapReg(m, &i->RISCV64in.LR_W.dst);
+      mapReg(m, &i->RISCV64in.LR_W.addr);
       return;
    case RISCV64in_FENCE:
       return;
@@ -1825,6 +1849,14 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt imm11_0 = soff12 & 0xfff;
 
       p = emit_S(p, 0b0100011, imm11_0, 0b000, base, src);
+      goto done;
+   }
+   case RISCV64in_LR_W: {
+      /* lr.w dst, (addr) */
+      UInt dst  = iregEnc(i->RISCV64in.LR_W.dst);
+      UInt addr = iregEnc(i->RISCV64in.LR_W.addr);
+
+      p = emit_R(p, 0b0101111, dst, 0b010, addr, 0b00000, 0b0001000);
       goto done;
    }
    case RISCV64in_FENCE: {
