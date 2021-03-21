@@ -661,6 +661,27 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- c.fldsp rd, uimm[8:3](x2) -------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b001) {
+      /* TODO Implement. */
+#if 0
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = 2; /* base=x2/sp */
+      UInt uimm8_3 = INSN(4, 2) << 3 | INSN(12, 12) << 2 | INSN(6, 5);
+      if (rd == 0) {
+         /* Invalid C.LDSP, fall through. */
+      } else {
+         ULong uimm = uimm8_3 << 3;
+         putIReg64(
+            irsb, rd,
+            loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
+         DIP("c.ldsp %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+         return True;
+      }
+#endif
+      return True;
+   }
+
    /* -------------- c.lwsp rd, uimm[7:2](x2) --------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b010) {
       UInt rd      = INSN(11, 7);
@@ -757,6 +778,22 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          DIP("c.add %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
          return True;
       }
+   }
+
+   /* ------------- c.fsdsp rs2, uimm[8:3](x2) -------------- */
+   if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b101) {
+      /* TODO Implement. */
+#if 0
+      UInt rs1     = 2; /* base=x2/sp */
+      UInt rs2     = INSN(6, 2);
+      UInt uimm8_3 = INSN(9, 7) << 3 | INSN(12, 10);
+      /* Note: All C.SDSP encodings are valid. */
+      ULong uimm = uimm8_3 << 3;
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
+              getIReg64(rs2));
+      DIP("c.sdsp %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+#endif
+      return True;
    }
 
    /* -------------- c.swsp rs2, uimm[7:2](x2) -------------- */
