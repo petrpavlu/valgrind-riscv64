@@ -513,6 +513,20 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------- c.srai rd_rs1, nzuimm[5:0] -------------- */
+   if (INSN(1, 0) == 0b01 && INSN(11, 10) == 0b01 && INSN(15, 13) == 0b100) {
+      UInt rd_rs1    = INSN(9, 7) + 8;
+      UInt nzuimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      if (nzuimm5_0 == 0) {
+         /* Invalid C.SRAI, fall through. */
+      } else {
+         putIReg64(irsb, rd_rs1,
+                   binop(Iop_Sar64, getIReg64(rd_rs1), mkU8(nzuimm5_0)));
+         DIP("c.srai %s, %u\n", nameIReg64(rd_rs1), nzuimm5_0);
+         return True;
+      }
+   }
+
    /* --------------- c.andi rd_rs1, imm[5:0] --------------- */
    if (INSN(1, 0) == 0b01 && INSN(11, 10) == 0b10 && INSN(15, 13) == 0b100) {
       UInt rd_rs1 = INSN(9, 7) + 8;
