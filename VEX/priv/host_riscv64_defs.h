@@ -94,6 +94,10 @@ typedef enum {
                                  another. */
    RISCV64in_REMU,            /* Remainder from unsigned division of one
                                  register by another. */
+   RISCV64in_DIVUW,           /* 32-bit unsigned division of one register by
+                                 another. */
+   RISCV64in_REMUW,           /* Remainder from 32-bit unsigned division of one
+                                 register by another. */
    RISCV64in_LD,              /* 64-bit load. */
    RISCV64in_LW,              /* sx-32-to-64-bit load. */
    RISCV64in_LH,              /* sx-16-to-64-bit load. */
@@ -241,6 +245,18 @@ typedef struct {
          HReg src1;
          HReg src2;
       } REMU;
+      /* 32-bit unsigned division of one register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } DIVUW;
+      /* Remainder from 32-bit unsigned division of one register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } REMUW;
       /* 64-bit load. */
       struct {
          HReg dst;
@@ -343,6 +359,8 @@ RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIVU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_REMU(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_DIVUW(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_REMUW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LH(HReg dst, HReg base, Int soff12);

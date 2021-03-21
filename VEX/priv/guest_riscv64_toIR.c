@@ -1621,6 +1621,26 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- RV64M Standard Extension --------------- */
+
+   /* ----------------- remuw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b111 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid REMUW, fall through. */
+      } else {
+         putIReg32(irsb, rd,
+                   unop(Iop_64HIto32, binop(Iop_DivModU32to32, getIReg32(rs1),
+                                            getIReg32(rs2))));
+         DIP("remuw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* -------------- RV32D Standard Extension --------------- */
 
    /* --------------- fld rd, imm[11:0](rs1) ---------------- */
