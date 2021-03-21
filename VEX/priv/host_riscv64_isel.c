@@ -311,6 +311,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), tmp));
          return dst;
       }
+      case Iop_CmpNE32:
+      case Iop_CasCmpNE32: {
+         HReg tmp  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_SUBW(tmp, argL, argR));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), tmp));
+         return dst;
+      }
       case Iop_CmpLT64S: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
@@ -655,6 +665,23 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             IRType ty    = typeOfIRTemp(env->type_env, res);
             vassert(ty == Ity_I1);
             addInstr(env, RISCV64Instr_SLTIU(r_res, r_tmp, 1));
+            return;
+         }
+      }
+      break;
+   }
+
+   /* ------------------------ ACAS ------------------------- */
+   case Ist_CAS: {
+      if (stmt->Ist.CAS.details->oldHi == IRTemp_INVALID) {
+         /* "Normal" singleton CAS. */
+         IRCAS* cas = stmt->Ist.CAS.details;
+         if (typeOfIRTemp(env->type_env, cas->oldLo) == Ity_I32) {
+            HReg old  = lookupIRTemp(env, cas->oldLo);
+            HReg addr = iselIntExpr_R(env, cas->addr);
+            HReg expd = iselIntExpr_R(env, cas->expdLo);
+            HReg data = iselIntExpr_R(env, cas->dataLo);
+            addInstr(env, RISCV64Instr_CAS_W(old, addr, expd, data));
             return;
          }
       }

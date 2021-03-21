@@ -71,6 +71,8 @@ typedef enum {
    RISCV64in_ADDIW,           /* 32-bit addition of a register and a sx-12-bit
                                  immediate. */
    RISCV64in_SUB,             /* Subtraction of one register from another. */
+   RISCV64in_SUBW,            /* 32-bit subtraction of one register from
+                                 another. */
    RISCV64in_XOR,             /* Bitwise logical XOR of two registers. */
    RISCV64in_OR,              /* Bitwise logical OR of two registers. */
    RISCV64in_AND,             /* Bitwise logical AND of two registers. */
@@ -108,6 +110,7 @@ typedef enum {
    RISCV64in_SB,              /* 8-bit store. */
    RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
+   RISCV64in_CAS_W,           /* 32-bit compare-and-swap pseudoinstruction. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
@@ -145,6 +148,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } SUB;
+      /* 32-bit subtraction of one register from another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } SUBW;
       /* Bitwise logical XOR of two registers. */
       struct {
          HReg dst;
@@ -318,6 +327,13 @@ typedef struct {
          HReg src;
          HReg addr;
       } SC_W;
+      /* 32-bit compare-and-swap pseudoinstruction. */
+      struct {
+         HReg old;
+         HReg addr;
+         HReg expd;
+         HReg data;
+      } CAS_W;
       /* Device I/O and memory fence. */
       struct {
       } FENCE;
@@ -355,6 +371,7 @@ RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_ADDIW(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_SUB(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_SUBW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_XOR(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_OR(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_AND(HReg dst, HReg src1, HReg src2);
@@ -384,6 +401,7 @@ RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_SC_W(HReg res, HReg src, HReg addr);
+RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);

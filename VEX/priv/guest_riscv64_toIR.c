@@ -133,6 +133,12 @@ static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
    addStmtToIRSB(irsb, st);
 }
 
+/* Add a statement to assign a value to a temporary. */
+static void assign(/*MOD*/ IRSB* irsb, IRTemp dst, IRExpr* e)
+{
+   stmt(irsb, IRStmt_WrTmp(dst, e));
+}
+
 /* Generate a statement to store a value in memory (in the little-endian
    order). */
 static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
@@ -1772,6 +1778,67 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
              nameIReg64(rs1));
          return True;
       }
+   }
+
+   /* -------------- amoswap.w rd, rs2, (rs1) --------------- */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 12) == 0b010 &&
+       INSN(31, 27) == 0b00001) {
+      UInt rd   = INSN(11, 7);
+      UInt rs1  = INSN(19, 15);
+      UInt rs2  = INSN(24, 20);
+      UInt aqrl = INSN(26, 25);
+
+      if (aqrl & 0x1)
+         stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+      IRTemp addr = newTemp(irsb, Ity_I64);
+      assign(irsb, addr, getIReg64(rs1));
+
+      IRTemp orig = newTemp(irsb, Ity_I32);
+      assign(irsb, orig, loadLE(Ity_I32, mkexpr(addr)));
+      /*IRExpr *lhs = mkexpr(orig);*/
+      IRExpr* rhs = getIReg32(rs2);
+      IRExpr* res = NULL;
+
+      res = rhs;
+
+      /* Store the result back if the original value remains unchanged in
+         memory. */
+      IRTemp old = newTemp(irsb, Ity_I32);
+      stmt(irsb, IRStmt_CAS(mkIRCAS(/*oldHi*/ IRTemp_INVALID, old, Iend_LE,
+                                    mkexpr(addr),
+                                    /*expdHi*/ NULL, mkexpr(orig),
+                                    /*dataHi*/ NULL, res)));
+
+      if (aqrl & 0x2)
+         stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+      /* Retry if the CAS failed (i.e. when old != orig). */
+      stmt(irsb,
+           IRStmt_Exit(binop(Iop_CasCmpNE32, mkexpr(old), mkexpr(orig)),
+                       Ijk_Boring, IRConst_U64(guest_pc_curr_instr), OFFB_PC));
+      /* Otherwise we succeeded. */
+      if (rd != 0)
+         putIReg32(irsb, rd, mkexpr(old));
+
+      const HChar* suffix;
+      switch (aqrl) {
+      case 0b00:
+         suffix = "";
+         break;
+      case 0b01:
+         suffix = ".rl";
+         break;
+      case 0b10:
+         suffix = ".aq";
+         break;
+      case 0b11:
+         suffix = ".aqrl";
+         break;
+      }
+      DIP("amoswap.w%s %s, %s, (%s)\n", suffix, nameIReg64(rd), nameIReg64(rs2),
+          nameIReg64(rs1));
+      return True;
    }
 
    if (sigill_diag)
