@@ -160,10 +160,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_openat, sys_openat),         /* 56 */
    GENXY(__NR_close, sys_close),           /* 57 */
    GENXY(__NR_read, sys_read),             /* 63 */
+   GENX_(__NR_write, sys_write),           /* 64 */
    GENX_(__NR_writev, sys_writev),         /* 66 */
    LINXY(__NR_newfstatat, sys_newfstatat), /* 79 */
+   LINX_(__NR_exit_group, sys_exit_group), /* 94 */
    GENXY(__NR_uname, sys_newuname),        /* 160 */
    GENX_(__NR_brk, sys_brk),               /* 214 */
+   GENXY(__NR_munmap, sys_munmap),         /* 215 */
    PLAX_(__NR_mmap, sys_mmap),             /* 222 */
    GENXY(__NR_mprotect, sys_mprotect),     /* 226 */
 };
