@@ -1429,6 +1429,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- srliw rd, rs1, uimm[4:0] --------------- */
+   if (INSN(6, 0) == 0b0011011 && INSN(14, 12) == 0b101 &&
+       INSN(31, 25) == 0b0000000) {
+      UInt rd      = INSN(11, 7);
+      UInt rs1     = INSN(19, 15);
+      UInt uimm4_0 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid SRLIW, fall through. */
+      } else {
+         putIReg32(irsb, rd, binop(Iop_Shr32, getIReg32(rs1), mkU8(uimm4_0)));
+         DIP("srliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm4_0);
+         return True;
+      }
+   }
+
    /* ------------------ addw rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b000 &&
        INSN(31, 25) == 0b0000000) {

@@ -82,6 +82,7 @@ typedef enum {
    RISCV64in_SRLI,            /* Logical right shift on a register by a 6-bit
                                  immediate. */
    RISCV64in_SLLW,            /* 32-bit logical left shift on a register. */
+   RISCV64in_SRLW,            /* 32-bit logical right shift on a register. */
    RISCV64in_SRAW,            /* 32-bit arithmetic right shift on a register. */
    RISCV64in_SLT,             /* Signed comparison of two registers. */
    RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
@@ -192,6 +193,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } SLLW;
+      /* 32-bit logical right shift on a register. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } SRLW;
       /* 32-bit arithmetic right shift on a register. */
       struct {
          HReg dst;
@@ -328,6 +335,7 @@ RISCV64Instr* RISCV64Instr_SRA(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLLI(HReg dst, HReg src, UInt uimm6);
 RISCV64Instr* RISCV64Instr_SRLI(HReg dst, HReg src, UInt uimm6);
 RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_SRLW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLT(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2);
