@@ -1554,9 +1554,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    }
 
    /* ------------------------ fence ------------------------ */
-   if (INSN(31, 0) == 0b00001111111100000000000000001111) {
+   if (INSN(19, 0) == 0b00000000000000001111 && INSN(31, 28) == 0b0000) {
+      UInt succ = INSN(23, 20);
+      UInt pred = INSN(27, 24);
       stmt(irsb, IRStmt_MBE(Imbe_Fence));
-      DIP("fence\n");
+      if (pred == 0b1111 && succ == 0b1111)
+         DIP("fence\n");
+      else
+         DIP("fence %s%s%s%s,%s%s%s%s\n", (pred & 0x8) ? "i" : "",
+             (pred & 0x4) ? "o" : "", (pred & 0x2) ? "r" : "",
+             (pred & 0x1) ? "w" : "", (succ & 0x8) ? "i" : "",
+             (succ & 0x4) ? "o" : "", (succ & 0x2) ? "r" : "",
+             (succ & 0x1) ? "w" : "");
       return True;
    }
 
