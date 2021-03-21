@@ -128,10 +128,7 @@ static IRExpr* loadLE(IRType ty, IRExpr* addr)
 }
 
 /* Add a statement to the list held by irsb. */
-static void stmt(/*OUT*/ IRSB* irsb, /*IN*/ IRStmt* st)
-{
-   addStmtToIRSB(irsb, st);
-}
+static void stmt(/*MOD*/ IRSB* irsb, IRStmt* st) { addStmtToIRSB(irsb, st); }
 
 /* Add a statement to assign a value to a temporary. */
 static void assign(/*MOD*/ IRSB* irsb, IRTemp dst, IRExpr* e)
@@ -141,7 +138,7 @@ static void assign(/*MOD*/ IRSB* irsb, IRTemp dst, IRExpr* e)
 
 /* Generate a statement to store a value in memory (in the little-endian
    order). */
-static void storeLE(/*OUT*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
+static void storeLE(/*MOD*/ IRSB* irsb, IRExpr* addr, IRExpr* data)
 {
    stmt(irsb, IRStmt_Store(Iend_LE, addr, data));
 }
