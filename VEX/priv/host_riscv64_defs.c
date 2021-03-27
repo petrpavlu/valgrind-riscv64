@@ -1566,11 +1566,11 @@ static UChar* addr48_to_ireg_EXACTLY_18B(UChar* p, UInt dst, ULong imm48)
    ULong rem = imm48;
    ULong imm47_28, imm27_16, imm15_4, imm3_0;
    imm3_0   = rem & 0xf;
-   rem      = ((rem >> 3) + 1) >> 1;
+   rem      = (rem + 0x8) >> 4;
    imm15_4  = rem & 0xfff;
-   rem      = ((rem >> 11) + 1) >> 1;
+   rem      = (rem + 0x800) >> 12;
    imm27_16 = rem & 0xfff;
-   rem      = ((rem >> 11) + 1) >> 1;
+   rem      = (rem + 0x800) >> 12;
    imm47_28 = rem & 0xfffff;
 
    /* lui dst, imm47_28 */
