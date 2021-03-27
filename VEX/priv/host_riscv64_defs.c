@@ -1985,10 +1985,10 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt data = iregEnc(i->RISCV64in.CAS_W.data);
 
       p = emit_R(p, 0b0101111, old, 0b010, addr, 0b00000, 0b0001000);
-      p = emit_B(p, 0b1100011, 0b00000000110, 0b001, old, expd);
+      p = emit_B(p, 0b1100011, (12 >> 1) & 0xfff, 0b001, old, expd);
       p = emit_R(p, 0b0101111, 5 /*x5/t0*/, 0b010, addr, data, 0b0001100);
-      p =
-         emit_B(p, 0b1100011, 0b11111111010, 0b001, 5 /*x5/t0*/, 0 /*x0/zero*/);
+      p = emit_B(p, 0b1100011, (-12 >> 1) & 0xfff, 0b001, 5 /*x5/t0*/,
+                 0 /*x0/zero*/);
       goto done;
    }
    case RISCV64in_FENCE: {
