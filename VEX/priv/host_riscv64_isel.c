@@ -483,13 +483,26 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          u = e->Iex.Const.con->Ico.U64;
          break;
       case Ico_U32:
-         u = e->Iex.Const.con->Ico.U32;
+         /* Sign-extend constants Ico_U32, Ico_U16 and Ico_U8 to 64 bits. The
+            RISC-V ISA exlusively uses sign-extended immediates in integer
+            computational instructions. Loading sign-extended values then
+            always results in the same or smaller number of instructions than
+            loading zero-extended values. For instance, this allows that any
+            Ico_U32 immediate can be materialized at maximum using two
+            instructions (LUI+ADDIW). The sign-extension is safe to do because
+            the type of a Ico_U<width> expression is guaranteed to be
+            Ity_I<width> and so the upper bits must be ignored by any uses of
+            the value. */
+         vassert(ty == Ity_I32);
+         u = vex_sx_to_64(e->Iex.Const.con->Ico.U32, 32);
          break;
       case Ico_U16:
-         u = e->Iex.Const.con->Ico.U16;
+         vassert(ty == Ity_I16);
+         u = vex_sx_to_64(e->Iex.Const.con->Ico.U16, 16);
          break;
       case Ico_U8:
-         u = e->Iex.Const.con->Ico.U8;
+         vassert(ty == Ity_I8);
+         u = vex_sx_to_64(e->Iex.Const.con->Ico.U8, 8);
          break;
       default:
          goto irreducible;
