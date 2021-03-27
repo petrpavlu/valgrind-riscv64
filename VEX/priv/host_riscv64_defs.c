@@ -1585,7 +1585,7 @@ static UChar* addr48_to_ireg_EXACTLY_18B(UChar* p, UInt dst, ULong imm48)
    p = emit_CI(p, 0b10, 4, dst, 0b000);
    if (imm3_0 != 0) {
       /* c.addi dst, imm3_0 */
-      p = emit_CI(p, 0b01, imm3_0 | (imm3_0 >> 3 != 0 ? 0x30 : 0), dst, 0b000);
+      p = emit_CI(p, 0b01, vex_sx_to_64(imm3_0, 4) & 0x3f, dst, 0b000);
    } else {
       /* c.nop */
       p = emit_CI(p, 0b01, 0, 0, 0b000);
