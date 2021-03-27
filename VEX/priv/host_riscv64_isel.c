@@ -496,6 +496,20 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       return dst;
    }
 
+   /* ---------------------- MULTIPLEX ---------------------- */
+   case Iex_ITE: {
+      /* ITE(ccexpr, iftrue, iffalse) */
+      if (ty == Ity_I64) {
+         HReg dst     = newVRegI(env);
+         HReg iftrue  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
+         HReg iffalse = iselIntExpr_R(env, e->Iex.ITE.iffalse);
+         HReg cond    = iselIntExpr_R(env, e->Iex.ITE.cond);
+         addInstr(env, RISCV64Instr_CSEL(dst, iftrue, iffalse, cond));
+         return dst;
+      }
+      break;
+   }
+
    default:
       break;
    }

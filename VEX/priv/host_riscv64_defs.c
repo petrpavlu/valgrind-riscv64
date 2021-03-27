@@ -442,6 +442,17 @@ RISCV64Instr* RISCV64Instr_FENCE(void)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond)
+{
+   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                    = RISCV64in_CSEL;
+   i->RISCV64in.CSEL.dst     = dst;
+   i->RISCV64in.CSEL.iftrue  = iftrue;
+   i->RISCV64in.CSEL.iffalse = iffalse;
+   i->RISCV64in.CSEL.cond    = cond;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP)
 {
@@ -765,6 +776,19 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
    case RISCV64in_FENCE:
       vex_printf("fence");
       return;
+   case RISCV64in_CSEL:
+      vex_printf("(CSEL) beq ");
+      ppHRegRISCV64(i->RISCV64in.CSEL.cond);
+      vex_printf(", zero, 1f; c.mv ");
+      ppHRegRISCV64(i->RISCV64in.CSEL.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.CSEL.iftrue);
+      vex_printf("; c.j 2f; 1: c.mv ");
+      ppHRegRISCV64(i->RISCV64in.CSEL.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.CSEL.iffalse);
+      vex_printf("; 2:");
+      return;
    case RISCV64in_XDirect:
       vex_printf("(xDirect) ");
       if (!hregIsInvalid(i->RISCV64in.XDirect.cond)) {
@@ -1034,6 +1058,12 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       return;
    case RISCV64in_FENCE:
       return;
+   case RISCV64in_CSEL:
+      addHRegUse(u, HRmWrite, i->RISCV64in.CSEL.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.CSEL.iftrue);
+      addHRegUse(u, HRmRead, i->RISCV64in.CSEL.iffalse);
+      addHRegUse(u, HRmRead, i->RISCV64in.CSEL.cond);
+      return;
    /* XDirect/XIndir/XAssisted are also a bit subtle. They conditionally exit
       the block. Hence we only need to list (1) the registers that they read,
       and (2) the registers that they write in the case where the block is not
@@ -1236,6 +1266,12 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.CAS_W.data);
       return;
    case RISCV64in_FENCE:
+      return;
+   case RISCV64in_CSEL:
+      mapReg(m, &i->RISCV64in.CSEL.dst);
+      mapReg(m, &i->RISCV64in.CSEL.iftrue);
+      mapReg(m, &i->RISCV64in.CSEL.iffalse);
+      mapReg(m, &i->RISCV64in.CSEL.cond);
       return;
    case RISCV64in_XDirect:
       mapReg(m, &i->RISCV64in.XDirect.base);
@@ -1507,6 +1543,38 @@ static UChar* emit_CI(UChar* p, UInt opcode, UInt imm5_0, UInt rd, UInt funct3)
    the_insn |= imm4_0 << 2;
    the_insn |= rd << 7;
    the_insn |= imm5_5 << 12;
+   the_insn |= funct3 << 13;
+
+   return emit16(p, the_insn);
+}
+
+/* Emit a CJ-type instruction. */
+static UChar* emit_CJ(UChar* p, UInt opcode, UInt imm11_1, UInt funct3)
+{
+   vassert(opcode >> 2 == 0);
+   vassert(imm11_1 >> 11 == 0);
+   vassert(funct3 >> 3 == 0);
+
+   UInt imm5_5   = (imm11_1 >> 4) & 0x1;
+   UInt imm3_1   = (imm11_1 >> 0) & 0x7;
+   UInt imm7_7   = (imm11_1 >> 6) & 0x1;
+   UInt imm6_6   = (imm11_1 >> 5) & 0x1;
+   UInt imm10_10 = (imm11_1 >> 9) & 0x1;
+   UInt imm9_8   = (imm11_1 >> 7) & 0x3;
+   UInt imm4_4   = (imm11_1 >> 3) & 0x1;
+   UInt imm11_11 = (imm11_1 >> 10) & 0x1;
+
+   UShort the_insn = 0;
+
+   the_insn |= opcode << 0;
+   the_insn |= imm5_5 << 2;
+   the_insn |= imm3_1 << 3;
+   the_insn |= imm7_7 << 6;
+   the_insn |= imm6_6 << 7;
+   the_insn |= imm10_10 << 8;
+   the_insn |= imm9_8 << 9;
+   the_insn |= imm4_4 << 11;
+   the_insn |= imm11_11 << 12;
    the_insn |= funct3 << 13;
 
    return emit16(p, the_insn);
@@ -1994,6 +2062,24 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
    case RISCV64in_FENCE: {
       /* fence */
       p = emit_I(p, 0b0001111, 0b00000, 0b000, 0b00000, 0b000011111111);
+      goto done;
+   }
+   case RISCV64in_CSEL: {
+      /*    beq cond, zero, 1f
+            c.mv dst, iftrue
+            c.j 2f
+         1: c.mv dst, iffalse
+         2:
+       */
+      UInt dst     = iregEnc(i->RISCV64in.CSEL.dst);
+      UInt iftrue  = iregEnc(i->RISCV64in.CSEL.iftrue);
+      UInt iffalse = iregEnc(i->RISCV64in.CSEL.iffalse);
+      UInt cond    = iregEnc(i->RISCV64in.CSEL.cond);
+
+      p = emit_B(p, 0b1100011, (8 >> 1) & 0xfff, 0b000, cond, 0 /*x0/zero*/);
+      p = emit_CR(p, 0b10, dst, iftrue, 0b1000);
+      p = emit_CJ(p, 0b01, (4 >> 1) & 0x7ff, 0b101);
+      p = emit_CR(p, 0b10, dst, iffalse, 0b1000);
       goto done;
    }
 

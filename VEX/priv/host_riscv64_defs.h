@@ -112,6 +112,7 @@ typedef enum {
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_CAS_W,           /* 32-bit compare-and-swap pseudoinstruction. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
+   RISCV64in_CSEL,            /* Conditional-select pseudoinstruction. */
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
    RISCV64in_XAssisted,       /* Assisted transfer to guest address. */
@@ -337,6 +338,13 @@ typedef struct {
       /* Device I/O and memory fence. */
       struct {
       } FENCE;
+      /* Conditional-select pseudoinstruction. */
+      struct {
+         HReg dst;
+         HReg iftrue;
+         HReg iffalse;
+         HReg cond;
+      } CSEL;
       /* Update the guest pc value, then exit requesting to chain to it. May be
          conditional. */
       struct {
@@ -403,6 +411,7 @@ RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_SC_W(HReg res, HReg src, HReg addr);
 RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);
+RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond);
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);
 RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond);
