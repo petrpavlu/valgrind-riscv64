@@ -2052,7 +2052,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          /* delta_min = 4 (beq) + 2 (c.li) + 4 (sd) + 18 (addr48) + 2 (c.jalr)
                       = 30 */
          vassert(delta >= 30 && delta < 4096 && (delta & 1) == 0);
-         UInt imm12_1 = (delta >> 1) & 0x7ff;
+         UInt imm12_1 = (delta >> 1) & 0xfff;
 
          emit_B(ptmp, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
       }
@@ -2102,7 +2102,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          UInt delta = p - ptmp;
          /* delta_min = 4 (beq) + 4 (sd) + 2 (c.li) + 2 (c.jr) = 12 */
          vassert(delta >= 12 && delta < 4096 && (delta & 1) == 0);
-         UInt imm12_1 = (delta >> 1) & 0x7ff;
+         UInt imm12_1 = (delta >> 1) & 0xfff;
 
          emit_B(ptmp, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
       }
@@ -2195,7 +2195,7 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
          /* delta_min = 4 (beq) + 4 (sd) + 2 (c.li) + 2 (c.li) + 2 (c.jr)
                       = 14 */
          vassert(delta >= 14 && delta < 4096 && (delta & 1) == 0);
-         UInt imm12_1 = (delta >> 1) & 0x7ff;
+         UInt imm12_1 = (delta >> 1) & 0xfff;
 
          emit_B(ptmp, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
       }
