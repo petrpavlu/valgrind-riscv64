@@ -1437,21 +1437,21 @@ emit_B(UChar* p, UInt opcode, UInt imm12_1, UInt funct3, UInt rs1, UInt rs2)
    vassert(rs1 >> 5 == 0);
    vassert(rs2 >> 5 == 0);
 
-   UInt imm11   = (imm12_1 >> 10) & 0x1;
-   UInt imm4_1  = (imm12_1 >> 0) & 0xf;
-   UInt imm10_5 = (imm12_1 >> 4) & 0x3f;
-   UInt imm12   = (imm12_1 >> 11) & 0x1;
+   UInt imm11_11 = (imm12_1 >> 10) & 0x1;
+   UInt imm4_1   = (imm12_1 >> 0) & 0xf;
+   UInt imm10_5  = (imm12_1 >> 4) & 0x3f;
+   UInt imm12_12 = (imm12_1 >> 11) & 0x1;
 
    UInt the_insn = 0;
 
    the_insn |= opcode << 0;
-   the_insn |= imm11 << 7;
+   the_insn |= imm11_11 << 7;
    the_insn |= imm4_1 << 8;
    the_insn |= funct3 << 12;
    the_insn |= rs1 << 15;
    the_insn |= rs2 << 20;
    the_insn |= imm10_5 << 25;
-   the_insn |= imm12 << 31;
+   the_insn |= imm12_12 << 31;
 
    return emit32(p, the_insn);
 }
@@ -1499,14 +1499,14 @@ static UChar* emit_CI(UChar* p, UInt opcode, UInt imm5_0, UInt rd, UInt funct3)
    vassert(funct3 >> 3 == 0);
 
    UInt imm4_0 = (imm5_0 >> 0) & 0x1f;
-   UInt imm5   = (imm5_0 >> 5) & 0x1;
+   UInt imm5_5 = (imm5_0 >> 5) & 0x1;
 
    UShort the_insn = 0;
 
    the_insn |= opcode << 0;
    the_insn |= imm4_0 << 2;
    the_insn |= rd << 7;
-   the_insn |= imm5 << 12;
+   the_insn |= imm5_5 << 12;
    the_insn |= funct3 << 13;
 
    return emit16(p, the_insn);
