@@ -1607,8 +1607,33 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
       return emit_I(p, 0b0011011, dst, 0b000, dst, imm64 & 0xfff);
    }
 
-   /* TODO Implement support for >32-bit constants. */
-   vpanic("imm64_to_ireg");
+   /* Handle a constant that is out of the 32-bit signed integer range. */
+   /* Strip the low 12 bits. */
+   ULong imm11_0 = imm64 & 0xfff;
+
+   /* Get the remaining adjusted upper bits. */
+   ULong rem   = (simm64 + 0x800) >> 12;
+   UInt  sham6 = 12 + __builtin_ctzll(rem);
+   vassert(sham6 < 64);
+   rem = vex_sx_to_64(rem >> (sham6 - 12), 64 - sham6);
+
+   /* Generate instructions to load the upper bits. */
+   p = imm64_to_ireg(p, dst, rem);
+   /* c.slli dst, sham6 */
+   p = emit_CI(p, 0b10, sham6, dst, 0b000);
+
+   /* Add the low bits in. */
+   if (imm11_0 == 0)
+      return p;
+   UInt imm5_0 = imm11_0 & 0x3f;
+   if (vex_sx_to_64(imm5_0, 6) == vex_sx_to_64(imm11_0, 12)) {
+      /* c.addi dst, imm5_0 */
+      p = emit_CI(p, 0b01, imm5_0, dst, 0b000);
+   } else {
+      /* addi dst, dst, imm11_0 */
+      p = emit_I(p, 0b0010011, dst, 0b000, dst, imm11_0);
+   }
+
    return p;
 }
 
