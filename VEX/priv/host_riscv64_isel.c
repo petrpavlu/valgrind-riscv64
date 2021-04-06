@@ -137,13 +137,6 @@ static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
 static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
 
 /*------------------------------------------------------------*/
-/*--- ISEL: Misc helpers                                   ---*/
-/*------------------------------------------------------------*/
-
-static HReg get_baseblock_register(void) { return hregRISCV64_x8(); }
-#define BASEBLOCK_OFFSET_ADJUSTMENT 2048
-
-/*------------------------------------------------------------*/
 /*--- ISEL: Integer expressions (64/32 bit)                ---*/
 /*------------------------------------------------------------*/
 

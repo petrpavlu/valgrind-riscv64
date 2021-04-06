@@ -1311,17 +1311,13 @@ void genSpill_RISCV64(/*OUT*/ HInstr** i1,
 
    HRegClass rclass = hregClass(rreg);
    switch (rclass) {
-#if 0
-   case HRcInt64:
-      vassert(0 == (offsetB & 7));
-      offsetB >>= 3;
-      vassert(offsetB < 4096);
-      *i1 = RISCV64Instr_LdSt64(
-         False /*!isLoad*/,
-         rreg,
-         RISCV64AMode_RI12(hregRISCV64_X21(), offsetB, 8));
+   case HRcInt64: {
+      HReg base   = get_baseblock_register();
+      Int  soff12 = offsetB - BASEBLOCK_OFFSET_ADJUSTMENT;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      *i1 = RISCV64Instr_SD(rreg, base, soff12);
       return;
-#endif
+   }
    default:
       ppHRegClass(rclass);
       vpanic("genSpill_RISCV64: unimplemented regclass");
@@ -1340,17 +1336,13 @@ void genReload_RISCV64(/*OUT*/ HInstr** i1,
 
    HRegClass rclass = hregClass(rreg);
    switch (rclass) {
-#if 0
-   case HRcInt64:
-      vassert(0 == (offsetB & 7));
-      offsetB >>= 3;
-      vassert(offsetB < 4096);
-      *i1 = RISCV64Instr_LdSt64(
-         True /*isLoad*/,
-         rreg,
-         RISCV64AMode_RI12(hregRISCV64_X21(), offsetB, 8));
+   case HRcInt64: {
+      HReg base   = get_baseblock_register();
+      Int  soff12 = offsetB - BASEBLOCK_OFFSET_ADJUSTMENT;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      *i1 = RISCV64Instr_LD(rreg, base, soff12);
       return;
-#endif
+   }
    default:
       ppHRegClass(rclass);
       vpanic("genReload_RISCV64: unimplemented regclass");

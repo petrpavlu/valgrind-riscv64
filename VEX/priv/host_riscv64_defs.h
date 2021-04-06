@@ -419,6 +419,13 @@ RISCV64Instr* RISCV64Instr_XAssisted(
    HReg dstGA, HReg base, Int soff12, HReg cond, IRJumpKind jk);
 
 /*------------------------------------------------------------*/
+/*--- Misc helpers                                         ---*/
+/*------------------------------------------------------------*/
+
+static inline HReg get_baseblock_register(void) { return hregRISCV64_x8(); }
+#define BASEBLOCK_OFFSET_ADJUSTMENT 2048
+
+/*------------------------------------------------------------*/
 /* --- Interface exposed to VEX                           --- */
 /*------------------------------------------------------------*/
 
