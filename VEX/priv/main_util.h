@@ -106,7 +106,7 @@ extern void vex_bzero ( void* s, SizeT n );
    positions. */
 static inline ULong vex_sx_to_64( ULong x, UInt n )
 {
-   vassert(n > 1 && n < 64);
+   vassert(n >= 1 && n < 64);
    return (ULong)((Long)(x << (64 - n)) >> (64 - n));
 }
 
