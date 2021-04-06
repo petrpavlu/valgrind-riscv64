@@ -588,6 +588,17 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ----------------- c.subw rd_rs1, rs2 ------------------ */
+   if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b00 && INSN(15, 10) == 0b100111) {
+      UInt rd_rs1 = INSN(9, 7) + 8;
+      UInt rs2    = INSN(4, 2) + 8;
+      /* Note: All C.SUBW encodings are valid. */
+      putIReg32(irsb, rd_rs1,
+                binop(Iop_Sub32, getIReg32(rd_rs1), getIReg32(rs2)));
+      DIP("c.subw %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
+      return True;
+   }
+
    /* ----------------- c.addw rd_rs1, rs2 ------------------ */
    if (INSN(1, 0) == 0b01 && INSN(6, 5) == 0b01 && INSN(15, 10) == 0b100111) {
       UInt rd_rs1 = INSN(9, 7) + 8;
