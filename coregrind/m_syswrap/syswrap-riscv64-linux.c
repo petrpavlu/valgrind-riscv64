@@ -43,6 +43,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_tooliface.h"
+#include "pub_core_transtab.h"      // VG_(discard_translations)
 
 #include "priv_types_n_macros.h"
 #include "priv_syswrap-generic.h"   /* for decls of generic wrappers */
@@ -128,6 +129,7 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
    magic. */
 
 DECL_TEMPLATE(riscv64_linux, sys_mmap);
+DECL_TEMPLATE(riscv64_linux, sys_riscv_flush_icache);
 
 PRE(sys_mmap)
 {
@@ -140,6 +142,17 @@ PRE(sys_mmap)
    SysRes r =
       ML_(generic_PRE_sys_mmap)(tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
    SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_riscv_flush_icache)
+{
+   PRINT("sys_riscv_flush_icache ( %#lx, %lx, %#lx )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "riscv_flush_icache", unsigned long, start,
+                 unsigned long, end, unsigned long, flags);
+
+   VG_(discard_translations)
+   ((Addr)ARG1, (ULong)ARG2 - (ULong)ARG1, "PRE(sys_riscv_flush_icache)");
+   SET_STATUS_Success(0);
 }
 
 #undef PRE
@@ -169,6 +182,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_munmap, sys_munmap),         /* 215 */
    PLAX_(__NR_mmap, sys_mmap),             /* 222 */
    GENXY(__NR_mprotect, sys_mprotect),     /* 226 */
+   PLAX_(__NR_riscv_flush_icache, sys_riscv_flush_icache), /* 259 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)
