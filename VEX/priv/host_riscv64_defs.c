@@ -2102,9 +2102,9 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt cond    = iregEnc(i->RISCV64in.CSEL.cond);
 
       p = emit_B(p, 0b1100011, (8 >> 1) & 0xfff, 0b000, cond, 0 /*x0/zero*/);
-      p = emit_CR(p, 0b10, dst, iftrue, 0b1000);
+      p = emit_CR(p, 0b10, iftrue, dst, 0b1000);
       p = emit_CJ(p, 0b01, (4 >> 1) & 0x7ff, 0b101);
-      p = emit_CR(p, 0b10, dst, iffalse, 0b1000);
+      p = emit_CR(p, 0b10, iffalse, dst, 0b1000);
       goto done;
    }
 
