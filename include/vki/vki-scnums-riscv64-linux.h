@@ -41,8 +41,10 @@
 #define __NR3264_fcntl 25
 #define __NR_ioctl 29
 #define __NR_mknodat 33
+#define __NR_mkdirat 34
 #define __NR_unlinkat 35
 #define __NR_faccessat 48
+#define __NR_chdir 49
 #define __NR_openat 56
 #define __NR_close 57
 #define __NR_pipe2 59
@@ -52,12 +54,16 @@
 #define __NR_write 64
 #define __NR_writev 66
 #define __NR_pread64 67
+#define __NR_pselect6 72
 #define __NR_ppoll 73
 #define __NR_readlinkat 78
 #define __NR3264_fstatat 79
 #define __NR_exit_group 94
+#define __NR_set_tid_address 96
 #define __NR_futex 98
+#define __NR_set_robust_list 99
 #define __NR_clock_gettime 113
+#define __NR_clock_nanosleep 115
 #define __NR_ptrace 117
 #define __NR_sched_yield 124
 #define __NR_kill 129
@@ -77,9 +83,18 @@
 #define __NR_geteuid 175
 #define __NR_getegid 177
 #define __NR_gettid 178
+#define __NR_mq_open 180
+#define __NR_mq_unlink 181
+#define __NR_semget 190
 #define __NR_semctl 191
+#define __NR_semtimedop 192
+#define __NR_shmget 194
 #define __NR_shmctl 195
+#define __NR_shmat 196
 #define __NR_socket 198
+#define __NR_socketpair 199
+#define __NR_bind 200
+#define __NR_listen 201
 #define __NR_connect 203
 #define __NR_getsockname 204
 #define __NR_getpeername 205
@@ -96,7 +111,10 @@
 #define __NR_arch_specific_syscall 244
 #define __NR_wait4 260
 #define __NR_prlimit64 261
+#define __NR_process_vm_readv 270
+#define __NR_process_vm_writev 271
 #define __NR_renameat2 276
+#define __NR_membarrier 283
 #define __NR_statx 291
 
 #define __NR_fcntl __NR3264_fcntl
