@@ -1,0 +1,45 @@
+Compressed Instructions, Quadrant 0
+c.addi4spn a0, sp, 4
+  inputs: sp=0xdb432311d1e3a1d5
+  output: a0=0xdb432311d1e3a1d9
+c.addi4spn a5, sp, 4
+  inputs: sp=0xfd79baaee550b488
+  output: a5=0xfd79baaee550b48c
+c.addi4spn a0, sp, 1020
+  inputs: sp=0xc58586ea2c6954df
+  output: a0=0xc58586ea2c6958db
+c.addi4spn a5, sp, 1020
+  inputs: sp=0xfb834ed5b21de6b5
+  output: a5=0xfb834ed5b21deab1
+c.lw a0, 0(a1)
+  inputs: a1=&area_mid
+  output: a0=0x00000053239dcf
+  no memory changes
+c.lw a0, 124(a1)
+  inputs: a1=&area_mid
+  output: a0=0xffffffff80ddba7e
+  no memory changes
+c.ld a0, 0(a1)
+  inputs: a1=&area_mid
+  output: a0=0x9f7301c1392d8087
+  no memory changes
+c.ld a0, 248(a1)
+  inputs: a1=&area_mid
+  output: a0=0x6f9f902235982fa0
+  no memory changes
+c.sw a0, 0(a1)
+  inputs: a0=0xdb432311d1e3a1d5, a1=&area_mid
+  output: none
+  [+000]  d5 a1 e3 d1 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sw a0, 124(a1)
+  inputs: a0=0xfd79baaee550b488, a1=&area_mid
+  output: none
+  [+112]  .. .. .. .. .. .. .. .. .. .. .. .. 88 b4 50 e5
+c.sd a0, 0(a1)
+  inputs: a0=0xdb432311d1e3a1d5, a1=&area_mid
+  output: none
+  [+000]  d5 a1 e3 d1 11 23 43 db .. .. .. .. .. .. .. ..
+c.sd a0, 248(a1)
+  inputs: a0=0xfd79baaee550b488, a1=&area_mid
+  output: none
+  [+240]  .. .. .. .. .. .. .. .. 88 b4 50 e5 ae ba 79 fd
