@@ -1637,6 +1637,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
 
    /* -------------- RV64M Standard Extension --------------- */
 
+   /* ------------------ mulw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b000 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid MULW, fall through. */
+      } else {
+         putIReg32(irsb, rd, binop(Iop_Mul32, getIReg32(rs1), getIReg32(rs2)));
+         DIP("mulw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ----------------- remuw rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b111 &&
        INSN(31, 25) == 0b0000001) {

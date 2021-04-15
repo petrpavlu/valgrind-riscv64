@@ -280,6 +280,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_MUL(dst, argL, argR));
          return dst;
       }
+      case Iop_Mul32: {
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_MULW(dst, argL, argR));
+         return dst;
+      }
       case Iop_DivU64: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
