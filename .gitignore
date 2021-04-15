@@ -1882,6 +1882,19 @@
 /none/tests/s390x/high-word
 /none/tests/s390x/vector_float
 
+# /none/tests/riscv64/
+/none/tests/riscv64/*.stderr.diff
+/none/tests/riscv64/*.stderr.out
+/none/tests/riscv64/*.stdout.diff
+/none/tests/riscv64/*.stdout.out
+/none/tests/riscv64/.deps
+/none/tests/riscv64/Makefile
+/none/tests/riscv64/Makefile.in
+/none/tests/riscv64/atomic
+/none/tests/riscv64/compressed
+/none/tests/riscv64/integer
+/none/tests/riscv64/muldiv
+
 # /none/tests/scripts/
 /none/tests/scripts/*.dSYM
 /none/tests/scripts/*.so
