@@ -46,22 +46,24 @@ static void show_block_diff(unsigned char* block1,
       printf("  no memory changes\n");
 }
 
-#define TESTINST1_SP(instruction, sp_val, rd)                                  \
+#define TESTINST_1_SP(instruction, sp_val, rd)                                 \
    {                                                                           \
       unsigned long out, scratch;                                              \
-      __asm__ __volatile__("mv %[scratch], sp;"                                \
-                           "mv sp, %[sp_in];" instruction ";"                  \
-                           "mv sp, %[scratch];"                                \
-                           "mv %[out], " #rd ";"                               \
-                           : [out] "=r"(out), [scratch] "=&r"(scratch)         \
-                           : [sp_in] "r"(sp_val)                               \
-                           : #rd, "memory");                                   \
-      printf("%s\n", instruction);                                             \
-      printf("  inputs: sp=%#016lx\n", (unsigned long)sp_val);                 \
-      printf("  output: %s=%#016lx\n", #rd, out);                              \
+      __asm__ __volatile__(                                                    \
+         "mv %[scratch], sp;"                                                  \
+         "mv sp, %[sp_in];"                                                    \
+         instruction ";"                                                       \
+         "mv %[out], " #rd ";"                                                 \
+         "mv sp, %[scratch];"                                                  \
+         : [out] "=r"(out), [scratch] "=&r"(scratch)                           \
+         : [sp_in] "r"((unsigned long)sp_val)                                  \
+         : #rd);                                                               \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: sp=0x%016lx\n", (unsigned long)sp_val);                \
+      printf("  output: %s=0x%016lx\n", #rd, out);                             \
    }
 
-#define TESTINST2_LOAD(instruction, rd, rs1)                                   \
+#define TESTINST_1_1_LOAD(instruction, rd, rs1)                                \
    {                                                                           \
       unsigned long  out;                                                      \
       const size_t   N    = 512;                                               \
@@ -69,19 +71,21 @@ static void show_block_diff(unsigned char* block1,
       unsigned char  area2[N];                                                 \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
-      __asm__ __volatile__("mv " #rs1 ", %[area_mid];" instruction ";"         \
-                           "mv %[out], " #rd ";"                               \
-                           : [out] "=r"(out)                                   \
-                           : [area_mid] "r"(area + N / 2)                      \
-                           : #rd, #rs1, "memory");                             \
-      printf("%s\n", instruction);                                             \
+      __asm__ __volatile__(                                                    \
+         "mv " #rs1 ", %[area_mid];"                                           \
+         instruction ";"                                                       \
+         "mv %[out], " #rd ";"                                                 \
+         : [out] "=r"(out)                                                     \
+         : [area_mid] "r"(area + N / 2)                                        \
+         : #rd, #rs1);                                                         \
+      printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=&area_mid\n", #rs1);                                \
-      printf("  output: %s=%#016lx\n", #rd, out);                              \
+      printf("  output: %s=0x%016lx\n", #rd, out);                             \
       show_block_diff(area2, area, N, N / 2);                                  \
       free(area);                                                              \
    }
 
-#define TESTINST2_STORE(instruction, rs2_val, rs2, rs1)                        \
+#define TESTINST_0_2_STORE(instruction, rs2_val, rs2, rs1)                     \
    {                                                                           \
       const size_t   N    = 512;                                               \
       unsigned char* area = memalign16(N);                                     \
@@ -90,14 +94,14 @@ static void show_block_diff(unsigned char* block1,
          area[i] = area2[i] = rand_uchar();                                    \
       __asm__ __volatile__(                                                    \
          "mv " #rs2 ", %[rs2_in];"                                             \
-         "mv " #rs1 ", %[area_mid];" instruction ";"                           \
+         "mv " #rs1 ", %[area_mid];"                                           \
+         instruction ";"                                                       \
          :                                                                     \
-         : [rs2_in] "r"(rs2_val), [area_mid] "r"(area + N / 2)                 \
+         : [rs2_in] "r"((unsigned long)rs2_val), [area_mid] "r"(area + N / 2)  \
          : #rs2, #rs1, "memory");                                              \
-      printf("%s\n", instruction);                                             \
-      printf("  inputs: %s=%#016lx, %s=&area_mid\n", #rs2,                     \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx, %s=&area_mid\n", #rs2,                    \
              (unsigned long)rs2_val, #rs1);                                    \
-      printf("  output: none\n");                                              \
       show_block_diff(area2, area, N, N / 2);                                  \
       free(area);                                                              \
    }
@@ -107,32 +111,67 @@ static __attribute__((noinline)) void test_compressed_00(void)
    printf("Compressed Instructions, Quadrant 0\n");
 
    /* ------------- c.addi4spn rd, nzuimm[9:2] -------------- */
-   TESTINST1_SP("c.addi4spn a0, sp, 4", 0xdb432311d1e3a1d5, a0);
-   TESTINST1_SP("c.addi4spn a5, sp, 4", 0xfd79baaee550b488, a5);
-   TESTINST1_SP("c.addi4spn a0, sp, 1020", 0xc58586ea2c6954df, a0);
-   TESTINST1_SP("c.addi4spn a5, sp, 1020", 0xfb834ed5b21de6b5, a5);
+   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 8", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 16", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 32", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 64", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 128", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 256", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 512", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 1020", 0x0000000000001000, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x000000007ffffffc, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x00000000fffffffb, a0);
+   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x00000000fffffffc, a0);
+   TESTINST_1_SP("c.addi4spn a5, sp, 4", 0x0000000000001000, a0);
 
    /* -------------- c.fld rd, uimm[7:3](rs1) --------------- */
    /* TODO */
 
    /* --------------- c.lw rd, uimm[6:2](rs1) --------------- */
-   TESTINST2_LOAD("c.lw a0, 0(a1)", a0, a1);
-   TESTINST2_LOAD("c.lw a0, 124(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 0(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 4(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 8(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 16(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 32(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 64(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a0, 124(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.lw a4, 0(a5)", a4, a5);
 
    /* --------------- c.ld rd, uimm[7:3](rs1) --------------- */
-   TESTINST2_LOAD("c.ld a0, 0(a1)", a0, a1);
-   TESTINST2_LOAD("c.ld a0, 248(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 0(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 8(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 16(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 32(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 64(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 128(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a0, 248(a1)", a0, a1);
+   TESTINST_1_1_LOAD("c.ld a4, 0(a5)", a4, a5);
 
    /* -------------- c.fsd rs2, uimm[7:3](rs1) -------------- */
    /* TODO */
 
    /* -------------- c.sw rs2, uimm[6:2](rs1) --------------- */
-   TESTINST2_STORE("c.sw a0, 0(a1)", 0xdb432311d1e3a1d5, a0, a1);
-   TESTINST2_STORE("c.sw a0, 124(a1)", 0xfd79baaee550b488, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 0(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 4(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 8(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 16(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 32(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 64(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a0, 124(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sw a4, 0(a5)", 0xabcdef0123456789, a4, a5);
 
    /* -------------- c.sd rs2, uimm[7:3](rs1) --------------- */
-   TESTINST2_STORE("c.sd a0, 0(a1)", 0xdb432311d1e3a1d5, a0, a1);
-   TESTINST2_STORE("c.sd a0, 248(a1)", 0xfd79baaee550b488, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 0(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 8(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 16(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 32(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 64(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 128(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a0, 248(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE("c.sd a4, 0(a5)", 0xabcdef0123456789, a4, a5);
+
+   printf("\n");
 }
 
 int main(void)
