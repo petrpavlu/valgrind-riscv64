@@ -46,6 +46,62 @@ static void show_block_diff(unsigned char* block1,
       printf("  no memory changes\n");
 }
 
+/* Disable clang-format for the test macros because it messes up the inline
+   assembly. */
+/* clang-format off */
+
+#define TESTINST_0_0(instruction)                                              \
+   {                                                                           \
+      __asm__ __volatile__(instruction);                                       \
+      printf("%s ::\n", instruction);                                          \
+   }
+
+#define TESTINST_1_0(instruction, rd)                                          \
+   {                                                                           \
+      unsigned long out;                                                       \
+      __asm__ __volatile__(                                                    \
+         instruction ";"                                                       \
+         "mv %[out], " #rd ";"                                                 \
+         : [out] "=r"(out)                                                     \
+         :                                                                     \
+         : #rd);                                                               \
+      printf("%s ::\n", instruction);                                          \
+      printf("  output: %s=0x%016lx\n", #rd, out);                             \
+   }
+
+#define TESTINST_1_1(instruction, rs1_val, rd, rs1)                            \
+   {                                                                           \
+      unsigned long out;                                                       \
+      __asm__ __volatile__(                                                    \
+         "mv " #rs1 ", %[rs1_in];"                                             \
+         instruction ";"                                                       \
+         "mv %[out], " #rd ";"                                                 \
+         : [out] "=r"(out)                                                     \
+         : [rs1_in] "r"((unsigned long)rs1_val)                                \
+         : #rd, #rs1);                                                         \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
+      printf("  output: %s=0x%016lx\n", #rd, out);                             \
+   }
+
+#define TESTINST_1_2(instruction, rs1_val, rs2_val, rd, rs1, rs2)              \
+   {                                                                           \
+      unsigned long out;                                                       \
+      __asm__ __volatile__(                                                    \
+         "mv " #rs1 ", %[rs1_in];"                                             \
+         "mv " #rs2 ", %[rs2_in];"                                             \
+         instruction ";"                                                       \
+         "mv %[out], " #rd ";"                                                 \
+         : [out] "=r"(out)                                                     \
+         : [rs1_in] "r"((unsigned long)rs1_val),                               \
+           [rs2_in] "r"((unsigned long)rs2_val)                                \
+         : #rd, #rs1, #rs2);                                                   \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx, %s=0x%016lx\n", #rs1,                     \
+             (unsigned long)rs1_val, #rs2, (unsigned long)rs2_val);            \
+      printf("  output: %s=0x%016lx\n", #rd, out);                             \
+   }
+
 #define TESTINST_1_SP(instruction, sp_val, rd)                                 \
    {                                                                           \
       unsigned long out, scratch;                                              \
@@ -61,6 +117,23 @@ static void show_block_diff(unsigned char* block1,
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: sp=0x%016lx\n", (unsigned long)sp_val);                \
       printf("  output: %s=0x%016lx\n", #rd, out);                             \
+   }
+
+#define TESTINST_SP_SP(instruction, sp_val)                                    \
+   {                                                                           \
+      unsigned long out, scratch;                                              \
+      __asm__ __volatile__(                                                    \
+         "mv %[scratch], sp;"                                                  \
+         "mv sp, %[sp_in];"                                                    \
+         instruction ";"                                                       \
+         "mv %[out], sp;"                                                      \
+         "mv sp, %[scratch];"                                                  \
+         : [out] "=r"(out), [scratch] "=&r"(scratch)                           \
+         : [sp_in] "r"((unsigned long)sp_val)                                  \
+         : );                                                                  \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: sp=0x%016lx\n", (unsigned long)sp_val);                \
+      printf("  output: sp=0x%016lx\n", out);                                  \
    }
 
 #define TESTINST_1_1_LOAD(instruction, rd, rs1)                                \
@@ -105,6 +178,92 @@ static void show_block_diff(unsigned char* block1,
       show_block_diff(area2, area, N, N / 2);                                  \
       free(area);                                                              \
    }
+
+#define TESTINST_0_0_JMP_RANGE(instruction, offset)                            \
+   {                                                                           \
+      __asm__ __volatile__(                                                    \
+         "j 1f;"                                                               \
+         ".option push;"                                                       \
+         ".option norvc;"                                                      \
+         /* Generate a target area for a negative offset. */                   \
+         ".if " #offset " < 0;"                                                \
+         ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"      \
+         "j 2f;"                                                               \
+         ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"          \
+         ".else;"                                                              \
+         ".space 4096;"                                                        \
+         ".endif;"                                                             \
+         "1:;"                                                                 \
+         ".option rvc;" instruction "; .space 2; .option norvc;"               \
+         /* Generate a target area for a positive offset. */                   \
+         ".if " #offset " > 0;"                                                \
+         ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"            \
+         "j 2f;"                                                               \
+         ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"      \
+         ".else;"                                                              \
+         ".space 4094;"                                                        \
+         ".endif;"                                                             \
+         "2:;"                                                                 \
+         ".option pop;"                                                        \
+         :                                                                     \
+         :                                                                     \
+         : );                                                                  \
+      printf("%s ::\n", instruction);                                          \
+      printf("  target: reached\n");                                           \
+   }
+
+#define TESTINST_0_1_JMP_RANGE(instruction, rs1_val, offset, rs1)              \
+   {                                                                           \
+      __asm__ __volatile__(                                                    \
+         "mv " #rs1 ", %[rs1_in];"                                             \
+         "j 1f;"                                                               \
+         ".option push;"                                                       \
+         ".option norvc;"                                                      \
+         /* Generate a target area for a negative offset. */                   \
+         ".if " #offset " < 0;"                                                \
+         ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"      \
+         "j 2f;"                                                               \
+         ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"          \
+         ".else;"                                                              \
+         ".space 4096;"                                                        \
+         ".endif;"                                                             \
+         "1:; .option rvc;" instruction "; .space 2; .option norvc;"           \
+         /* Generate a target area for a positive offset. */                   \
+         ".if " #offset " > 0;"                                                \
+         ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"            \
+         "j 2f;"                                                               \
+         ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"      \
+         ".else;"                                                              \
+         ".space 4094;"                                                        \
+         ".endif;"                                                             \
+         "2:;"                                                                 \
+         ".option pop;"                                                        \
+         :                                                                     \
+         : [rs1_in] "r"((unsigned long)rs1_val)                                \
+         : #rs1);                                                              \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
+      printf("  target: reached\n");                                           \
+   }
+
+#define TESTINST_0_1_JMP_COND(instruction, rs1_val, rs1)                       \
+   {                                                                           \
+      unsigned long out;                                                       \
+      __asm__ __volatile__(                                                    \
+         "mv " #rs1 ", %[rs1_in];"                                             \
+        "li %[out], 1;"                                                        \
+        instruction ";"                                                        \
+        "li %[out], 0;"                                                        \
+        "1:;"                                                                  \
+        : [out] "=r"(out)                                                      \
+        : [rs1_in] "r"((unsigned long)rs1_val)                                 \
+        : #rs1);                                                               \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
+      printf("  branch: %s\n", out ? "taken" : "not taken");                   \
+   }
+
+/* clang-format on */
 
 static __attribute__((noinline)) void test_compressed_00(void)
 {
@@ -174,8 +333,243 @@ static __attribute__((noinline)) void test_compressed_00(void)
    printf("\n");
 }
 
+static __attribute__((noinline)) void test_compressed_01(void)
+{
+   printf("Compressed Instructions, Quadrant 1\n");
+
+   /* ------------------------ c.nop ------------------------ */
+   TESTINST_0_0("c.nop");
+
+   /* -------------- c.addi rd_rs1, nzimm[5:0] -------------- */
+   TESTINST_1_1("c.addi a0, 1", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, 2", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, 4", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, 8", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, 16", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, 31", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, -32", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, 1", 0x000000007fffffff, a0, a0);
+   TESTINST_1_1("c.addi a0, 1", 0x00000000fffffffe, a0, a0);
+   TESTINST_1_1("c.addi a0, 1", 0x00000000ffffffff, a0, a0);
+   TESTINST_1_1("c.addi t6, 1", 0x0000000000001000, t6, t6);
+
+   /* -------------- c.addiw rd_rs1, imm[5:0] --------------- */
+   TESTINST_1_1("c.addiw a0, 0", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 1", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 2", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 4", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 8", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 16", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 31", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, -32", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, 1", 0x000000007fffffff, a0, a0);
+   TESTINST_1_1("c.addiw a0, 1", 0x00000000fffffffe, a0, a0);
+   TESTINST_1_1("c.addiw a0, 1", 0x00000000ffffffff, a0, a0);
+   TESTINST_1_1("c.addiw t6, 0", 0x0000000000001000, t6, t6);
+
+   /* ------------------ c.li rd, imm[5:0] ------------------ */
+   TESTINST_1_0("c.li a0, 0", a0);
+   TESTINST_1_0("c.li a0, 1", a0);
+   TESTINST_1_0("c.li a0, 2", a0);
+   TESTINST_1_0("c.li a0, 4", a0);
+   TESTINST_1_0("c.li a0, 8", a0);
+   TESTINST_1_0("c.li a0, 15", a0);
+   TESTINST_1_0("c.li a0, -16", a0);
+   TESTINST_1_0("c.li t6, 0", t6);
+
+   /* ---------------- c.addi16sp nzimm[9:4] ---------------- */
+   TESTINST_SP_SP("c.addi16sp sp, 16", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, 32", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, 64", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, 128", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, 256", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, 496", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, -512", 0x0000000000001000);
+   TESTINST_SP_SP("c.addi16sp sp, 16", 0x000000007ffffff0);
+   TESTINST_SP_SP("c.addi16sp sp, 16", 0x00000000ffffffef);
+   TESTINST_SP_SP("c.addi16sp sp, 16", 0x00000000fffffff0);
+
+   /* --------------- c.lui rd, nzimm[17:12] ---------------- */
+   TESTINST_1_0("c.lui a0, 1", a0);
+   TESTINST_1_0("c.lui a0, 2", a0);
+   TESTINST_1_0("c.lui a0, 4", a0);
+   TESTINST_1_0("c.lui a0, 8", a0);
+   TESTINST_1_0("c.lui a0, 16", a0);
+   TESTINST_1_0("c.lui a0, 31", a0);
+   TESTINST_1_0("c.lui a0, 0xfffe0" /* -32 */, a0);
+   TESTINST_1_0("c.lui a0, 0xffff0" /* -16 */, a0);
+   TESTINST_1_0("c.lui a0, 0xffff8" /* -8 */, a0);
+   TESTINST_1_0("c.lui a0, 0xffffc" /* -4 */, a0);
+   TESTINST_1_0("c.lui a0, 0xffffe" /* -2 */, a0);
+   TESTINST_1_0("c.lui a0, 0xfffff" /* -1 */, a0);
+   TESTINST_1_0("c.lui t6, 1", t6);
+
+   /* ------------- c.srli rd_rs1, nzuimm[5:0] -------------- */
+   TESTINST_1_1("c.srli a0, 1", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a0, 2", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a0, 4", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a0, 8", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a0, 16", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a0, 32", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a0, 63", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srli a5, 1", 0xabcdef0123456789, a5, a5);
+
+   /* ------------- c.srai rd_rs1, nzuimm[5:0] -------------- */
+   TESTINST_1_1("c.srai a0, 1", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a0, 2", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a0, 4", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a0, 8", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a0, 16", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a0, 32", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a0, 63", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.srai a5, 1", 0xabcdef0123456789, a5, a5);
+
+   /* --------------- c.andi rd_rs1, imm[5:0] --------------- */
+   TESTINST_1_1("c.andi a0, 0", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a0, 1", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a0, 2", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a0, 4", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a0, 8", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a0, 16", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a0, 31", 0xffffffffffffffff, a0, a0);
+   TESTINST_1_1("c.andi a5, 0", 0xffffffffffffffff, a5, a5);
+
+   /* ------------------ c.sub rd_rs1, rs2 ------------------ */
+   TESTINST_1_2("c.sub a0, a1", 0x0000000000001000, 0x0000000000000fff, a0, a0,
+                a1);
+   TESTINST_1_2("c.sub a0, a1", 0x0000000000001000, 0x0000000000001000, a0, a0,
+                a1);
+   TESTINST_1_2("c.sub a0, a1", 0x0000000000001000, 0x0000000000001001, a0, a0,
+                a1);
+   TESTINST_1_2("c.sub a0, a1", 0xffffffffffffffff, 0x0000000000000000, a0, a0,
+                a1);
+   TESTINST_1_2("c.sub a0, a1", 0x0000000100000000, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.sub a4, a5", 0x0000000000001000, 0x0000000000000fff, a4, a4,
+                a5);
+
+   /* ------------------ c.xor rd_rs1, rs2 ------------------ */
+   TESTINST_1_2("c.xor a0, a1", 0x0000ffff0000ffff, 0x00000000ffffffff, a0, a0,
+                a1);
+   TESTINST_1_2("c.xor a4, a5", 0x0000ffff0000ffff, 0x00000000ffffffff, a4, a4,
+                a5);
+
+   /* ------------------ c.or rd_rs1, rs2 ------------------- */
+   TESTINST_1_2("c.or a0, a1", 0x0000ffff0000ffff, 0x00000000ffffffff, a0, a0,
+                a1);
+   TESTINST_1_2("c.or a4, a5", 0x0000ffff0000ffff, 0x00000000ffffffff, a4, a4,
+                a5);
+
+   /* ------------------ c.and rd_rs1, rs2 ------------------ */
+   TESTINST_1_2("c.and a0, a1", 0x0000ffff0000ffff, 0x00000000ffffffff, a0, a0,
+                a1);
+   TESTINST_1_2("c.and a4, a5", 0x0000ffff0000ffff, 0x00000000ffffffff, a4, a4,
+                a5);
+
+   /* ----------------- c.subw rd_rs1, rs2 ------------------ */
+   TESTINST_1_2("c.subw a0, a1", 0x0000000000001000, 0x0000000000000fff, a0, a0,
+                a1);
+   TESTINST_1_2("c.subw a0, a1", 0x0000000000001000, 0x0000000000001000, a0, a0,
+                a1);
+   TESTINST_1_2("c.subw a0, a1", 0x0000000000001000, 0x0000000000001001, a0, a0,
+                a1);
+   TESTINST_1_2("c.subw a0, a1", 0xffffffffffffffff, 0x0000000000000000, a0, a0,
+                a1);
+   TESTINST_1_2("c.subw a0, a1", 0x0000000100000000, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.subw a4, a5", 0x0000000000001000, 0x0000000000000fff, a4, a4,
+                a5);
+
+   /* ----------------- c.addw rd_rs1, rs2 ------------------ */
+   TESTINST_1_2("c.addw a0, a1", 0x0000000000001000, 0x0000000000002000, a0, a0,
+                a1);
+   TESTINST_1_2("c.addw a0, a1", 0x000000007fffffff, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.addw a0, a1", 0x00000000fffffffe, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.addw a0, a1", 0x00000000ffffffff, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.addw a0, a1", 0xfffffffffffffffe, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.addw a0, a1", 0xffffffffffffffff, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.addw a4, a5", 0x0000000000001000, 0x0000000000002000, a4, a4,
+                a5);
+
+   /* -------------------- c.j imm[11:1] -------------------- */
+   TESTINST_0_0_JMP_RANGE("c.j .-2048", -2048);
+   TESTINST_0_0_JMP_RANGE("c.j .-1024", -1024);
+   TESTINST_0_0_JMP_RANGE("c.j .-512", -512);
+   TESTINST_0_0_JMP_RANGE("c.j .-256", -256);
+   TESTINST_0_0_JMP_RANGE("c.j .-128", -128);
+   TESTINST_0_0_JMP_RANGE("c.j .-64", -64);
+   TESTINST_0_0_JMP_RANGE("c.j .-32", -32);
+   TESTINST_0_0_JMP_RANGE("c.j .-16", -16);
+   TESTINST_0_0_JMP_RANGE("c.j .-8", -8);
+   TESTINST_0_0_JMP_RANGE("c.j .-6", -6);
+   TESTINST_0_0_JMP_RANGE("c.j .-4", -4);
+   TESTINST_0_0_JMP_RANGE("c.j .+4", 4);
+   TESTINST_0_0_JMP_RANGE("c.j .+6", 6);
+   TESTINST_0_0_JMP_RANGE("c.j .+8", 8);
+   TESTINST_0_0_JMP_RANGE("c.j .+16", 16);
+   TESTINST_0_0_JMP_RANGE("c.j .+32", 32);
+   TESTINST_0_0_JMP_RANGE("c.j .+64", 64);
+   TESTINST_0_0_JMP_RANGE("c.j .+128", 128);
+   TESTINST_0_0_JMP_RANGE("c.j .+256", 256);
+   TESTINST_0_0_JMP_RANGE("c.j .+512", 512);
+   TESTINST_0_0_JMP_RANGE("c.j .+1024", 1024);
+   TESTINST_0_0_JMP_RANGE("c.j .+2044", 2044);
+
+   /* ---------------- c.beqz rs1, imm[8:1] ----------------- */
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-256", 0, -256, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-128", 0, -128, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-64", 0, -64, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-32", 0, -32, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-16", 0, -16, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-8", 0, -8, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-6", 0, -6, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-4", 0, -4, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+4", 0, 4, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+6", 0, 6, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+8", 0, 8, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+16", 0, 16, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+32", 0, 32, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+64", 0, 64, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+128", 0, 128, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+252", 0, 252, a0);
+   TESTINST_0_1_JMP_RANGE("c.beqz a5, .-256", 0, -256, a5);
+   TESTINST_0_1_JMP_COND("c.beqz a0, 1f", 0, a0);
+   TESTINST_0_1_JMP_COND("c.beqz a0, 1f", 1, a0);
+   TESTINST_0_1_JMP_COND("c.beqz a0, 1f", 0x8000000000000000, a0);
+
+   /* ---------------- c.bnez rs1, imm[8:1] ----------------- */
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-256", 1, -256, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-128", 1, -128, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-64", 1, -64, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-32", 1, -32, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-16", 1, -16, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-8", 1, -8, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-6", 1, -6, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-4", 1, -4, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+4", 1, 4, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+6", 1, 6, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+8", 1, 8, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+16", 1, 16, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+32", 1, 32, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+64", 1, 64, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+128", 1, 128, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+252", 1, 252, a0);
+   TESTINST_0_1_JMP_RANGE("c.bnez a5, .-256", 1, -256, a5);
+   TESTINST_0_1_JMP_COND("c.bnez a0, 1f", 0, a0);
+   TESTINST_0_1_JMP_COND("c.bnez a0, 1f", 1, a0);
+   TESTINST_0_1_JMP_COND("c.bnez a0, 1f", 0x8000000000000000, a0);
+
+   printf("\n");
+}
+
 int main(void)
 {
    test_compressed_00();
+   test_compressed_01();
    return 0;
 }
