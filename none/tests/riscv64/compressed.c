@@ -139,7 +139,7 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_1_1_LOAD(instruction, rd, rs1)                                \
    {                                                                           \
       unsigned long  out;                                                      \
-      const size_t   N    = 512;                                               \
+      const size_t   N    = 1024;                                              \
       unsigned char* area = memalign16(N);                                     \
       unsigned char  area2[N];                                                 \
       for (size_t i = 0; i < N; i++)                                           \
@@ -160,7 +160,7 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_0_2_STORE(instruction, rs2_val, rs2, rs1)                     \
    {                                                                           \
-      const size_t   N    = 512;                                               \
+      const size_t   N    = 1024;                                              \
       unsigned char* area = memalign16(N);                                     \
       unsigned char  area2[N];                                                 \
       for (size_t i = 0; i < N; i++)                                           \

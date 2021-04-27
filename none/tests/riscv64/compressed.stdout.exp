@@ -40,67 +40,67 @@ c.addi4spn a5, sp, 4 ::
   output: a0=0x0000000000000020
 c.lw a0, 0(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x0000000053239dcf
+  output: a0=0xffffffffffc411c4
   no memory changes
 c.lw a0, 4(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffff95c45b33
+  output: a0=0x00000000413cead2
   no memory changes
 c.lw a0, 8(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x000000007cf69dda
+  output: a0=0x000000004c88ae0d
   no memory changes
 c.lw a0, 16(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x000000005f3bc8d7
+  output: a0=0x000000000e860c39
   no memory changes
 c.lw a0, 32(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xfffffffff3078d2a
+  output: a0=0x0000000035968b0a
   no memory changes
 c.lw a0, 64(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffffd0e20c30
+  output: a0=0xffffffffb2ddaa1e
   no memory changes
 c.lw a0, 124(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffffb168a24a
+  output: a0=0x00000000442729db
   no memory changes
 c.lw a4, 0(a5) ::
   inputs: a5=&area_mid
-  output: a4=0xffffffffad4a4cb8
+  output: a4=0xfffffffff353aed5
   no memory changes
 c.ld a0, 0(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x304780122c8b69f0
+  output: a0=0x46518421715669c6
   no memory changes
 c.ld a0, 8(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x1854ddf6d8b991ce
+  output: a0=0x8dd9540466eef7d3
   no memory changes
 c.ld a0, 16(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x312d32f1bb069e61
+  output: a0=0xc8dd1991b6cb297d
   no memory changes
 c.ld a0, 32(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xcece7967d1f50cd5
+  output: a0=0xf33908f372f209e1
   no memory changes
 c.ld a0, 64(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x8b55d9bb9a9e8466
+  output: a0=0xbaae5dda57a6295a
   no memory changes
 c.ld a0, 128(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x3be2256e10956ff4
+  output: a0=0x2d9b0d5f9d85c79b
   no memory changes
 c.ld a0, 248(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x0b8c2426798b6a5d
+  output: a0=0xef5942a1c0e0ca1e
   no memory changes
 c.ld a4, 0(a5) ::
   inputs: a5=&area_mid
-  output: a4=0x43215d8ac5f35818
+  output: a4=0x2bc7fed064e506d7
   no memory changes
 c.sw a0, 0(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
@@ -143,7 +143,7 @@ c.sd a0, 64(a1) ::
   [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 c.sd a0, 128(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
-  [+128]  89 .. 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 c.sd a0, 248(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
   [+240]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
