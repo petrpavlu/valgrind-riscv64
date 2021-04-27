@@ -260,6 +260,39 @@ static void show_block_diff(unsigned char* block1,
       printf("  branch: %s\n", work[0] ? "taken" : "not taken");               \
    }
 
+#define TESTINST_0_1_JR_RANGE(instruction, rs1_val, offset, rs1)               \
+   TESTINST_1_1_JALR_RANGE(instruction, rs1_val, offset, zero, rs1)
+
+#define TESTINST_1_1_JALR_RANGE(instruction, rs1_val, offset, rd, rs1)         \
+   {                                                                           \
+      unsigned long work[2 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0};              \
+      register unsigned long* t1 asm("t1") = work;                             \
+      __asm__ __volatile__(                                                    \
+         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
+         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
+         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         JMP_RANGE_ASM(instruction, offset)                                    \
+         ".if \"" #rd "\" != \"zero\";"                                        \
+         /* Calculate offset of the return address from the instruction        \
+            address. */                                                        \
+         "la " #rs1 ", 1b;"                                                    \
+         "sub " #rd ", " #rd ", " #rs1 ";"                                     \
+         "sd " #rd ", 0(%[work]);"     /* Store the return address offset. */  \
+         "li " #rd ", 1;"                                                      \
+         "sd " #rd ", 8(%[work]);"     /* Flag that rd is not the zero reg. */ \
+         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
+         ".endif;"                                                             \
+         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         :                                                                     \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=%s\n", #rs1, rs1_val);                              \
+      if (work[1] != 0) /* If rd is not the zero register. */                  \
+         printf("  output: %s=1f%+ld\n", #rd, work[0]);                        \
+      printf("  target: reached\n");                                           \
+   }
+
 /* clang-format on */
 
 static __attribute__((noinline)) void test_compressed_00(void)
@@ -564,9 +597,117 @@ static __attribute__((noinline)) void test_compressed_01(void)
    printf("\n");
 }
 
+static __attribute__((noinline)) void test_compressed_10(void)
+{
+   printf("Compressed Instructions, Quadrant 2\n");
+
+   /* ------------- c.slli rd_rs1, nzuimm[5:0] -------------- */
+   TESTINST_1_1("c.slli a0, 1", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a0, 2", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a0, 4", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a0, 8", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a0, 16", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a0, 32", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a0, 63", 0xabcdef0123456789, a0, a0);
+   TESTINST_1_1("c.slli a5, 1", 0xabcdef0123456789, a5, a5);
+
+   /* -------------- c.fldsp rd, uimm[8:3](x2) -------------- */
+   /* TODO */
+
+   /* -------------- c.lwsp rd, uimm[7:2](x2) --------------- */
+   TESTINST_1_1_LOAD("c.lwsp a0, 0(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 4(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 8(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 16(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 32(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 64(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 128(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a0, 252(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.lwsp a5, 0(sp)", a5, sp);
+
+   /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
+   TESTINST_1_1_LOAD("c.ldsp a0, 0(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 8(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 16(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 32(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 64(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 128(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 256(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a0, 504(sp)", a0, sp);
+   TESTINST_1_1_LOAD("c.ldsp a5, 0(sp)", a5, sp);
+
+   /* ---------------------- c.jr rs1 ----------------------- */
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-8", -8, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-6", -6, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-4", -4, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f+4", 4, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f+6", 6, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f+8", 8, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t6", "1f-8", -8, t6);
+
+   /* -------------------- c.mv rd, rs2 --------------------- */
+   TESTINST_1_1("c.mv t0, t6", 0xabcdef0123456789, t0, t6);
+   TESTINST_1_1("c.mv t6, t0", 0xabcdef0123456789, t6, t0);
+   TESTINST_1_1("c.mv s0, s11", 0xabcdef0123456789, s0, s11);
+   TESTINST_1_1("c.mv s11, s0", 0xabcdef0123456789, s11, s0);
+   TESTINST_1_1("c.mv a0, a7", 0xabcdef0123456789, a0, a7);
+   TESTINST_1_1("c.mv a7, a0", 0xabcdef0123456789, a7, a0);
+
+   /* --------------------- c.jalr rs1 ---------------------- */
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-8", -8, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-6", -6, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-4", -4, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f+4", 4, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f+6", 6, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f+8", 8, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t6", "1f-8", -8, ra, t6);
+
+   /* ------------------ c.add rd_rs1, rs2 ------------------ */
+   TESTINST_1_2("c.add a0, a1", 0x0000000000001000, 0x0000000000002000, a0, a0,
+                a1);
+   TESTINST_1_2("c.add a0, a1", 0x000000007fffffff, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.add a0, a1", 0x00000000fffffffe, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.add a0, a1", 0x00000000ffffffff, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.add a0, a1", 0xfffffffffffffffe, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.add a0, a1", 0xffffffffffffffff, 0x0000000000000001, a0, a0,
+                a1);
+   TESTINST_1_2("c.add a4, a5", 0x0000000000001000, 0x0000000000002000, a4, a4,
+                a5);
+
+   /* ------------- c.fsdsp rs2, uimm[8:3](x2) -------------- */
+   /* TODO */
+
+   /* -------------- c.swsp rs2, uimm[7:2](x2) -------------- */
+   TESTINST_0_2_STORE("c.swsp a0, 0(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 4(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 8(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 16(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 32(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 64(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 128(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a0, 252(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.swsp a5, 0(sp)", 0xabcdef0123456789, a5, sp);
+
+   /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
+   TESTINST_0_2_STORE("c.sdsp a0, 0(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 8(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 16(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 32(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 64(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 128(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 256(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a0, 504(sp)", 0xabcdef0123456789, a0, sp);
+   TESTINST_0_2_STORE("c.sdsp a5, 0(sp)", 0xabcdef0123456789, a5, sp);
+}
+
 int main(void)
 {
    test_compressed_00();
    test_compressed_01();
+   test_compressed_10();
    return 0;
 }

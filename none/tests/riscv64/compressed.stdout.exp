@@ -606,3 +606,242 @@ c.bnez a0, 1f ::
   inputs: a0=0x8000000000000000
   branch: taken
 
+Compressed Instructions, Quadrant 2
+c.slli a0, 1 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x579bde02468acf12
+c.slli a0, 2 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xaf37bc048d159e24
+c.slli a0, 4 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xbcdef01234567890
+c.slli a0, 8 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xcdef012345678900
+c.slli a0, 16 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0xef01234567890000
+c.slli a0, 32 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x2345678900000000
+c.slli a0, 63 ::
+  inputs: a0=0xabcdef0123456789
+  output: a0=0x8000000000000000
+c.slli a5, 1 ::
+  inputs: a5=0xabcdef0123456789
+  output: a5=0x579bde02468acf12
+c.lwsp a0, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffc50971cb
+  no memory changes
+c.lwsp a0, 4(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffa20c8585
+  no memory changes
+c.lwsp a0, 8(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x000000000aa4452b
+  no memory changes
+c.lwsp a0, 16(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffc47adc70
+  no memory changes
+c.lwsp a0, 32(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xffffffffdb3aca71
+  no memory changes
+c.lwsp a0, 64(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x0000000038e2cae5
+  no memory changes
+c.lwsp a0, 128(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x000000000cc7c63d
+  no memory changes
+c.lwsp a0, 252(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x000000004db76ca6
+  no memory changes
+c.lwsp a5, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a5=0x00000000379ac9cc
+  no memory changes
+c.ldsp a0, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xbb816cf195fc641d
+  no memory changes
+c.ldsp a0, 8(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xee4bd229392cabb3
+  no memory changes
+c.ldsp a0, 16(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xcc2a25e372b8103e
+  no memory changes
+c.ldsp a0, 32(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x86a438c7c524da0b
+  no memory changes
+c.ldsp a0, 64(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x2d13947199239217
+  no memory changes
+c.ldsp a0, 128(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xfe16f29c5db8fe9e
+  no memory changes
+c.ldsp a0, 256(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0x7d26a069bc89cfe1
+  no memory changes
+c.ldsp a0, 504(sp) ::
+  inputs: sp=&area_mid
+  output: a0=0xa6b92f013cf0893e
+  no memory changes
+c.ldsp a5, 0(sp) ::
+  inputs: sp=&area_mid
+  output: a5=0xd3f5535e068ebc1e
+  no memory changes
+c.jr t0 ::
+  inputs: t0=1f-8
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-6
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-4
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f+4
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f+6
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f+8
+  target: reached
+c.jr t6 ::
+  inputs: t6=1f-8
+  target: reached
+c.mv t0, t6 ::
+  inputs: t6=0xabcdef0123456789
+  output: t0=0xabcdef0123456789
+c.mv t6, t0 ::
+  inputs: t0=0xabcdef0123456789
+  output: t6=0xabcdef0123456789
+c.mv s0, s11 ::
+  inputs: s11=0xabcdef0123456789
+  output: s0=0xabcdef0123456789
+c.mv s11, s0 ::
+  inputs: s0=0xabcdef0123456789
+  output: s11=0xabcdef0123456789
+c.mv a0, a7 ::
+  inputs: a7=0xabcdef0123456789
+  output: a0=0xabcdef0123456789
+c.mv a7, a0 ::
+  inputs: a0=0xabcdef0123456789
+  output: a7=0xabcdef0123456789
+c.jalr t0 ::
+  inputs: t0=1f-8
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-6
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-4
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f+4
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f+6
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f+8
+  output: ra=1f+2
+  target: reached
+c.jalr t6 ::
+  inputs: t6=1f-8
+  output: ra=1f+2
+  target: reached
+c.add a0, a1 ::
+  inputs: a0=0x0000000000001000, a1=0x0000000000002000
+  output: a0=0x0000000000003000
+c.add a0, a1 ::
+  inputs: a0=0x000000007fffffff, a1=0x0000000000000001
+  output: a0=0x0000000080000000
+c.add a0, a1 ::
+  inputs: a0=0x00000000fffffffe, a1=0x0000000000000001
+  output: a0=0x00000000ffffffff
+c.add a0, a1 ::
+  inputs: a0=0x00000000ffffffff, a1=0x0000000000000001
+  output: a0=0x0000000100000000
+c.add a0, a1 ::
+  inputs: a0=0xfffffffffffffffe, a1=0x0000000000000001
+  output: a0=0xffffffffffffffff
+c.add a0, a1 ::
+  inputs: a0=0xffffffffffffffff, a1=0x0000000000000001
+  output: a0=0x0000000000000000
+c.add a4, a5 ::
+  inputs: a4=0x0000000000001000, a5=0x0000000000002000
+  output: a4=0x0000000000003000
+c.swsp a0, 0(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 4(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 .. .. .. .. .. .. .. ..
+c.swsp a0, 8(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 .. .. .. ..
+c.swsp a0, 16(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+016]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 32(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+032]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 64(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+064]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 128(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+128]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.swsp a0, 252(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+240]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+c.swsp a5, 0(sp) ::
+  inputs: a5=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+c.sdsp a0, 0(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 8(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.sdsp a0, 16(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 32(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 64(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 128(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 256(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+256]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.sdsp a0, 504(sp) ::
+  inputs: a0=0xabcdef0123456789, sp=&area_mid
+  [+496]  .. .. .. .. .. .. .. .. 89 67 45 23 01 .. cd ab
+c.sdsp a5, 0(sp) ::
+  inputs: a5=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
