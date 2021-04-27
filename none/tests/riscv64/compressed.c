@@ -187,88 +187,77 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define TESTINST_0_0_JMP_RANGE(instruction, offset)                            \
+#define JMP_RANGE_ASM(instruction, offset)                                     \
+   "j 1f;"                                                                     \
+   ".option push;"                                                             \
+   ".option norvc;"                                                            \
+   /* Generate a target area for negative offset. */                           \
+   ".if " #offset " < 0;"                                                      \
+   ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"            \
+   "j 2f;"                                                                     \
+   ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"                \
+   ".else;"                                                                    \
+   ".space 4096;"                                                              \
+   ".endif;"                                                                   \
+   "1:;"                                                                       \
+   ".option rvc;" instruction "; .space 2; .option norvc;"                     \
+   /* Generate a target area for positive offset. */                           \
+   ".if " #offset " > 0;"                                                      \
+   ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"                  \
+   "j 2f;"                                                                     \
+   ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"            \
+   ".else;"                                                                    \
+   ".space 4094;"                                                              \
+   ".endif;"                                                                   \
+   "2:;"                                                                       \
+   ".option pop;"
+
+#define TESTINST_0_0_J_RANGE(instruction, offset)                              \
    {                                                                           \
+      __asm__ __volatile__(JMP_RANGE_ASM(instruction, offset));                \
+      printf("%s ::\n", instruction);                                          \
+      printf("  target: reached\n");                                           \
+   }
+
+#define TESTINST_0_1_BxxZ_RANGE(instruction, rs1_val, offset, rs1)             \
+   {                                                                           \
+      unsigned long work[1 /*in*/ + 1 /*spill*/] = {                           \
+         (unsigned long)rs1_val, 0};                                           \
+      register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "j 1f;"                                                               \
-         ".option push;"                                                       \
-         ".option norvc;"                                                      \
-         /* Generate a target area for a negative offset. */                   \
-         ".if " #offset " < 0;"                                                \
-         ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"      \
-         "j 2f;"                                                               \
-         ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"          \
-         ".else;"                                                              \
-         ".space 4096;"                                                        \
-         ".endif;"                                                             \
+         "sd " #rs1 ", 8(%[work]);"    /* Spill rs1. */                        \
+         "ld " #rs1 ", 0(%[work]);"    /* Load the first input. */             \
+         JMP_RANGE_ASM(instruction, offset)                                    \
+         "ld " #rs1 ", 8(%[work]);"    /* Reload rs1. */                       \
+         :                                                                     \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
+      printf("  target: reached\n");                                           \
+   }
+
+#define TESTINST_0_1_BxxZ_COND(instruction, rs1_val, rs1)                      \
+   {                                                                           \
+      unsigned long work[1 /*out*/ + 1 /*in*/ + 1 /*spill*/] = {               \
+         0, (unsigned long)rs1_val, 0};                                        \
+      register unsigned long* t1 asm("t1") = work;                             \
+      __asm__ __volatile__(                                                    \
+         "sd " #rs1 ", 16(%[work]);"   /* Spill rs1. */                        \
+         "li " #rs1 ", 1;"                                                     \
+         "sd " #rs1 ", 0(%[work]);"    /* Set result to "taken". */            \
+         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
+         instruction ";"                                                       \
+         "li " #rs1 ", 0;"                                                     \
+         "sd " #rs1 ", 0(%[work]);"    /* Set result to "not taken". */        \
          "1:;"                                                                 \
-         ".option rvc;" instruction "; .space 2; .option norvc;"               \
-         /* Generate a target area for a positive offset. */                   \
-         ".if " #offset " > 0;"                                                \
-         ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"            \
-         "j 2f;"                                                               \
-         ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"      \
-         ".else;"                                                              \
-         ".space 4094;"                                                        \
-         ".endif;"                                                             \
-         "2:;"                                                                 \
-         ".option pop;"                                                        \
+         "ld " #rs1 ", 16(%[work]);"   /* Reload rs1. */                       \
          :                                                                     \
-         :                                                                     \
-         : );                                                                  \
-      printf("%s ::\n", instruction);                                          \
-      printf("  target: reached\n");                                           \
-   }
-
-#define TESTINST_0_1_JMP_RANGE(instruction, rs1_val, offset, rs1)              \
-   {                                                                           \
-      __asm__ __volatile__(                                                    \
-         "mv " #rs1 ", %[rs1_in];"                                             \
-         "j 1f;"                                                               \
-         ".option push;"                                                       \
-         ".option norvc;"                                                      \
-         /* Generate a target area for a negative offset. */                   \
-         ".if " #offset " < 0;"                                                \
-         ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"      \
-         "j 2f;"                                                               \
-         ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"          \
-         ".else;"                                                              \
-         ".space 4096;"                                                        \
-         ".endif;"                                                             \
-         "1:; .option rvc;" instruction "; .space 2; .option norvc;"           \
-         /* Generate a target area for a positive offset. */                   \
-         ".if " #offset " > 0;"                                                \
-         ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"            \
-         "j 2f;"                                                               \
-         ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"      \
-         ".else;"                                                              \
-         ".space 4094;"                                                        \
-         ".endif;"                                                             \
-         "2:;"                                                                 \
-         ".option pop;"                                                        \
-         :                                                                     \
-         : [rs1_in] "r"((unsigned long)rs1_val)                                \
-         : #rs1);                                                              \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
-      printf("  target: reached\n");                                           \
-   }
-
-#define TESTINST_0_1_JMP_COND(instruction, rs1_val, rs1)                       \
-   {                                                                           \
-      unsigned long out;                                                       \
-      __asm__ __volatile__(                                                    \
-         "mv " #rs1 ", %[rs1_in];"                                             \
-        "li %[out], 1;"                                                        \
-        instruction ";"                                                        \
-        "li %[out], 0;"                                                        \
-        "1:;"                                                                  \
-        : [out] "=r"(out)                                                      \
-        : [rs1_in] "r"((unsigned long)rs1_val)                                 \
-        : #rs1);                                                               \
-      printf("%s ::\n", instruction);                                          \
-      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
-      printf("  branch: %s\n", out ? "taken" : "not taken");                   \
+      printf("  branch: %s\n", work[0] ? "taken" : "not taken");               \
    }
 
 /* clang-format on */
@@ -505,72 +494,72 @@ static __attribute__((noinline)) void test_compressed_01(void)
                 a5);
 
    /* -------------------- c.j imm[11:1] -------------------- */
-   TESTINST_0_0_JMP_RANGE("c.j .-2048", -2048);
-   TESTINST_0_0_JMP_RANGE("c.j .-1024", -1024);
-   TESTINST_0_0_JMP_RANGE("c.j .-512", -512);
-   TESTINST_0_0_JMP_RANGE("c.j .-256", -256);
-   TESTINST_0_0_JMP_RANGE("c.j .-128", -128);
-   TESTINST_0_0_JMP_RANGE("c.j .-64", -64);
-   TESTINST_0_0_JMP_RANGE("c.j .-32", -32);
-   TESTINST_0_0_JMP_RANGE("c.j .-16", -16);
-   TESTINST_0_0_JMP_RANGE("c.j .-8", -8);
-   TESTINST_0_0_JMP_RANGE("c.j .-6", -6);
-   TESTINST_0_0_JMP_RANGE("c.j .-4", -4);
-   TESTINST_0_0_JMP_RANGE("c.j .+4", 4);
-   TESTINST_0_0_JMP_RANGE("c.j .+6", 6);
-   TESTINST_0_0_JMP_RANGE("c.j .+8", 8);
-   TESTINST_0_0_JMP_RANGE("c.j .+16", 16);
-   TESTINST_0_0_JMP_RANGE("c.j .+32", 32);
-   TESTINST_0_0_JMP_RANGE("c.j .+64", 64);
-   TESTINST_0_0_JMP_RANGE("c.j .+128", 128);
-   TESTINST_0_0_JMP_RANGE("c.j .+256", 256);
-   TESTINST_0_0_JMP_RANGE("c.j .+512", 512);
-   TESTINST_0_0_JMP_RANGE("c.j .+1024", 1024);
-   TESTINST_0_0_JMP_RANGE("c.j .+2044", 2044);
+   TESTINST_0_0_J_RANGE("c.j .-2048", -2048);
+   TESTINST_0_0_J_RANGE("c.j .-1024", -1024);
+   TESTINST_0_0_J_RANGE("c.j .-512", -512);
+   TESTINST_0_0_J_RANGE("c.j .-256", -256);
+   TESTINST_0_0_J_RANGE("c.j .-128", -128);
+   TESTINST_0_0_J_RANGE("c.j .-64", -64);
+   TESTINST_0_0_J_RANGE("c.j .-32", -32);
+   TESTINST_0_0_J_RANGE("c.j .-16", -16);
+   TESTINST_0_0_J_RANGE("c.j .-8", -8);
+   TESTINST_0_0_J_RANGE("c.j .-6", -6);
+   TESTINST_0_0_J_RANGE("c.j .-4", -4);
+   TESTINST_0_0_J_RANGE("c.j .+4", 4);
+   TESTINST_0_0_J_RANGE("c.j .+6", 6);
+   TESTINST_0_0_J_RANGE("c.j .+8", 8);
+   TESTINST_0_0_J_RANGE("c.j .+16", 16);
+   TESTINST_0_0_J_RANGE("c.j .+32", 32);
+   TESTINST_0_0_J_RANGE("c.j .+64", 64);
+   TESTINST_0_0_J_RANGE("c.j .+128", 128);
+   TESTINST_0_0_J_RANGE("c.j .+256", 256);
+   TESTINST_0_0_J_RANGE("c.j .+512", 512);
+   TESTINST_0_0_J_RANGE("c.j .+1024", 1024);
+   TESTINST_0_0_J_RANGE("c.j .+2044", 2044);
 
    /* ---------------- c.beqz rs1, imm[8:1] ----------------- */
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-256", 0, -256, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-128", 0, -128, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-64", 0, -64, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-32", 0, -32, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-16", 0, -16, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-8", 0, -8, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-6", 0, -6, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .-4", 0, -4, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+4", 0, 4, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+6", 0, 6, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+8", 0, 8, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+16", 0, 16, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+32", 0, 32, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+64", 0, 64, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+128", 0, 128, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a0, .+252", 0, 252, a0);
-   TESTINST_0_1_JMP_RANGE("c.beqz a5, .-256", 0, -256, a5);
-   TESTINST_0_1_JMP_COND("c.beqz a0, 1f", 0, a0);
-   TESTINST_0_1_JMP_COND("c.beqz a0, 1f", 1, a0);
-   TESTINST_0_1_JMP_COND("c.beqz a0, 1f", 0x8000000000000000, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-256", 0, -256, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-128", 0, -128, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-64", 0, -64, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-32", 0, -32, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-16", 0, -16, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-8", 0, -8, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-6", 0, -6, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-4", 0, -4, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+4", 0, 4, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+6", 0, 6, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+8", 0, 8, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+16", 0, 16, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+32", 0, 32, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+64", 0, 64, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+128", 0, 128, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+252", 0, 252, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a5, .-256", 0, -256, a5);
+   TESTINST_0_1_BxxZ_COND("c.beqz a0, 1f", 0, a0);
+   TESTINST_0_1_BxxZ_COND("c.beqz a0, 1f", 1, a0);
+   TESTINST_0_1_BxxZ_COND("c.beqz a0, 1f", 0x8000000000000000, a0);
 
    /* ---------------- c.bnez rs1, imm[8:1] ----------------- */
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-256", 1, -256, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-128", 1, -128, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-64", 1, -64, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-32", 1, -32, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-16", 1, -16, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-8", 1, -8, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-6", 1, -6, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .-4", 1, -4, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+4", 1, 4, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+6", 1, 6, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+8", 1, 8, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+16", 1, 16, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+32", 1, 32, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+64", 1, 64, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+128", 1, 128, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a0, .+252", 1, 252, a0);
-   TESTINST_0_1_JMP_RANGE("c.bnez a5, .-256", 1, -256, a5);
-   TESTINST_0_1_JMP_COND("c.bnez a0, 1f", 0, a0);
-   TESTINST_0_1_JMP_COND("c.bnez a0, 1f", 1, a0);
-   TESTINST_0_1_JMP_COND("c.bnez a0, 1f", 0x8000000000000000, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-256", 1, -256, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-128", 1, -128, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-64", 1, -64, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-32", 1, -32, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-16", 1, -16, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-8", 1, -8, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-6", 1, -6, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-4", 1, -4, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+4", 1, 4, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+6", 1, 6, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+8", 1, 8, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+16", 1, 16, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+32", 1, 32, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+64", 1, 64, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+128", 1, 128, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+252", 1, 252, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a5, .-256", 1, -256, a5);
+   TESTINST_0_1_BxxZ_COND("c.bnez a0, 1f", 0, a0);
+   TESTINST_0_1_BxxZ_COND("c.bnez a0, 1f", 1, a0);
+   TESTINST_0_1_BxxZ_COND("c.bnez a0, 1f", 0x8000000000000000, a0);
 
    printf("\n");
 }
