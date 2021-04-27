@@ -2,6 +2,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+/* Helper functions. */
+
 static inline unsigned char rand_uchar(void)
 {
    static unsigned int seed = 80021;
@@ -46,7 +48,18 @@ static void show_block_diff(unsigned char* block1,
       printf("  no memory changes\n");
 }
 
-/* Disable clang-format for the test macros because it messes up the inline
+/* Macros to test individual instructions
+
+   Naming is in form TESTINST_<#inputs>_<#outputs>_<suffix-id>.
+
+   Environment to test each instruction is set up by a carefully crafted inline
+   assembly. The code implements own handling of input and output operands
+   which most importantly allows also use of the sp register as an instruction
+   operand. Register t1 is reserved for this purpose and must be avoided in
+   instruction tests.
+ */
+
+/* Disable clang-format for the test macros because it would mess up the inline
    assembly. */
 /* clang-format off */
 
@@ -58,102 +71,90 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_1_0(instruction, rd)                                          \
    {                                                                           \
-      unsigned long out;                                                       \
+      unsigned long work[1 /*out*/ + 1 /*spill*/] = {0};                       \
+      register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
+         "sd " #rd ", 8(%[work]);"     /* Spill rd. */                         \
          instruction ";"                                                       \
-         "mv %[out], " #rd ";"                                                 \
-         : [out] "=r"(out)                                                     \
+         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
+         "ld " #rd ", 8(%[work]);"     /* Reload rd. */                        \
          :                                                                     \
-         : #rd);                                                               \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
-      printf("  output: %s=0x%016lx\n", #rd, out);                             \
+      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
    }
 
 #define TESTINST_1_1(instruction, rs1_val, rd, rs1)                            \
    {                                                                           \
-      unsigned long out;                                                       \
+      unsigned long work[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {               \
+         0, (unsigned long)rs1_val, 0, 0};                                     \
+      register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "mv " #rs1 ", %[rs1_in];"                                             \
+         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
+         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
+         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
          instruction ";"                                                       \
-         "mv %[out], " #rd ";"                                                 \
-         : [out] "=r"(out)                                                     \
-         : [rs1_in] "r"((unsigned long)rs1_val)                                \
-         : #rd, #rs1);                                                         \
+         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
+         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
+         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         :                                                                     \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
-      printf("  output: %s=0x%016lx\n", #rd, out);                             \
+      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
    }
 
 #define TESTINST_1_2(instruction, rs1_val, rs2_val, rd, rs1, rs2)              \
    {                                                                           \
-      unsigned long out;                                                       \
+      unsigned long work[1 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {               \
+         0, (unsigned long)rs1_val, (unsigned long)rs2_val, 0, 0};             \
+      register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "mv " #rs1 ", %[rs1_in];"                                             \
-         "mv " #rs2 ", %[rs2_in];"                                             \
+         "sd " #rd ", 24(%[work]);"    /* Spill rd. */                         \
+         "sd " #rs1 ", 32(%[work]);"   /* Spill rs1. */                        \
+         "sd " #rs2 ", 40(%[work]);"   /* Spill rs2. */                        \
+         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
+         "ld " #rs2 ", 16(%[work]);"   /* Load the second input. */            \
          instruction ";"                                                       \
-         "mv %[out], " #rd ";"                                                 \
-         : [out] "=r"(out)                                                     \
-         : [rs1_in] "r"((unsigned long)rs1_val),                               \
-           [rs2_in] "r"((unsigned long)rs2_val)                                \
-         : #rd, #rs1, #rs2);                                                   \
+         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
+         "ld " #rd ", 24(%[work]);"    /* Reload rd. */                        \
+         "ld " #rs1 ", 32(%[work]);"   /* Reload rs1. */                       \
+         "ld " #rs2 ", 40(%[work]);"   /* Reload rs2. */                       \
+         :                                                                     \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx, %s=0x%016lx\n", #rs1,                     \
              (unsigned long)rs1_val, #rs2, (unsigned long)rs2_val);            \
-      printf("  output: %s=0x%016lx\n", #rd, out);                             \
-   }
-
-#define TESTINST_1_SP(instruction, sp_val, rd)                                 \
-   {                                                                           \
-      unsigned long out, scratch;                                              \
-      __asm__ __volatile__(                                                    \
-         "mv %[scratch], sp;"                                                  \
-         "mv sp, %[sp_in];"                                                    \
-         instruction ";"                                                       \
-         "mv %[out], " #rd ";"                                                 \
-         "mv sp, %[scratch];"                                                  \
-         : [out] "=r"(out), [scratch] "=&r"(scratch)                           \
-         : [sp_in] "r"((unsigned long)sp_val)                                  \
-         : #rd);                                                               \
-      printf("%s ::\n", instruction);                                          \
-      printf("  inputs: sp=0x%016lx\n", (unsigned long)sp_val);                \
-      printf("  output: %s=0x%016lx\n", #rd, out);                             \
-   }
-
-#define TESTINST_SP_SP(instruction, sp_val)                                    \
-   {                                                                           \
-      unsigned long out, scratch;                                              \
-      __asm__ __volatile__(                                                    \
-         "mv %[scratch], sp;"                                                  \
-         "mv sp, %[sp_in];"                                                    \
-         instruction ";"                                                       \
-         "mv %[out], sp;"                                                      \
-         "mv sp, %[scratch];"                                                  \
-         : [out] "=r"(out), [scratch] "=&r"(scratch)                           \
-         : [sp_in] "r"((unsigned long)sp_val)                                  \
-         : );                                                                  \
-      printf("%s ::\n", instruction);                                          \
-      printf("  inputs: sp=0x%016lx\n", (unsigned long)sp_val);                \
-      printf("  output: sp=0x%016lx\n", out);                                  \
+      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
    }
 
 #define TESTINST_1_1_LOAD(instruction, rd, rs1)                                \
    {                                                                           \
-      unsigned long  out;                                                      \
       const size_t   N    = 1024;                                              \
       unsigned char* area = memalign16(N);                                     \
       unsigned char  area2[N];                                                 \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
+      unsigned long work[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {               \
+         0, (unsigned long)(area + N / 2), 0, 0};                              \
+      register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "mv " #rs1 ", %[area_mid];"                                           \
+         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
+         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
+         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
          instruction ";"                                                       \
-         "mv %[out], " #rd ";"                                                 \
-         : [out] "=r"(out)                                                     \
-         : [area_mid] "r"(area + N / 2)                                        \
-         : #rd, #rs1);                                                         \
+         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
+         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
+         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         :                                                                     \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=&area_mid\n", #rs1);                                \
-      printf("  output: %s=0x%016lx\n", #rd, out);                             \
+      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
       show_block_diff(area2, area, N, N / 2);                                  \
       free(area);                                                              \
    }
@@ -165,13 +166,20 @@ static void show_block_diff(unsigned char* block1,
       unsigned char  area2[N];                                                 \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
+      unsigned long work[2 /*in*/ + 2 /*spill*/] = {                           \
+         (unsigned long)rs2_val, (unsigned long)(area + N / 2), 0, 0};         \
+      register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "mv " #rs2 ", %[rs2_in];"                                             \
-         "mv " #rs1 ", %[area_mid];"                                           \
+         "sd " #rs2 ", 16(%[work]);"   /* Spill rs2. */                        \
+         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
+         "ld " #rs2 ", 0(%[work]);"    /* Load the first input. */             \
+         "ld " #rs1 ", 8(%[work]);"    /* Load the second input. */            \
          instruction ";"                                                       \
+         "ld " #rs2 ", 16(%[work]);"   /* Reload rs2. */                       \
+         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
          :                                                                     \
-         : [rs2_in] "r"((unsigned long)rs2_val), [area_mid] "r"(area + N / 2)  \
-         : #rs2, #rs1, "memory");                                              \
+         : [work] "r"(t1)                                                      \
+         : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx, %s=&area_mid\n", #rs2,                    \
              (unsigned long)rs2_val, #rs1);                                    \
@@ -270,19 +278,19 @@ static __attribute__((noinline)) void test_compressed_00(void)
    printf("Compressed Instructions, Quadrant 0\n");
 
    /* ------------- c.addi4spn rd, nzuimm[9:2] -------------- */
-   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 8", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 16", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 32", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 64", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 128", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 256", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 512", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 1020", 0x0000000000001000, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x000000007ffffffc, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x00000000fffffffb, a0);
-   TESTINST_1_SP("c.addi4spn a0, sp, 4", 0x00000000fffffffc, a0);
-   TESTINST_1_SP("c.addi4spn a5, sp, 4", 0x0000000000001000, a0);
+   TESTINST_1_1("c.addi4spn a0, sp, 4", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 8", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 16", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 32", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 64", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 128", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 256", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 512", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 1020", 0x0000000000001000, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 4", 0x000000007ffffffc, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 4", 0x00000000fffffffb, a0, sp);
+   TESTINST_1_1("c.addi4spn a0, sp, 4", 0x00000000fffffffc, a0, sp);
+   TESTINST_1_1("c.addi4spn a5, sp, 4", 0x0000000000001000, a0, sp);
 
    /* -------------- c.fld rd, uimm[7:3](rs1) --------------- */
    /* TODO */
@@ -378,16 +386,16 @@ static __attribute__((noinline)) void test_compressed_01(void)
    TESTINST_1_0("c.li t6, 0", t6);
 
    /* ---------------- c.addi16sp nzimm[9:4] ---------------- */
-   TESTINST_SP_SP("c.addi16sp sp, 16", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, 32", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, 64", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, 128", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, 256", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, 496", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, -512", 0x0000000000001000);
-   TESTINST_SP_SP("c.addi16sp sp, 16", 0x000000007ffffff0);
-   TESTINST_SP_SP("c.addi16sp sp, 16", 0x00000000ffffffef);
-   TESTINST_SP_SP("c.addi16sp sp, 16", 0x00000000fffffff0);
+   TESTINST_1_1("c.addi16sp sp, 16", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 32", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 64", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 128", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 256", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 496", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, -512", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 16", 0x000000007ffffff0, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 16", 0x00000000ffffffef, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, 16", 0x00000000fffffff0, sp, sp);
 
    /* --------------- c.lui rd, nzimm[17:12] ---------------- */
    TESTINST_1_0("c.lui a0, 1", a0);
