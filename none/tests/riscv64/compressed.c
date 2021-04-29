@@ -1,9 +1,10 @@
+/* Tests for the RV64C standard compressed instruction-set extension. */
 
 #include "testinst.h"
 
-static __attribute__((noinline)) void test_compressed_00(void)
+static void test_compressed_00(void)
 {
-   printf("Compressed Instructions, Quadrant 0\n");
+   printf("Compressed instructions, quadrant 0\n");
 
    /* ------------- c.addi4spn rd, nzuimm[9:2] -------------- */
    TESTINST_1_1("c.addi4spn a0, sp, 4", 0x0000000000001000, a0, sp);
@@ -69,9 +70,9 @@ static __attribute__((noinline)) void test_compressed_00(void)
    printf("\n");
 }
 
-static __attribute__((noinline)) void test_compressed_01(void)
+static void test_compressed_01(void)
 {
-   printf("Compressed Instructions, Quadrant 1\n");
+   printf("Compressed instructions, quadrant 1\n");
 
    /* ------------------------ c.nop ------------------------ */
    TESTINST_0_0("c.nop");
@@ -303,9 +304,9 @@ static __attribute__((noinline)) void test_compressed_01(void)
    printf("\n");
 }
 
-static __attribute__((noinline)) void test_compressed_10(void)
+static void test_compressed_10(void)
 {
-   printf("Compressed Instructions, Quadrant 2\n");
+   printf("Compressed instructions, quadrant 2\n");
 
    /* ------------- c.slli rd_rs1, nzuimm[5:0] -------------- */
    TESTINST_1_1("c.slli a0, 1", 0xabcdef0123456789, a0, a0);
