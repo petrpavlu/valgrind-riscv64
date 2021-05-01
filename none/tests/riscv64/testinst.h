@@ -187,55 +187,88 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define JMP_RANGE_ASM(instruction, offset)                                     \
-   "j 1f;"                                                                     \
-   ".option push;"                                                             \
-   ".option norvc;"                                                            \
-   /* Generate a target area for negative offset. */                           \
-   ".if " #offset " < 0;"                                                      \
-   ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"            \
-   "j 2f;"                                                                     \
-   ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"                \
-   ".else;"                                                                    \
-   ".space 4096;"                                                              \
-   ".endif;"                                                                   \
-   "1:;"                                                                       \
-   ".option rvc;" instruction "; .space 2; .option norvc;"                     \
-   /* Generate a target area for positive offset. */                           \
-   ".if " #offset " > 0;"                                                      \
-   ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"                  \
-   "j 2f;"                                                                     \
-   ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"            \
-   ".else;"                                                                    \
-   ".space 4094;"                                                              \
-   ".endif;"                                                                   \
-   "2:;"                                                                       \
-   ".option pop;"
-
-#define TESTINST_0_0_J_RANGE(instruction, offset)                              \
+#define JMP_RANGE(instruction, rs1_val, offset, rd, rs1)                       \
    {                                                                           \
-      __asm__ __volatile__(JMP_RANGE_ASM(instruction, offset));                \
-      printf("%s ::\n", instruction);                                          \
-      printf("  target: reached\n");                                           \
-   }
-
-#define TESTINST_0_1_BxxZ_RANGE(instruction, rs1_val, offset, rs1)             \
-   {                                                                           \
-      unsigned long work[1 /*in*/ + 1 /*spill*/] = {                           \
-         (unsigned long)rs1_val, 0};                                           \
+      unsigned long work[4 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0, 0, 0};        \
+      /* work[0] = output rd value                                             \
+         work[1] = address of the test instruction                             \
+         work[2] = flag that rd is not the zero reg                            \
+         work[3] = flag that rs1 is not the zero reg                           \
+         work[4] = spill slot for rd                                           \
+         work[5] = spill slot for rs1                                          \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "sd " #rs1 ", 8(%[work]);"    /* Spill rs1. */                        \
-         "ld " #rs1 ", 0(%[work]);"    /* Load the first input. */             \
-         JMP_RANGE_ASM(instruction, offset)                                    \
-         "ld " #rs1 ", 8(%[work]);"    /* Reload rs1. */                       \
+         ".if \"" #rd "\" != \"zero\";"                                        \
+         "sd " #rd ", 32(%[work]);"    /* Spill rd. */                         \
+         ".endif;"                                                             \
+         ".if \"" #rs1 "\" != \"zero\";"                                       \
+         "sd " #rs1 ", 40(%[work]);"   /* Spill rs1. */                        \
+         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         ".endif;"                                                             \
+         "j 1f;"                                                               \
+         ".option push;"                                                       \
+         ".option norvc;"                                                      \
+         /* Generate a target area for negative offset. */                     \
+         ".if " #offset " < 0;"                                                \
+         ".if 4096 + " #offset " > 0; .space 4096 + " #offset "; .endif;"      \
+         "j 2f;"                                                               \
+         ".if -" #offset " - 4 > 0; .space -" #offset " - 4; .endif;"          \
+         ".else;"                                                              \
+         ".space 4096;"                                                        \
+         ".endif;"                                                             \
+         "1:;"                                                                 \
+         ".option rvc;" instruction "; .space 2; .option norvc;"               \
+         /* Generate a target area for positive offset. */                     \
+         ".if " #offset " > 0;"                                                \
+         ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"            \
+         "j 2f;"                                                               \
+         ".if 4094 - " #offset " > 0; .space 4094 - " #offset "; .endif;"      \
+         ".else;"                                                              \
+         ".space 4094;"                                                        \
+         ".endif;"                                                             \
+         "2:;"                                                                 \
+         ".option pop;"                                                        \
+         ".if \"" #rd "\" != \"zero\";"                                        \
+         /* Calculate offset of the return address from the instruction        \
+            address. */                                                        \
+         "sd " #rd ", 0(%[work]);"     /* Store the output return address. */  \
+         "la " #rd ", 1b;"                                                     \
+         "sd " #rd ", 8(%[work]);"     /* Store address of the test instr. */  \
+         "li " #rd ", 1;"                                                      \
+         "sd " #rd ", 16(%[work]);"    /* Flag rd is not the zero reg. */      \
+         "ld " #rd ", 32(%[work]);"    /* Reload rd. */                        \
+         ".endif;"                                                             \
+         ".if \"" #rs1 "\" != \"zero\";"                                       \
+         "li " #rs1 ", 1;"                                                     \
+         "sd " #rs1 ", 24(%[work]);"   /* Flag rs1 is not the zero reg. */     \
+         "ld " #rs1 ", 40(%[work]);"   /* Reload rs1. */                       \
+         ".endif;"                                                             \
          :                                                                     \
          : [work] "r"(t1)                                                      \
          : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
-      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
+      if (work[3] != 0) /* If rs1 is not the zero register. */                 \
+         printf("  inputs: %s=%s\n", #rs1, rs1_val);                           \
+      if (work[2] != 0) /* If rd is not the zero register. */                  \
+         printf("  output: %s=1f%+ld\n", #rd, (long)(work[0] - work[1]));      \
       printf("  target: reached\n");                                           \
    }
+
+#define TESTINST_0_0_J_RANGE(instruction, offset)                              \
+   JMP_RANGE(instruction, "0", offset, zero, zero)
+
+#define TESTINST_0_1_BxxZ_RANGE(instruction, rs1_val, offset, rs1)             \
+   JMP_RANGE(instruction, #rs1_val, offset, zero, rs1)
+
+#define TESTINST_0_1_JR_RANGE(instruction, rs1_val, offset, rs1)               \
+   JMP_RANGE(instruction, rs1_val, offset, zero, rs1)
+
+#define TESTINST_1_1_JALR_RANGE(instruction, rs1_val, offset, rd, rs1)         \
+   JMP_RANGE(instruction, rs1_val, offset, rd, rs1)
+
+#define TESTINST_1_0_JAL_RANGE(instruction, offset, rd)                        \
+   JMP_RANGE(instruction, "0", offset, rd, zero)
 
 #define TESTINST_0_1_BxxZ_COND(instruction, rs1_val, rs1)                      \
    {                                                                           \
@@ -258,39 +291,6 @@ static void show_block_diff(unsigned char* block1,
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
       printf("  branch: %s\n", work[0] ? "taken" : "not taken");               \
-   }
-
-#define TESTINST_0_1_JR_RANGE(instruction, rs1_val, offset, rs1)               \
-   TESTINST_1_1_JALR_RANGE(instruction, rs1_val, offset, zero, rs1)
-
-#define TESTINST_1_1_JALR_RANGE(instruction, rs1_val, offset, rd, rs1)         \
-   {                                                                           \
-      unsigned long work[2 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0};              \
-      register unsigned long* t1 asm("t1") = work;                             \
-      __asm__ __volatile__(                                                    \
-         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
-         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
-         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
-         JMP_RANGE_ASM(instruction, offset)                                    \
-         ".if \"" #rd "\" != \"zero\";"                                        \
-         /* Calculate offset of the return address from the instruction        \
-            address. */                                                        \
-         "la " #rs1 ", 1b;"                                                    \
-         "sub " #rd ", " #rd ", " #rs1 ";"                                     \
-         "sd " #rd ", 0(%[work]);"     /* Store the return address offset. */  \
-         "li " #rd ", 1;"                                                      \
-         "sd " #rd ", 8(%[work]);"     /* Flag that rd is not the zero reg. */ \
-         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
-         ".endif;"                                                             \
-         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
-         :                                                                     \
-         : [work] "r"(t1)                                                      \
-         : "memory");                                                          \
-      printf("%s ::\n", instruction);                                          \
-      printf("  inputs: %s=%s\n", #rs1, rs1_val);                              \
-      if (work[1] != 0) /* If rd is not the zero register. */                  \
-         printf("  output: %s=1f%+ld\n", #rd, work[0]);                        \
-      printf("  target: reached\n");                                           \
    }
 
 /* clang-format on */
