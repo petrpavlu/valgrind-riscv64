@@ -145,13 +145,13 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_1_1_LOAD(length, instruction, rd, rs1)                        \
    {                                                                           \
-      const size_t   N    = 1024;                                              \
-      unsigned char* area = memalign16(N);                                     \
-      unsigned char  area2[N];                                                 \
+      const size_t   N     = 4096;                                             \
+      unsigned char* area  = memalign16(N);                                    \
+      unsigned char* area2 = memalign16(N);                                    \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
       unsigned long work[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {               \
-         0, (unsigned long)(area + N / 2), 0, 0};                              \
+         0, (unsigned long)(area2 + N / 2), 0, 0};                             \
       register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
          "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
@@ -167,19 +167,19 @@ static void show_block_diff(unsigned char* block1,
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=&area_mid\n", #rs1);                                \
       printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
-      show_block_diff(area2, area, N, N / 2);                                  \
+      show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
    }
 
 #define TESTINST_0_2_STORE(length, instruction, rs2_val, rs2, rs1)             \
    {                                                                           \
-      const size_t   N    = 1024;                                              \
-      unsigned char* area = memalign16(N);                                     \
-      unsigned char  area2[N];                                                 \
+      const size_t   N     = 4096;                                             \
+      unsigned char* area  = memalign16(N);                                    \
+      unsigned char* area2 = memalign16(N);                                    \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
       unsigned long work[2 /*in*/ + 2 /*spill*/] = {                           \
-         (unsigned long)rs2_val, (unsigned long)(area + N / 2), 0, 0};         \
+         (unsigned long)rs2_val, (unsigned long)(area2 + N / 2), 0, 0};        \
       register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
          "sd " #rs2 ", 16(%[work]);"   /* Spill rs2. */                        \
@@ -195,7 +195,7 @@ static void show_block_diff(unsigned char* block1,
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx, %s=&area_mid\n", #rs2,                    \
              (unsigned long)rs2_val, #rs1);                                    \
-      show_block_diff(area2, area, N, N / 2);                                  \
+      show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
    }
 
