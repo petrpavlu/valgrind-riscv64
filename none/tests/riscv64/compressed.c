@@ -16,6 +16,7 @@ static void test_compressed_00(void)
    TESTINST_1_1("c.addi4spn a0, sp, 256", 0x0000000000001000, a0, sp);
    TESTINST_1_1("c.addi4spn a0, sp, 512", 0x0000000000001000, a0, sp);
    TESTINST_1_1("c.addi4spn a0, sp, 1020", 0x0000000000001000, a0, sp);
+
    TESTINST_1_1("c.addi4spn a0, sp, 4", 0x000000007ffffffc, a0, sp);
    TESTINST_1_1("c.addi4spn a0, sp, 4", 0x00000000fffffffb, a0, sp);
    TESTINST_1_1("c.addi4spn a0, sp, 4", 0x00000000fffffffc, a0, sp);
@@ -32,6 +33,7 @@ static void test_compressed_00(void)
    TESTINST_1_1_LOAD("c.lw a0, 32(a1)", a0, a1);
    TESTINST_1_1_LOAD("c.lw a0, 64(a1)", a0, a1);
    TESTINST_1_1_LOAD("c.lw a0, 124(a1)", a0, a1);
+
    TESTINST_1_1_LOAD("c.lw a4, 0(a5)", a4, a5);
 
    /* --------------- c.ld rd, uimm[7:3](rs1) --------------- */
@@ -42,6 +44,7 @@ static void test_compressed_00(void)
    TESTINST_1_1_LOAD("c.ld a0, 64(a1)", a0, a1);
    TESTINST_1_1_LOAD("c.ld a0, 128(a1)", a0, a1);
    TESTINST_1_1_LOAD("c.ld a0, 248(a1)", a0, a1);
+
    TESTINST_1_1_LOAD("c.ld a4, 0(a5)", a4, a5);
 
    /* -------------- c.fsd rs2, uimm[7:3](rs1) -------------- */
@@ -55,6 +58,7 @@ static void test_compressed_00(void)
    TESTINST_0_2_STORE("c.sw a0, 32(a1)", 0xabcdef0123456789, a0, a1);
    TESTINST_0_2_STORE("c.sw a0, 64(a1)", 0xabcdef0123456789, a0, a1);
    TESTINST_0_2_STORE("c.sw a0, 124(a1)", 0xabcdef0123456789, a0, a1);
+
    TESTINST_0_2_STORE("c.sw a4, 0(a5)", 0xabcdef0123456789, a4, a5);
 
    /* -------------- c.sd rs2, uimm[7:3](rs1) --------------- */
@@ -65,6 +69,7 @@ static void test_compressed_00(void)
    TESTINST_0_2_STORE("c.sd a0, 64(a1)", 0xabcdef0123456789, a0, a1);
    TESTINST_0_2_STORE("c.sd a0, 128(a1)", 0xabcdef0123456789, a0, a1);
    TESTINST_0_2_STORE("c.sd a0, 248(a1)", 0xabcdef0123456789, a0, a1);
+
    TESTINST_0_2_STORE("c.sd a4, 0(a5)", 0xabcdef0123456789, a4, a5);
 
    printf("\n");
@@ -84,7 +89,9 @@ static void test_compressed_01(void)
    TESTINST_1_1("c.addi a0, 8", 0x0000000000001000, a0, a0);
    TESTINST_1_1("c.addi a0, 16", 0x0000000000001000, a0, a0);
    TESTINST_1_1("c.addi a0, 31", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addi a0, -1", 0x0000000000001000, a0, a0);
    TESTINST_1_1("c.addi a0, -32", 0x0000000000001000, a0, a0);
+
    TESTINST_1_1("c.addi a0, 1", 0x000000007fffffff, a0, a0);
    TESTINST_1_1("c.addi a0, 1", 0x00000000fffffffe, a0, a0);
    TESTINST_1_1("c.addi a0, 1", 0x00000000ffffffff, a0, a0);
@@ -98,7 +105,9 @@ static void test_compressed_01(void)
    TESTINST_1_1("c.addiw a0, 8", 0x0000000000001000, a0, a0);
    TESTINST_1_1("c.addiw a0, 16", 0x0000000000001000, a0, a0);
    TESTINST_1_1("c.addiw a0, 31", 0x0000000000001000, a0, a0);
+   TESTINST_1_1("c.addiw a0, -1", 0x0000000000001000, a0, a0);
    TESTINST_1_1("c.addiw a0, -32", 0x0000000000001000, a0, a0);
+
    TESTINST_1_1("c.addiw a0, 1", 0x000000007fffffff, a0, a0);
    TESTINST_1_1("c.addiw a0, 1", 0x00000000fffffffe, a0, a0);
    TESTINST_1_1("c.addiw a0, 1", 0x00000000ffffffff, a0, a0);
@@ -111,7 +120,9 @@ static void test_compressed_01(void)
    TESTINST_1_0("c.li a0, 4", a0);
    TESTINST_1_0("c.li a0, 8", a0);
    TESTINST_1_0("c.li a0, 15", a0);
+   TESTINST_1_0("c.li a0, -1", a0);
    TESTINST_1_0("c.li a0, -16", a0);
+
    TESTINST_1_0("c.li t6, 0", t6);
 
    /* ---------------- c.addi16sp nzimm[9:4] ---------------- */
@@ -121,7 +132,9 @@ static void test_compressed_01(void)
    TESTINST_1_1("c.addi16sp sp, 128", 0x0000000000001000, sp, sp);
    TESTINST_1_1("c.addi16sp sp, 256", 0x0000000000001000, sp, sp);
    TESTINST_1_1("c.addi16sp sp, 496", 0x0000000000001000, sp, sp);
+   TESTINST_1_1("c.addi16sp sp, -16", 0x0000000000001000, sp, sp);
    TESTINST_1_1("c.addi16sp sp, -512", 0x0000000000001000, sp, sp);
+
    TESTINST_1_1("c.addi16sp sp, 16", 0x000000007ffffff0, sp, sp);
    TESTINST_1_1("c.addi16sp sp, 16", 0x00000000ffffffef, sp, sp);
    TESTINST_1_1("c.addi16sp sp, 16", 0x00000000fffffff0, sp, sp);
@@ -133,12 +146,9 @@ static void test_compressed_01(void)
    TESTINST_1_0("c.lui a0, 8", a0);
    TESTINST_1_0("c.lui a0, 16", a0);
    TESTINST_1_0("c.lui a0, 31", a0);
-   TESTINST_1_0("c.lui a0, 0xfffe0" /* -32 */, a0);
-   TESTINST_1_0("c.lui a0, 0xffff0" /* -16 */, a0);
-   TESTINST_1_0("c.lui a0, 0xffff8" /* -8 */, a0);
-   TESTINST_1_0("c.lui a0, 0xffffc" /* -4 */, a0);
-   TESTINST_1_0("c.lui a0, 0xffffe" /* -2 */, a0);
    TESTINST_1_0("c.lui a0, 0xfffff" /* -1 */, a0);
+   TESTINST_1_0("c.lui a0, 0xfffe0" /* -32 */, a0);
+
    TESTINST_1_0("c.lui t6, 1", t6);
 
    /* ------------- c.srli rd_rs1, nzuimm[5:0] -------------- */
@@ -149,6 +159,7 @@ static void test_compressed_01(void)
    TESTINST_1_1("c.srli a0, 16", 0xabcdef0123456789, a0, a0);
    TESTINST_1_1("c.srli a0, 32", 0xabcdef0123456789, a0, a0);
    TESTINST_1_1("c.srli a0, 63", 0xabcdef0123456789, a0, a0);
+
    TESTINST_1_1("c.srli a5, 1", 0xabcdef0123456789, a5, a5);
 
    /* ------------- c.srai rd_rs1, nzuimm[5:0] -------------- */
@@ -159,6 +170,7 @@ static void test_compressed_01(void)
    TESTINST_1_1("c.srai a0, 16", 0xabcdef0123456789, a0, a0);
    TESTINST_1_1("c.srai a0, 32", 0xabcdef0123456789, a0, a0);
    TESTINST_1_1("c.srai a0, 63", 0xabcdef0123456789, a0, a0);
+
    TESTINST_1_1("c.srai a5, 1", 0xabcdef0123456789, a5, a5);
 
    /* --------------- c.andi rd_rs1, imm[5:0] --------------- */
@@ -169,6 +181,7 @@ static void test_compressed_01(void)
    TESTINST_1_1("c.andi a0, 8", 0xffffffffffffffff, a0, a0);
    TESTINST_1_1("c.andi a0, 16", 0xffffffffffffffff, a0, a0);
    TESTINST_1_1("c.andi a0, 31", 0xffffffffffffffff, a0, a0);
+
    TESTINST_1_1("c.andi a5, 0", 0xffffffffffffffff, a5, a5);
 
    /* ------------------ c.sub rd_rs1, rs2 ------------------ */
@@ -234,17 +247,6 @@ static void test_compressed_01(void)
                 a5);
 
    /* -------------------- c.j imm[11:1] -------------------- */
-   TESTINST_0_0_J_RANGE("c.j .-2048", -2048);
-   TESTINST_0_0_J_RANGE("c.j .-1024", -1024);
-   TESTINST_0_0_J_RANGE("c.j .-512", -512);
-   TESTINST_0_0_J_RANGE("c.j .-256", -256);
-   TESTINST_0_0_J_RANGE("c.j .-128", -128);
-   TESTINST_0_0_J_RANGE("c.j .-64", -64);
-   TESTINST_0_0_J_RANGE("c.j .-32", -32);
-   TESTINST_0_0_J_RANGE("c.j .-16", -16);
-   TESTINST_0_0_J_RANGE("c.j .-8", -8);
-   TESTINST_0_0_J_RANGE("c.j .-6", -6);
-   TESTINST_0_0_J_RANGE("c.j .-4", -4);
    TESTINST_0_0_J_RANGE("c.j .+4", 4);
    TESTINST_0_0_J_RANGE("c.j .+6", 6);
    TESTINST_0_0_J_RANGE("c.j .+8", 8);
@@ -256,16 +258,11 @@ static void test_compressed_01(void)
    TESTINST_0_0_J_RANGE("c.j .+512", 512);
    TESTINST_0_0_J_RANGE("c.j .+1024", 1024);
    TESTINST_0_0_J_RANGE("c.j .+2044", 2044);
+   TESTINST_0_0_J_RANGE("c.j .-4", -4);
+   TESTINST_0_0_J_RANGE("c.j .-6", -6);
+   TESTINST_0_0_J_RANGE("c.j .-2048", -2048);
 
    /* ---------------- c.beqz rs1, imm[8:1] ----------------- */
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-256", 0, -256, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-128", 0, -128, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-64", 0, -64, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-32", 0, -32, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-16", 0, -16, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-8", 0, -8, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-6", 0, -6, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-4", 0, -4, a0);
    TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+4", 0, 4, a0);
    TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+6", 0, 6, a0);
    TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+8", 0, 8, a0);
@@ -274,20 +271,15 @@ static void test_compressed_01(void)
    TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+64", 0, 64, a0);
    TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+128", 0, 128, a0);
    TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .+252", 0, 252, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.beqz a5, .-256", 0, -256, a5);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-4", 0, -4, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-6", 0, -6, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a0, .-256", 0, -256, a0);
+
+   TESTINST_0_1_BxxZ_RANGE("c.beqz a5, .+4", 0, 4, a5);
    TESTINST_0_1_BxxZ_COND("c.beqz a0, 1f", 0, a0);
    TESTINST_0_1_BxxZ_COND("c.beqz a0, 1f", 1, a0);
-   TESTINST_0_1_BxxZ_COND("c.beqz a0, 1f", 0x8000000000000000, a0);
 
    /* ---------------- c.bnez rs1, imm[8:1] ----------------- */
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-256", 1, -256, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-128", 1, -128, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-64", 1, -64, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-32", 1, -32, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-16", 1, -16, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-8", 1, -8, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-6", 1, -6, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-4", 1, -4, a0);
    TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+4", 1, 4, a0);
    TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+6", 1, 6, a0);
    TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+8", 1, 8, a0);
@@ -296,10 +288,13 @@ static void test_compressed_01(void)
    TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+64", 1, 64, a0);
    TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+128", 1, 128, a0);
    TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .+252", 1, 252, a0);
-   TESTINST_0_1_BxxZ_RANGE("c.bnez a5, .-256", 1, -256, a5);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-4", 1, -4, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-6", 1, -6, a0);
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a0, .-256", 1, -256, a0);
+
+   TESTINST_0_1_BxxZ_RANGE("c.bnez a5, .+4", 1, 4, a5);
    TESTINST_0_1_BxxZ_COND("c.bnez a0, 1f", 0, a0);
    TESTINST_0_1_BxxZ_COND("c.bnez a0, 1f", 1, a0);
-   TESTINST_0_1_BxxZ_COND("c.bnez a0, 1f", 0x8000000000000000, a0);
 
    printf("\n");
 }
@@ -316,6 +311,7 @@ static void test_compressed_10(void)
    TESTINST_1_1("c.slli a0, 16", 0xabcdef0123456789, a0, a0);
    TESTINST_1_1("c.slli a0, 32", 0xabcdef0123456789, a0, a0);
    TESTINST_1_1("c.slli a0, 63", 0xabcdef0123456789, a0, a0);
+
    TESTINST_1_1("c.slli a5, 1", 0xabcdef0123456789, a5, a5);
 
    /* -------------- c.fldsp rd, uimm[8:3](x2) -------------- */
@@ -330,6 +326,7 @@ static void test_compressed_10(void)
    TESTINST_1_1_LOAD("c.lwsp a0, 64(sp)", a0, sp);
    TESTINST_1_1_LOAD("c.lwsp a0, 128(sp)", a0, sp);
    TESTINST_1_1_LOAD("c.lwsp a0, 252(sp)", a0, sp);
+
    TESTINST_1_1_LOAD("c.lwsp a5, 0(sp)", a5, sp);
 
    /* -------------- c.ldsp rd, uimm[8:3](x2) --------------- */
@@ -341,16 +338,18 @@ static void test_compressed_10(void)
    TESTINST_1_1_LOAD("c.ldsp a0, 128(sp)", a0, sp);
    TESTINST_1_1_LOAD("c.ldsp a0, 256(sp)", a0, sp);
    TESTINST_1_1_LOAD("c.ldsp a0, 504(sp)", a0, sp);
+
    TESTINST_1_1_LOAD("c.ldsp a5, 0(sp)", a5, sp);
 
    /* ---------------------- c.jr rs1 ----------------------- */
-   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-8", -8, t0);
-   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-6", -6, t0);
-   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-4", -4, t0);
    TESTINST_0_1_JR_RANGE("c.jr t0", "1f+4", 4, t0);
    TESTINST_0_1_JR_RANGE("c.jr t0", "1f+6", 6, t0);
    TESTINST_0_1_JR_RANGE("c.jr t0", "1f+8", 8, t0);
-   TESTINST_0_1_JR_RANGE("c.jr t6", "1f-8", -8, t6);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-4", -4, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-6", -6, t0);
+   TESTINST_0_1_JR_RANGE("c.jr t0", "1f-8", -8, t0);
+
+   TESTINST_0_1_JR_RANGE("c.jr t6", "1f+4", 4, t6);
 
    /* -------------------- c.mv rd, rs2 --------------------- */
    TESTINST_1_1("c.mv t0, t6", 0xabcdef0123456789, t0, t6);
@@ -361,13 +360,14 @@ static void test_compressed_10(void)
    TESTINST_1_1("c.mv a7, a0", 0xabcdef0123456789, a7, a0);
 
    /* --------------------- c.jalr rs1 ---------------------- */
-   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-8", -8, ra, t0);
-   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-6", -6, ra, t0);
-   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-4", -4, ra, t0);
    TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f+4", 4, ra, t0);
    TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f+6", 6, ra, t0);
    TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f+8", 8, ra, t0);
-   TESTINST_1_1_JALR_RANGE("c.jalr t6", "1f-8", -8, ra, t6);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-4", -4, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-6", -6, ra, t0);
+   TESTINST_1_1_JALR_RANGE("c.jalr t0", "1f-8", -8, ra, t0);
+
+   TESTINST_1_1_JALR_RANGE("c.jalr t6", "1f+4", 4, ra, t6);
 
    /* ------------------ c.add rd_rs1, rs2 ------------------ */
    TESTINST_1_2("c.add a0, a1", 0x0000000000001000, 0x0000000000002000, a0, a0,
@@ -397,6 +397,7 @@ static void test_compressed_10(void)
    TESTINST_0_2_STORE("c.swsp a0, 64(sp)", 0xabcdef0123456789, a0, sp);
    TESTINST_0_2_STORE("c.swsp a0, 128(sp)", 0xabcdef0123456789, a0, sp);
    TESTINST_0_2_STORE("c.swsp a0, 252(sp)", 0xabcdef0123456789, a0, sp);
+
    TESTINST_0_2_STORE("c.swsp a5, 0(sp)", 0xabcdef0123456789, a5, sp);
 
    /* -------------- c.sdsp rs2, uimm[8:3](x2) -------------- */
@@ -408,6 +409,7 @@ static void test_compressed_10(void)
    TESTINST_0_2_STORE("c.sdsp a0, 128(sp)", 0xabcdef0123456789, a0, sp);
    TESTINST_0_2_STORE("c.sdsp a0, 256(sp)", 0xabcdef0123456789, a0, sp);
    TESTINST_0_2_STORE("c.sdsp a0, 504(sp)", 0xabcdef0123456789, a0, sp);
+
    TESTINST_0_2_STORE("c.sdsp a5, 0(sp)", 0xabcdef0123456789, a5, sp);
 }
 
