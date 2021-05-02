@@ -199,24 +199,30 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define JMP_RANGE(length, instruction, rs1_val, offset, rd, rs1)               \
+#define JMP_RANGE(length, instruction, rs1_val, rs2_val, offset, rd, rs1, rs2) \
    {                                                                           \
-      unsigned long work[4 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0, 0, 0};        \
+      unsigned long work[5 /*out*/ + 3 /*spill*/] = {0, 0, 0, 0, 0, 0, 0, 0};  \
       /* work[0] = output rd value                                             \
          work[1] = address of the test instruction                             \
-         work[2] = flag that rd is not the zero reg                            \
-         work[3] = flag that rs1 is not the zero reg                           \
-         work[4] = spill slot for rd                                           \
-         work[5] = spill slot for rs1                                          \
+         work[2] = flag that rd is valid                                       \
+         work[3] = flag that rs1 is valid                                      \
+         work[4] = flag that rs2 is valid                                      \
+         work[5] = spill slot for rd                                           \
+         work[6] = spill slot for rs1                                          \
+         work[7] = spill slot for rs2                                          \
        */                                                                      \
       register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         ".if \"" #rd "\" != \"zero\";"                                        \
-         "sd " #rd ", 32(%[work]);"    /* Spill rd. */                         \
+         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         "sd " #rd ", 40(%[work]);"    /* Spill rd. */                         \
          ".endif;"                                                             \
-         ".if \"" #rs1 "\" != \"zero\";"                                       \
-         "sd " #rs1 ", 40(%[work]);"   /* Spill rs1. */                        \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "sd " #rs1 ", 48(%[work]);"   /* Spill rs1. */                        \
          "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         ".endif;"                                                             \
+         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         "sd " #rs2 ", 56(%[work]);"   /* Spill rs2. */                        \
+         "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
          ".endif;"                                                             \
          "j 1f;"                                                               \
          ".option push;"                                                       \
@@ -242,68 +248,121 @@ static void show_block_diff(unsigned char* block1,
          ".endif;"                                                             \
          "2:;"                                                                 \
          ".option pop;"                                                        \
-         ".if \"" #rd "\" != \"zero\";"                                        \
+         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
          /* Calculate offset of the return address from the instruction        \
             address. */                                                        \
          "sd " #rd ", 0(%[work]);"     /* Store the output return address. */  \
-         "la " #rd ", 1b;"                                                     \
-         "sd " #rd ", 8(%[work]);"     /* Store address of the test instr. */  \
-         "li " #rd ", 1;"                                                      \
-         "sd " #rd ", 16(%[work]);"    /* Flag rd is not the zero reg. */      \
-         "ld " #rd ", 32(%[work]);"    /* Reload rd. */                        \
+         "la t2, 1b;"                                                          \
+         "sd t2, 8(%[work]);"          /* Store address of the test instr. */  \
+         "li t2, 1;"                                                           \
+         "sd t2, 16(%[work]);"         /* Flag that rd is valid. */            \
          ".endif;"                                                             \
-         ".if \"" #rs1 "\" != \"zero\";"                                       \
-         "li " #rs1 ", 1;"                                                     \
-         "sd " #rs1 ", 24(%[work]);"   /* Flag rs1 is not the zero reg. */     \
-         "ld " #rs1 ", 40(%[work]);"   /* Reload rs1. */                       \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
+         "li t2, 1;"                                                           \
+         "sd t2, 24(%[work]);"         /* Flag that rs1 is valid. */           \
+         ".endif;"                                                             \
+         ".if \"" #rs2 "\" != \"unused\";"                                     \
+         "li t2, 1;"                                                           \
+         "sd t2, 32(%[work]);"         /* Flag that rs2 is valid. */           \
+         ".endif;"                                                             \
+         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         "ld " #rd ", 40(%[work]);"    /* Reload rd. */                        \
+         ".endif;"                                                             \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "ld " #rs1 ", 48(%[work]);"   /* Reload rs1. */                       \
+         ".endif;"                                                             \
+         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         "ld " #rs2 ", 56(%[work]);"   /* Reload rs2. */                       \
          ".endif;"                                                             \
          :                                                                     \
          : [work] "r"(t1)                                                      \
-         : "memory");                                                          \
+         : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
-      if (work[3] != 0) /* If rs1 is not the zero register. */                 \
-         printf("  inputs: %s=%s\n", #rs1, rs1_val);                           \
-      if (work[2] != 0) /* If rd is not the zero register. */                  \
+      if (work[3] != 0) { /* If rs1 is valid. */                               \
+         printf("  inputs: %s=%s", #rs1, rs1_val);                             \
+         if (work[4] != 0) /* If rs2 is valid. */                              \
+            printf(", %s=%s", #rs2, rs2_val);                                  \
+         printf("\n");                                                         \
+      }                                                                        \
+      if (work[2] != 0) /* If rd is valid. */                                  \
          printf("  output: %s=1f%+ld\n", #rd, (long)(work[0] - work[1]));      \
       printf("  target: reached\n");                                           \
    }
 
 #define TESTINST_0_0_J_RANGE(length, instruction, offset)                      \
-   JMP_RANGE(length, instruction, "0", offset, unused, unused)
+   JMP_RANGE(length, instruction, "0", "0", offset, unused, unused, unused)
 
 #define TESTINST_0_1_JR_RANGE(length, instruction, rs1_val, offset, rs1)       \
-   JMP_RANGE(length, instruction, rs1_val, offset, unused, rs1)
+   JMP_RANGE(length, instruction, rs1_val, "0", offset, unused, rs1, unused)
 
 #define TESTINST_1_0_JAL_RANGE(length, instruction, offset, rd)                \
-   JMP_RANGE(length, instruction, "0", offset, rd, unused)
+   JMP_RANGE(length, instruction, "0", "0", offset, rd, unused, unused)
 
 #define TESTINST_1_1_JALR_RANGE(length, instruction, rs1_val, offset, rd, rs1) \
-   JMP_RANGE(length, instruction, rs1_val, offset, rd, rs1)
+   JMP_RANGE(length, instruction, rs1_val, "0", offset, rd, rs1, unused)
 
 #define TESTINST_0_1_BxxZ_RANGE(length, instruction, rs1_val, offset, rs1)     \
-   JMP_RANGE(length, instruction, #rs1_val, offset, unused, rs1)
+   JMP_RANGE(length, instruction, #rs1_val, "0", offset, unused, rs1, unused)
 
-#define TESTINST_0_1_BxxZ_COND(length, instruction, rs1_val, rs1)              \
+#define TESTINST_0_2_Bxx_RANGE(length, instruction, rs1_val, rs2_val, offset, rs1, rs2) \
+   JMP_RANGE(length, instruction, #rs1_val, #rs2_val, offset, unused, rs1, rs2)
+
+#define JMP_COND(length, instruction, rs1_val, rs2_val, rs1, rs2)              \
    {                                                                           \
-      unsigned long work[1 /*out*/ + 1 /*in*/ + 1 /*spill*/] = {               \
-         0, (unsigned long)rs1_val, 0};                                        \
+      unsigned long work[2 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0};              \
+      /* work[0] = flag that the branch was taken                              \
+         work[1] = flag that rs1 is valid                                      \
+         work[2] = flag that rs2 is valid                                      \
+         work[3] = spill slot for rs1                                          \
+         work[4] = spill slot for rs2                                          \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
-         "sd " #rs1 ", 16(%[work]);"   /* Spill rs1. */                        \
-         "li " #rs1 ", 1;"                                                     \
-         "sd " #rs1 ", 0(%[work]);"    /* Set result to "taken". */            \
-         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
+         "li t2, 1;"                                                           \
+         "sd t2, 0(%[work]);"          /* Set result to "taken". */            \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
+         "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
+         ".endif;"                                                             \
+         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         "sd " #rs2 ", 32(%[work]);"   /* Spill rs2. */                        \
+         "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
+         ".endif;"                                                             \
          ASMINST_##length(instruction) ";"                                     \
-         "li " #rs1 ", 0;"                                                     \
-         "sd " #rs1 ", 0(%[work]);"    /* Set result to "not taken". */        \
+         "li t2, 0;"                                                           \
+         "sd t2, 0(%[work]);"          /* Set result to "not taken". */        \
          "1:;"                                                                 \
-         "ld " #rs1 ", 16(%[work]);"   /* Reload rs1. */                       \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
+         "li t2, 1;"                                                           \
+         "sd t2, 8(%[work]);"          /* Flag that rs1 is valid. */           \
+         ".endif;"                                                             \
+         ".if \"" #rs2 "\" != \"unused\";"                                     \
+         "li t2, 1;"                                                           \
+         "sd t2, 16(%[work]);"         /* Flag that rs2 is valid. */           \
+         ".endif;"                                                             \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         ".endif;"                                                             \
+         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         "ld " #rs2 ", 32(%[work]);"   /* Reload rs2. */                       \
+         ".endif;"                                                             \
          :                                                                     \
          : [work] "r"(t1)                                                      \
-         : "memory");                                                          \
+         : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
-      printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
+      if (work[1] != 0) { /* If rs1 is valid. */                               \
+         printf("  inputs: %s=%s", #rs1, rs1_val);                             \
+         if (work[2] != 0) /* If rs2 is valid. */                              \
+            printf(", %s=%s", #rs2, rs2_val);                                  \
+         printf("\n");                                                         \
+      }                                                                        \
       printf("  branch: %s\n", work[0] ? "taken" : "not taken");               \
    }
+
+#define TESTINST_0_1_BxxZ_COND(length, instruction, rs1_val, rs1)              \
+   JMP_COND(length, instruction, #rs1_val, "0", rs1, unused)
+
+#define TESTINST_0_2_Bxx_COND(length, instruction, rs1_val, rs2_val, rs1, rs2) \
+   JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
 
 /* clang-format on */
