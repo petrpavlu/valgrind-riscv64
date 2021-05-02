@@ -63,19 +63,31 @@ static void show_block_diff(unsigned char* block1,
    assembly. */
 /* clang-format off */
 
-#define TESTINST_0_0(instruction)                                              \
+#define ASMINST_2(instruction)                                                 \
+   ".option push;"                                                             \
+   ".option rvc;"                                                              \
+   instruction ";"                                                             \
+   ".option pop"
+
+#define ASMINST_4(instruction)                                                 \
+   ".option push;"                                                             \
+   ".option norvc;"                                                            \
+   instruction ";"                                                             \
+   ".option pop"
+
+#define TESTINST_0_0(length, instruction)                                      \
    {                                                                           \
-      __asm__ __volatile__(instruction);                                       \
+      __asm__ __volatile__(ASMINST_##length(instruction));                     \
       printf("%s ::\n", instruction);                                          \
    }
 
-#define TESTINST_1_0(instruction, rd)                                          \
+#define TESTINST_1_0(length, instruction, rd)                                  \
    {                                                                           \
       unsigned long work[1 /*out*/ + 1 /*spill*/] = {0};                       \
       register unsigned long* t1 asm("t1") = work;                             \
       __asm__ __volatile__(                                                    \
          "sd " #rd ", 8(%[work]);"     /* Spill rd. */                         \
-         instruction ";"                                                       \
+         ASMINST_##length(instruction) ";"                                     \
          "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
          "ld " #rd ", 8(%[work]);"     /* Reload rd. */                        \
          :                                                                     \
@@ -85,7 +97,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
    }
 
-#define TESTINST_1_1(instruction, rs1_val, rd, rs1)                            \
+#define TESTINST_1_1(length, instruction, rs1_val, rd, rs1)                    \
    {                                                                           \
       unsigned long work[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {               \
          0, (unsigned long)rs1_val, 0, 0};                                     \
@@ -94,7 +106,7 @@ static void show_block_diff(unsigned char* block1,
          "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
          "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
          "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
-         instruction ";"                                                       \
+         ASMINST_##length(instruction) ";"                                     \
          "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
          "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
          "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
@@ -106,7 +118,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
    }
 
-#define TESTINST_1_2(instruction, rs1_val, rs2_val, rd, rs1, rs2)              \
+#define TESTINST_1_2(length, instruction, rs1_val, rs2_val, rd, rs1, rs2)      \
    {                                                                           \
       unsigned long work[1 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {               \
          0, (unsigned long)rs1_val, (unsigned long)rs2_val, 0, 0};             \
@@ -117,7 +129,7 @@ static void show_block_diff(unsigned char* block1,
          "sd " #rs2 ", 40(%[work]);"   /* Spill rs2. */                        \
          "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
          "ld " #rs2 ", 16(%[work]);"   /* Load the second input. */            \
-         instruction ";"                                                       \
+         ASMINST_##length(instruction) ";"                                     \
          "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
          "ld " #rd ", 24(%[work]);"    /* Reload rd. */                        \
          "ld " #rs1 ", 32(%[work]);"   /* Reload rs1. */                       \
@@ -131,7 +143,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
    }
 
-#define TESTINST_1_1_LOAD(instruction, rd, rs1)                                \
+#define TESTINST_1_1_LOAD(length, instruction, rd, rs1)                        \
    {                                                                           \
       const size_t   N    = 1024;                                              \
       unsigned char* area = memalign16(N);                                     \
@@ -145,7 +157,7 @@ static void show_block_diff(unsigned char* block1,
          "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
          "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
          "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
-         instruction ";"                                                       \
+         ASMINST_##length(instruction) ";"                                     \
          "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
          "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
          "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
@@ -159,7 +171,7 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define TESTINST_0_2_STORE(instruction, rs2_val, rs2, rs1)                     \
+#define TESTINST_0_2_STORE(length, instruction, rs2_val, rs2, rs1)             \
    {                                                                           \
       const size_t   N    = 1024;                                              \
       unsigned char* area = memalign16(N);                                     \
@@ -174,7 +186,7 @@ static void show_block_diff(unsigned char* block1,
          "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
          "ld " #rs2 ", 0(%[work]);"    /* Load the first input. */             \
          "ld " #rs1 ", 8(%[work]);"    /* Load the second input. */            \
-         instruction ";"                                                       \
+         ASMINST_##length(instruction) ";"                                     \
          "ld " #rs2 ", 16(%[work]);"   /* Reload rs2. */                       \
          "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
          :                                                                     \
@@ -187,7 +199,7 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define JMP_RANGE(instruction, rs1_val, offset, rd, rs1)                       \
+#define JMP_RANGE(length, instruction, rs1_val, offset, rd, rs1)               \
    {                                                                           \
       unsigned long work[4 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0, 0, 0};        \
       /* work[0] = output rd value                                             \
@@ -218,8 +230,9 @@ static void show_block_diff(unsigned char* block1,
          ".space 4096;"                                                        \
          ".endif;"                                                             \
          "1:;"                                                                 \
-         ".option rvc;" instruction "; .space 2; .option norvc;"               \
+         ASMINST_##length(instruction) ";"                                     \
          /* Generate a target area for positive offset. */                     \
+         ".if " #length " == 2; .space 2; .endif;"                             \
          ".if " #offset " > 0;"                                                \
          ".if " #offset " - 4 > 0; .space " #offset " - 4; .endif;"            \
          "j 2f;"                                                               \
@@ -255,22 +268,22 @@ static void show_block_diff(unsigned char* block1,
       printf("  target: reached\n");                                           \
    }
 
-#define TESTINST_0_0_J_RANGE(instruction, offset)                              \
-   JMP_RANGE(instruction, "0", offset, zero, zero)
+#define TESTINST_0_0_J_RANGE(length, instruction, offset)                      \
+   JMP_RANGE(length, instruction, "0", offset, unused, unused)
 
-#define TESTINST_0_1_BxxZ_RANGE(instruction, rs1_val, offset, rs1)             \
-   JMP_RANGE(instruction, #rs1_val, offset, zero, rs1)
+#define TESTINST_0_1_JR_RANGE(length, instruction, rs1_val, offset, rs1)       \
+   JMP_RANGE(length, instruction, rs1_val, offset, unused, rs1)
 
-#define TESTINST_0_1_JR_RANGE(instruction, rs1_val, offset, rs1)               \
-   JMP_RANGE(instruction, rs1_val, offset, zero, rs1)
+#define TESTINST_1_0_JAL_RANGE(length, instruction, offset, rd)                \
+   JMP_RANGE(length, instruction, "0", offset, rd, unused)
 
-#define TESTINST_1_1_JALR_RANGE(instruction, rs1_val, offset, rd, rs1)         \
-   JMP_RANGE(instruction, rs1_val, offset, rd, rs1)
+#define TESTINST_1_1_JALR_RANGE(length, instruction, rs1_val, offset, rd, rs1) \
+   JMP_RANGE(length, instruction, rs1_val, offset, rd, rs1)
 
-#define TESTINST_1_0_JAL_RANGE(instruction, offset, rd)                        \
-   JMP_RANGE(instruction, "0", offset, rd, zero)
+#define TESTINST_0_1_BxxZ_RANGE(length, instruction, rs1_val, offset, rs1)     \
+   JMP_RANGE(length, instruction, #rs1_val, offset, unused, rs1)
 
-#define TESTINST_0_1_BxxZ_COND(instruction, rs1_val, rs1)                      \
+#define TESTINST_0_1_BxxZ_COND(length, instruction, rs1_val, rs1)              \
    {                                                                           \
       unsigned long work[1 /*out*/ + 1 /*in*/ + 1 /*spill*/] = {               \
          0, (unsigned long)rs1_val, 0};                                        \
@@ -280,7 +293,7 @@ static void show_block_diff(unsigned char* block1,
          "li " #rs1 ", 1;"                                                     \
          "sd " #rs1 ", 0(%[work]);"    /* Set result to "taken". */            \
          "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
-         instruction ";"                                                       \
+         ASMINST_##length(instruction) ";"                                     \
          "li " #rs1 ", 0;"                                                     \
          "sd " #rs1 ", 0(%[work]);"    /* Set result to "not taken". */        \
          "1:;"                                                                 \
