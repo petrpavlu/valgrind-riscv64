@@ -1,4 +1,4 @@
-Compressed Instructions, Quadrant 0
+Compressed instructions, quadrant 0
 c.addi4spn a0, sp, 4 ::
   inputs: sp=0x0000000000001000
   output: a0=0x0000000000001004
@@ -40,67 +40,67 @@ c.addi4spn a5, sp, 4 ::
   output: a0=0x0000000000000020
 c.lw a0, 0(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffffffc411c4
+  output: a0=0x0000000041dc8da0
   no memory changes
 c.lw a0, 4(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x00000000413cead2
+  output: a0=0xffffffff8aa9987b
   no memory changes
 c.lw a0, 8(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x000000004c88ae0d
+  output: a0=0x00000000355229e8
   no memory changes
 c.lw a0, 16(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x000000000e860c39
+  output: a0=0xfffffffffeb20cc3
   no memory changes
 c.lw a0, 32(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x0000000035968b0a
+  output: a0=0xffffffffdb9b22c9
   no memory changes
 c.lw a0, 64(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffffb2ddaa1e
+  output: a0=0xffffffff879ff2e1
   no memory changes
 c.lw a0, 124(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x00000000442729db
+  output: a0=0x00000000013aaa2e
   no memory changes
 c.lw a4, 0(a5) ::
   inputs: a5=&area_mid
-  output: a4=0xfffffffff353aed5
+  output: a4=0x000000000e1801e6
   no memory changes
 c.ld a0, 0(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x46518421715669c6
+  output: a0=0x208080370720eda7
   no memory changes
 c.ld a0, 8(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x8dd9540466eef7d3
+  output: a0=0x939577469bec4e03
   no memory changes
 c.ld a0, 16(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xc8dd1991b6cb297d
+  output: a0=0x34bc79601d480253
   no memory changes
 c.ld a0, 32(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xf33908f372f209e1
+  output: a0=0xc6ceea1bcc0b1923
   no memory changes
 c.ld a0, 64(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xbaae5dda57a6295a
+  output: a0=0x0e1441b59c446e4f
   no memory changes
 c.ld a0, 128(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x2d9b0d5f9d85c79b
+  output: a0=0x03e9b958b646aef6
   no memory changes
 c.ld a0, 248(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xef5942a1c0e0ca1e
+  output: a0=0x4d8110321460c072
   no memory changes
 c.ld a4, 0(a5) ::
   inputs: a5=&area_mid
-  output: a4=0x2bc7fed064e506d7
+  output: a4=0xb55668f4d45c61ed
   no memory changes
 c.sw a0, 0(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
@@ -151,7 +151,7 @@ c.sd a4, 0(a5) ::
   inputs: a4=0xabcdef0123456789, a5=&area_mid
   [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 
-Compressed Instructions, Quadrant 1
+Compressed instructions, quadrant 1
 c.nop ::
 c.addi a0, 1 ::
   inputs: a0=0x0000000000001000
@@ -171,6 +171,9 @@ c.addi a0, 16 ::
 c.addi a0, 31 ::
   inputs: a0=0x0000000000001000
   output: a0=0x000000000000101f
+c.addi a0, -1 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000000fff
 c.addi a0, -32 ::
   inputs: a0=0x0000000000001000
   output: a0=0x0000000000000fe0
@@ -207,6 +210,9 @@ c.addiw a0, 16 ::
 c.addiw a0, 31 ::
   inputs: a0=0x0000000000001000
   output: a0=0x000000000000101f
+c.addiw a0, -1 ::
+  inputs: a0=0x0000000000001000
+  output: a0=0x0000000000000fff
 c.addiw a0, -32 ::
   inputs: a0=0x0000000000001000
   output: a0=0x0000000000000fe0
@@ -234,6 +240,8 @@ c.li a0, 8 ::
   output: a0=0x0000000000000008
 c.li a0, 15 ::
   output: a0=0x000000000000000f
+c.li a0, -1 ::
+  output: a0=0xffffffffffffffff
 c.li a0, -16 ::
   output: a0=0xfffffffffffffff0
 c.li t6, 0 ::
@@ -256,6 +264,9 @@ c.addi16sp sp, 256 ::
 c.addi16sp sp, 496 ::
   inputs: sp=0x0000000000001000
   output: sp=0x00000000000011f0
+c.addi16sp sp, -16 ::
+  inputs: sp=0x0000000000001000
+  output: sp=0x0000000000000ff0
 c.addi16sp sp, -512 ::
   inputs: sp=0x0000000000001000
   output: sp=0x0000000000000e00
@@ -280,18 +291,10 @@ c.lui a0, 16 ::
   output: a0=0x0000000000010000
 c.lui a0, 31 ::
   output: a0=0x000000000001f000
-c.lui a0, 0xfffe0 ::
-  output: a0=0xfffffffffffe0000
-c.lui a0, 0xffff0 ::
-  output: a0=0xffffffffffff0000
-c.lui a0, 0xffff8 ::
-  output: a0=0xffffffffffff8000
-c.lui a0, 0xffffc ::
-  output: a0=0xffffffffffffc000
-c.lui a0, 0xffffe ::
-  output: a0=0xffffffffffffe000
 c.lui a0, 0xfffff ::
   output: a0=0xfffffffffffff000
+c.lui a0, 0xfffe0 ::
+  output: a0=0xfffffffffffe0000
 c.lui t6, 1 ::
   output: t6=0x0000000000001000
 c.srli a0, 1 ::
@@ -441,28 +444,6 @@ c.addw a0, a1 ::
 c.addw a4, a5 ::
   inputs: a4=0x0000000000001000, a5=0x0000000000002000
   output: a4=0x0000000000003000
-c.j .-2048 ::
-  target: reached
-c.j .-1024 ::
-  target: reached
-c.j .-512 ::
-  target: reached
-c.j .-256 ::
-  target: reached
-c.j .-128 ::
-  target: reached
-c.j .-64 ::
-  target: reached
-c.j .-32 ::
-  target: reached
-c.j .-16 ::
-  target: reached
-c.j .-8 ::
-  target: reached
-c.j .-6 ::
-  target: reached
-c.j .-4 ::
-  target: reached
 c.j .+4 ::
   target: reached
 c.j .+6 ::
@@ -485,128 +466,98 @@ c.j .+1024 ::
   target: reached
 c.j .+2044 ::
   target: reached
-c.beqz a0, .-256 ::
-  inputs: a0=0x0000000000000000
+c.j .-4 ::
   target: reached
-c.beqz a0, .-128 ::
-  inputs: a0=0x0000000000000000
+c.j .-6 ::
   target: reached
-c.beqz a0, .-64 ::
-  inputs: a0=0x0000000000000000
-  target: reached
-c.beqz a0, .-32 ::
-  inputs: a0=0x0000000000000000
-  target: reached
-c.beqz a0, .-16 ::
-  inputs: a0=0x0000000000000000
-  target: reached
-c.beqz a0, .-8 ::
-  inputs: a0=0x0000000000000000
-  target: reached
-c.beqz a0, .-6 ::
-  inputs: a0=0x0000000000000000
-  target: reached
-c.beqz a0, .-4 ::
-  inputs: a0=0x0000000000000000
+c.j .-2048 ::
   target: reached
 c.beqz a0, .+4 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+6 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+8 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+16 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+32 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+64 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+128 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
 c.beqz a0, .+252 ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   target: reached
-c.beqz a5, .-256 ::
-  inputs: a5=0x0000000000000000
+c.beqz a0, .-4 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .-6 ::
+  inputs: a0=0
+  target: reached
+c.beqz a0, .-256 ::
+  inputs: a0=0
+  target: reached
+c.beqz a5, .+4 ::
+  inputs: a5=0
   target: reached
 c.beqz a0, 1f ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   branch: taken
 c.beqz a0, 1f ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   branch: not taken
-c.beqz a0, 1f ::
-  inputs: a0=0x8000000000000000
-  branch: not taken
-c.bnez a0, .-256 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-128 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-64 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-32 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-16 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-8 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-6 ::
-  inputs: a0=0x0000000000000001
-  target: reached
-c.bnez a0, .-4 ::
-  inputs: a0=0x0000000000000001
-  target: reached
 c.bnez a0, .+4 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+6 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+8 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+16 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+32 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+64 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+128 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
 c.bnez a0, .+252 ::
-  inputs: a0=0x0000000000000001
+  inputs: a0=1
   target: reached
-c.bnez a5, .-256 ::
-  inputs: a5=0x0000000000000001
+c.bnez a0, .-4 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .-6 ::
+  inputs: a0=1
+  target: reached
+c.bnez a0, .-256 ::
+  inputs: a0=1
+  target: reached
+c.bnez a5, .+4 ::
+  inputs: a5=1
   target: reached
 c.bnez a0, 1f ::
-  inputs: a0=0x0000000000000000
+  inputs: a0=0
   branch: not taken
 c.bnez a0, 1f ::
-  inputs: a0=0x0000000000000001
-  branch: taken
-c.bnez a0, 1f ::
-  inputs: a0=0x8000000000000000
+  inputs: a0=1
   branch: taken
 
-Compressed Instructions, Quadrant 2
+Compressed instructions, quadrant 2
 c.slli a0, 1 ::
   inputs: a0=0xabcdef0123456789
   output: a0=0x579bde02468acf12
@@ -633,85 +584,76 @@ c.slli a5, 1 ::
   output: a5=0x579bde02468acf12
 c.lwsp a0, 0(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xffffffffc50971cb
+  output: a0=0x0000000058ef0cbb
   no memory changes
 c.lwsp a0, 4(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xffffffffa20c8585
+  output: a0=0x0000000011ec0746
   no memory changes
 c.lwsp a0, 8(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x000000000aa4452b
+  output: a0=0x000000002cc58863
   no memory changes
 c.lwsp a0, 16(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xffffffffc47adc70
+  output: a0=0xffffffffd5854b9e
   no memory changes
 c.lwsp a0, 32(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xffffffffdb3aca71
+  output: a0=0x00000000722e2164
   no memory changes
 c.lwsp a0, 64(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x0000000038e2cae5
+  output: a0=0xffffffff9eb271fc
   no memory changes
 c.lwsp a0, 128(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x000000000cc7c63d
+  output: a0=0x00000000704da97b
   no memory changes
 c.lwsp a0, 252(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x000000004db76ca6
+  output: a0=0x00000000477a37c5
   no memory changes
 c.lwsp a5, 0(sp) ::
   inputs: sp=&area_mid
-  output: a5=0x00000000379ac9cc
+  output: a5=0x000000001e336cc2
   no memory changes
 c.ldsp a0, 0(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xbb816cf195fc641d
+  output: a0=0x73bda2f9163c5883
   no memory changes
 c.ldsp a0, 8(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xee4bd229392cabb3
+  output: a0=0x165d70dbe9e22082
   no memory changes
 c.ldsp a0, 16(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xcc2a25e372b8103e
+  output: a0=0xc56f29278b7a1bd5
   no memory changes
 c.ldsp a0, 32(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x86a438c7c524da0b
+  output: a0=0x1577a86918d360cb
   no memory changes
 c.ldsp a0, 64(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x2d13947199239217
+  output: a0=0x59299b8e24b791c2
   no memory changes
 c.ldsp a0, 128(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xfe16f29c5db8fe9e
+  output: a0=0x46d64b49b5128902
   no memory changes
 c.ldsp a0, 256(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x7d26a069bc89cfe1
+  output: a0=0x38e40901c9cbb6a7
   no memory changes
 c.ldsp a0, 504(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xa6b92f013cf0893e
+  output: a0=0xf1c6964b130ea280
   no memory changes
 c.ldsp a5, 0(sp) ::
   inputs: sp=&area_mid
-  output: a5=0xd3f5535e068ebc1e
+  output: a5=0xd58e3eacdc81b88a
   no memory changes
-c.jr t0 ::
-  inputs: t0=1f-8
-  target: reached
-c.jr t0 ::
-  inputs: t0=1f-6
-  target: reached
-c.jr t0 ::
-  inputs: t0=1f-4
-  target: reached
 c.jr t0 ::
   inputs: t0=1f+4
   target: reached
@@ -721,8 +663,17 @@ c.jr t0 ::
 c.jr t0 ::
   inputs: t0=1f+8
   target: reached
+c.jr t0 ::
+  inputs: t0=1f-4
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-6
+  target: reached
+c.jr t0 ::
+  inputs: t0=1f-8
+  target: reached
 c.jr t6 ::
-  inputs: t6=1f-8
+  inputs: t6=1f+4
   target: reached
 c.mv t0, t6 ::
   inputs: t6=0xabcdef0123456789
@@ -743,18 +694,6 @@ c.mv a7, a0 ::
   inputs: a0=0xabcdef0123456789
   output: a7=0xabcdef0123456789
 c.jalr t0 ::
-  inputs: t0=1f-8
-  output: ra=1f+2
-  target: reached
-c.jalr t0 ::
-  inputs: t0=1f-6
-  output: ra=1f+2
-  target: reached
-c.jalr t0 ::
-  inputs: t0=1f-4
-  output: ra=1f+2
-  target: reached
-c.jalr t0 ::
   inputs: t0=1f+4
   output: ra=1f+2
   target: reached
@@ -766,8 +705,20 @@ c.jalr t0 ::
   inputs: t0=1f+8
   output: ra=1f+2
   target: reached
+c.jalr t0 ::
+  inputs: t0=1f-4
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-6
+  output: ra=1f+2
+  target: reached
+c.jalr t0 ::
+  inputs: t0=1f-8
+  output: ra=1f+2
+  target: reached
 c.jalr t6 ::
-  inputs: t6=1f-8
+  inputs: t6=1f+4
   output: ra=1f+2
   target: reached
 c.add a0, a1 ::
@@ -841,7 +792,7 @@ c.sdsp a0, 256(sp) ::
   [+256]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 c.sdsp a0, 504(sp) ::
   inputs: a0=0xabcdef0123456789, sp=&area_mid
-  [+496]  .. .. .. .. .. .. .. .. 89 67 45 23 01 .. cd ab
+  [+496]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
 c.sdsp a5, 0(sp) ::
   inputs: a5=0xabcdef0123456789, sp=&area_mid
   [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
