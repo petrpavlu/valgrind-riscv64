@@ -491,6 +491,64 @@ static void test_pstxv_4 (void) {
 static void test_pstxv_0 (void) {
   __asm__ __volatile__ ("pstxv %x0, 0(%1), 0" :: "wa" (vec_xs), "r" (ra) );
 }
+static void test_xvcvspbf16 (void) {
+SET_FPSCR_ZERO; 
+  __asm__ __volatile__ ("xvcvspbf16 %x0, %x1"
+				: "=wa" (vec_xt) : "wa" (vec_xb) );
+GET_FPSCR(current_fpscr); 
+}
+static void test_xvcvbf16spn (void) {
+  __asm__ __volatile__ ("xvcvbf16spn %x0, %x1"
+				: "=wa" (vec_xt) : "wa" (vec_xb) );
+}
+static void test_xxgenpcvbm_imm0 (void) {
+  __asm__ __volatile__ ("xxgenpcvbm %x0, %1, 0" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvbm_imm1 (void) {
+  __asm__ __volatile__ ("xxgenpcvbm %x0, %1, 1" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvbm_imm2 (void) {
+  __asm__ __volatile__ ("xxgenpcvbm %x0, %1, 2" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvbm_imm3 (void) {
+  __asm__ __volatile__ ("xxgenpcvbm %x0, %1, 3" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvhm_imm0 (void) {
+  __asm__ __volatile__ ("xxgenpcvhm %x0, %1, 0" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvhm_imm1 (void) {
+  __asm__ __volatile__ ("xxgenpcvhm %x0, %1, 1" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvhm_imm2 (void) {
+  __asm__ __volatile__ ("xxgenpcvhm %x0, %1, 2" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvhm_imm3 (void) {
+  __asm__ __volatile__ ("xxgenpcvhm %x0, %1, 3" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvwm_imm0 (void) {
+  __asm__ __volatile__ ("xxgenpcvwm %x0, %1, 0" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvwm_imm1 (void) {
+  __asm__ __volatile__ ("xxgenpcvwm %x0, %1, 1" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvwm_imm2 (void) {
+  __asm__ __volatile__ ("xxgenpcvwm %x0, %1, 2" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvwm_imm3 (void) {
+  __asm__ __volatile__ ("xxgenpcvwm %x0, %1, 3" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvdm_imm0 (void) {
+  __asm__ __volatile__ ("xxgenpcvdm %x0, %1, 0" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvdm_imm1 (void) {
+  __asm__ __volatile__ ("xxgenpcvdm %x0, %1, 1" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvdm_imm2 (void) {
+  __asm__ __volatile__ ("xxgenpcvdm %x0, %1, 2" : "=wa" (vec_xt) : "v" (vrb) );
+}
+static void test_xxgenpcvdm_imm3 (void) {
+  __asm__ __volatile__ ("xxgenpcvdm %x0, %1, 3" : "=wa" (vec_xt) : "v" (vrb) );
+}
 
 static test_list_t testgroup_generic[] = {
   { &test_lxvkq_imm1, "lxvkq imm1", "XT,UIM"}, /* bcwp */
@@ -586,12 +644,30 @@ static test_list_t testgroup_generic[] = {
   { &test_stxvrdx, "stxvrdx", "XS,RA,RB"}, /* bcs */
   { &test_stxvrhx, "stxvrhx", "XS,RA,RB"}, /* bcs */
   { &test_stxvrwx, "stxvrwx", "XS,RA,RB"}, /* bcs */
+  { &test_xvcvbf16spn, "xvcvbf16spn", "XT,XB"}, /* bcs */
+  { &test_xvcvspbf16, "xvcvspbf16", "XT,XB", 0b0101010100000000}, /* bcs */
   { &test_xxblendvb, "xxblendvb", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvd, "xxblendvd", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvh, "xxblendvh", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxblendvw, "xxblendvw", "XT,XA,XB,XC"}, /* bcs */
   { &test_xxeval_imm0, "xxeval imm0", "XT,XA,XB,XC,IMM"}, /* bcwp */
   { &test_xxeval_imm3, "xxeval imm3", "XT,XA,XB,XC,IMM"}, /* bcwp */
+  { &test_xxgenpcvbm_imm0, "xxgenpcvbm imm0", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvbm_imm1, "xxgenpcvbm imm1", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvbm_imm2, "xxgenpcvbm imm2", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvbm_imm3, "xxgenpcvbm imm3", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvdm_imm0, "xxgenpcvdm imm0", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvdm_imm1, "xxgenpcvdm imm1", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvdm_imm2, "xxgenpcvdm imm2", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvdm_imm3, "xxgenpcvdm imm3", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvhm_imm0, "xxgenpcvhm imm0", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvhm_imm1, "xxgenpcvhm imm1", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvhm_imm2, "xxgenpcvhm imm2", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvhm_imm3, "xxgenpcvhm imm3", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvwm_imm0, "xxgenpcvwm imm0", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvwm_imm1, "xxgenpcvwm imm1", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvwm_imm2, "xxgenpcvwm imm2", "XT,VRB,IMM"}, /* bcwp */
+  { &test_xxgenpcvwm_imm3, "xxgenpcvwm imm3", "XT,VRB,IMM"}, /* bcwp */
   { &test_xxpermx_imm0, "xxpermx imm0", "XT,XA,XB,XC,UIM"}, /* bcwp */
   { &test_xxpermx_imm3, "xxpermx imm3", "XT,XA,XB,XC,UIM"}, /* bcwp */
   { &test_xxsplti32dx_ix0_imm0xa5a5a5a5, "xxsplti32dx ix0_imm0xa5a5a5a5", "XT,IX,IMM32"}, /* bcwp */

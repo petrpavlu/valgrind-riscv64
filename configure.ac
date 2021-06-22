@@ -8,7 +8,7 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT([Valgrind],[3.17.0.GIT],[valgrind-users@lists.sourceforge.net])
+AC_INIT([Valgrind],[3.18.0.GIT],[valgrind-users@lists.sourceforge.net])
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
@@ -115,7 +115,7 @@ rm $tmpfile
 
 # Make sure we can compile in C99 mode.
 AC_PROG_CC_C99
-if test "$ac_cv_prog_cc_c99" == "no"; then
+if test "$ac_cv_prog_cc_c99" = "no"; then
     AC_MSG_ERROR([Valgrind relies on a C compiler supporting C99])
 fi
 
@@ -1675,6 +1675,20 @@ ac_asm_have_xscvhpdp=no
 AC_MSG_RESULT([no])
 ])
 
+# darn instruction checking
+AC_MSG_CHECKING([that assembler knows darn instruction ])
+
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+]], [[
+  __asm__ __volatile__("darn 1,0 ");
+]])], [
+ac_asm_have_darn_inst=yes
+AC_MSG_RESULT([yes])
+], [
+ac_asm_have_darn_inst=no
+AC_MSG_RESULT([no])
+])
+
 # isa 3.01 checking
 AC_MSG_CHECKING([that assembler knows ISA 3.1 ])
 
@@ -1694,6 +1708,7 @@ AM_CONDITIONAL(HAS_ISA_3_00, [test x$ac_asm_have_isa_3_00 = xyes \
                              -a x$HWCAP_HAS_ISA_3_00 = xyes])
 
 AM_CONDITIONAL(HAS_XSCVHPDP, [test x$ac_asm_have_xscvhpdp = xyes])
+AM_CONDITIONAL(HAS_DARN, [test x$ac_asm_have_darn_inst = xyes])
 
 AM_CONDITIONAL(HAS_ISA_3_1, [test x$ac_asm_have_isa_3_1 = xyes \
                              -a x$HWCAP_HAS_ISA_3_1 = xyes])
@@ -2348,6 +2363,29 @@ AC_LANG(C)
 AC_SUBST(FLAG_FSIZED_DEALLOCATION)
 AM_CONDITIONAL([HAVE_FSIZED_DEALLOCATION], [test x$ac_have_sized_deallocation = xyes])
 
+# does this compiler support C++17 aligned new/delete?
+AC_MSG_CHECKING([if g++ supports aligned new and delete])
+
+safe_CXXFLAGS=$CXXFLAGS
+CXXFLAGS="-std=c++17"
+
+AC_LANG(C++)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <cstdlib>
+#include <new>
+]], [[
+  operator delete(nullptr, std::align_val_t(64U));
+]])], [
+ac_have_aligned_cxx_alloc=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_aligned_cxx_alloc=no
+AC_MSG_RESULT([no])
+])
+CXXFLAGS=$safe_CXXFLAGS
+AC_LANG(C)
+
+AM_CONDITIONAL([HAVE_ALIGNED_CXX_ALLOC], [test x$ac_have_aligned_cxx_alloc = xyes])
 
 # does this compiler support -fno-stack-protector ?
 AC_MSG_CHECKING([if gcc accepts -fno-stack-protector])
@@ -3259,6 +3297,31 @@ AC_MSG_RESULT([no])
 CFLAGS="$save_CFLAGS"
 
 AM_CONDITIONAL(BUILD_ARMV81_TESTS, test x$ac_have_armv81_feature = xyes)
+
+
+# Does the C compiler support the armv82 flag and the assembler v8.2 instructions
+# Note, this doesn't generate a C-level symbol.  It generates a
+# automake-level symbol (BUILD_ARMV82_TESTS), used in test Makefile.am's
+AC_MSG_CHECKING([if gcc supports the armv82 feature flag and assembler supports v8.2 instructions])
+
+save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -march=armv8.2-a+fp16 -Werror"
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+int main()
+{
+    __asm__ __volatile__("faddp h0, v1.2h");
+    return 0;
+}
+]])], [
+ac_have_armv82_feature=yes
+AC_MSG_RESULT([yes])
+], [
+ac_have_armv82_feature=no
+AC_MSG_RESULT([no])
+])
+CFLAGS="$save_CFLAGS"
+
+AM_CONDITIONAL(BUILD_ARMV82_TESTS, test x$ac_have_armv82_feature = xyes)
 
 
 # XXX JRS 2010 Oct 13: what is this for?  For sure, we don't need this
@@ -4349,25 +4412,34 @@ AC_CHECK_LIB([rt], [clock_gettime])
 
 AC_CHECK_FUNCS([     \
         clock_gettime\
+        copy_file_range \
         epoll_create \
         epoll_pwait  \
         klogctl      \
         mallinfo     \
         memchr       \
+        memfd_create \
         memset       \
         mkdir        \
         mremap       \
         ppoll        \
+        preadv       \
+        preadv2      \
+        process_vm_readv  \
+        process_vm_writev \
         pthread_barrier_init       \
         pthread_condattr_setclock  \
         pthread_mutex_timedlock    \
         pthread_rwlock_timedrdlock \
         pthread_rwlock_timedwrlock \
+        pthread_setname_np         \
         pthread_spin_lock          \
         pthread_yield              \
-        pthread_setname_np         \
+        pwritev      \
+        pwritev2     \
         readlinkat   \
         semtimedop   \
+        setcontext   \
         signalfd     \
         sigwaitinfo  \
         strchr       \
@@ -4375,15 +4447,9 @@ AC_CHECK_FUNCS([     \
         strpbrk      \
         strrchr      \
         strstr       \
+        swapcontext  \
         syscall      \
         utimensat    \
-        process_vm_readv  \
-        process_vm_writev \
-        copy_file_range \
-        preadv \
-        pwritev \
-        preadv2 \
-        pwritev2 \
         ])
 
 # AC_CHECK_LIB adds any library found to the variable LIBS, and links these
@@ -4405,6 +4471,10 @@ AM_CONDITIONAL([HAVE_PREADV_PWRITEV],
                [test x$ac_cv_func_preadv = xyes && test x$ac_cv_func_pwritev = xyes])
 AM_CONDITIONAL([HAVE_PREADV2_PWRITEV2],
                [test x$ac_cv_func_preadv2 = xyes && test x$ac_cv_func_pwritev2 = xyes])
+AM_CONDITIONAL([HAVE_SETCONTEXT], [test x$ac_cv_func_setcontext = xyes])
+AM_CONDITIONAL([HAVE_SWAPCONTEXT], [test x$ac_cv_func_swapcontext = xyes])
+AM_CONDITIONAL([HAVE_MEMFD_CREATE],
+               [test x$ac_cv_func_memfd_create = xyes])
 
 if test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
      -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
@@ -4897,6 +4967,7 @@ AC_CONFIG_FILES([
    memcheck/tests/amd64/Makefile
    memcheck/tests/x86/Makefile
    memcheck/tests/linux/Makefile
+   memcheck/tests/linux/debuginfod-check.vgtest
    memcheck/tests/darwin/Makefile
    memcheck/tests/solaris/Makefile
    memcheck/tests/amd64-linux/Makefile

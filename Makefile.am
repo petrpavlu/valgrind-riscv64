@@ -51,14 +51,15 @@ SUPP_FILES = \
 	darwin11.supp darwin12.supp darwin13.supp darwin14.supp darwin15.supp \
 	darwin16.supp darwin17.supp \
 	bionic.supp \
-	solaris11.supp solaris12.supp
+	solaris11.supp solaris12.supp \
+	musl.supp
 DEFAULT_SUPP_FILES = @DEFAULT_SUPP@
 
 # We include all the base .supp files in the distribution, but not
 # default.supp, as it is built from the base .supp files at compile-time.
 dist_noinst_DATA = $(SUPP_FILES)
 
-vglibdir = $(pkglibdir)
+vglibdir = $(pkglibexecdir)
 vglib_DATA = default.supp
 
 pkgconfigdir = $(libdir)/pkgconfig

@@ -1508,6 +1508,9 @@ struct vki_dirent64 {
 #define VKI_F_SETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 7)
 #define VKI_F_GETPIPE_SZ    (VKI_F_LINUX_SPECIFIC_BASE + 8)
 
+#define VKI_F_ADD_SEALS     (VKI_F_LINUX_SPECIFIC_BASE + 9)
+#define VKI_F_GET_SEALS     (VKI_F_LINUX_SPECIFIC_BASE + 10)
+
 struct vki_flock {
 	short			l_type;
 	short			l_whence;
@@ -1892,6 +1895,7 @@ struct vki_ppdev_frob_struct {
 
 #define VKI_FIBMAP	_VKI_IO(0x00,1)	/* bmap access */
 #define VKI_FIGETBSZ    _VKI_IO(0x00,2)	/* get the block size used for bmap */
+#define VKI_FICLONE     _VKI_IOW(0x94, 9, int)
 
 //----------------------------------------------------------------------
 // From linux-2.6.8.1/include/scsi/sg.h

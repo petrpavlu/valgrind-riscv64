@@ -3,7 +3,7 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
-noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h
+noinst_HEADERS = ppc64_helpers.h isa_3_1_helpers.h isa_3_1_register_defines.h
 
 EXTRA_DIST = \
 	jm-int.stderr.exp jm-int.stdout.exp jm-int.vgtest jm-int.stdout.exp-LE \
@@ -49,13 +49,20 @@ EXTRA_DIST = \
 	test_isa_3_0_altivec.stdout.exp-LE test_isa_3_0_altivec.vgtest \
 	test_isa_3_0_other.stderr.exp  \
 	test_isa_3_0_other.stdout.exp-LE test_isa_3_0_other.vgtest \
+	test_mod_instructions.stderr.exp test_mod_instructions.stdout.exp \
+	test_mod_instructions.vgtest \
 	test_isa_3_1_RT.vgtest test_isa_3_1_RT.stderr.exp test_isa_3_1_RT.stdout.exp \
 	test_isa_3_1_XT.vgtest test_isa_3_1_XT.stderr.exp test_isa_3_1_XT.stdout.exp \
 	test_isa_3_1_VRT.vgtest test_isa_3_1_VRT.stderr.exp test_isa_3_1_VRT.stdout.exp \
 	test_isa_3_1_Misc.vgtest test_isa_3_1_Misc.stderr.exp test_isa_3_1_Misc.stdout.exp \
 	test_isa_3_1_AT.vgtest test_isa_3_1_AT.stderr.exp test_isa_3_1_AT.stdout.exp \
 	subnormal_test.stderr.exp  subnormal_test.stdout.exp \
-	subnormal_test.vgtest
+	subnormal_test.vgtest test_darn_inst.stderr.exp \
+	test_darn_inst.stdout.exp test_darn_inst.vgtest \
+	scv_test.stderr.exp scv_test.stdout.exp scv_test.vgtest \
+	test_copy_paste.stderr.exp test_copy_paste.stdout.exp \
+	test_copy_paste.vgtest
+
 
 check_PROGRAMS = \
 	allexec \
@@ -63,13 +70,13 @@ check_PROGRAMS = \
 	test_isa_2_06_part1 test_isa_2_06_part2 test_isa_2_06_part3 \
 	test_dfp1 test_dfp2 test_dfp3 test_dfp4 test_dfp5 \
 	test_isa_2_07_part1 test_isa_2_07_part2 \
-	test_isa_3_0 \
+	test_isa_3_0 test_mod_instructions \
 	test_isa_3_1_RT test_isa_3_1_XT test_isa_3_1_VRT \
 	test_isa_3_1_Misc test_isa_3_1_AT \
-	subnormal_test \
+	subnormal_test test_darn_inst test_copy_paste \
 	test_tm test_touch_tm data-cache-instructions \
 	power6_mf_gpr std_reg_imm \
-	twi_tdi tw_td power6_bcmp
+	twi_tdi tw_td power6_bcmp scv_test
 
 # lmw, stmw, lswi, lswx, stswi, stswx compile (and run) only on big endian.
 if VGCONF_PLATFORMS_INCLUDE_PPC64BE_LINUX
@@ -186,6 +193,9 @@ test_touch_tm_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) 
 test_isa_3_0_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
 
+test_darn_inst_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(HTM_FLAG) $(ISA_3_00_FLAG) \
+			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_00)
+
 test_isa_3_1_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames  $(ISA_3_1_FLAG) \
 			@FLAG_M64@ $(BUILD_FLAGS_ISA_3_1)
 test_isa_3_1_RT_CFLAGS = $(test_isa_3_1_CFLAGS)
@@ -196,6 +206,9 @@ test_isa_3_1_AT_CFLAGS = $(test_isa_3_1_CFLAGS)
 
 subnormal_test_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_2_06_FLAG) \
 			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_2_06)
+
+test_copy_paste_CFLAGS = $(AM_CFLAGS) -Winline -Wall -O -g -mregnames $(VSX_FLAG) $(ISA_3_1_FLAG) \
+			@FLAG_M64@ $(ALTIVEC_FLAG) $(BUILD_FLAG_VSX) $(BUILD_FLAGS_ISA_3_1)
 
 test_isa_2_06_part3_LDADD = -lm
 test_dfp1_LDADD = -lm

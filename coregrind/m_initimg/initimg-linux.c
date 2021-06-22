@@ -47,7 +47,7 @@
 #include "pub_core_syscall.h"
 #include "pub_core_tooliface.h"       /* VG_TRACK */
 #include "pub_core_threadstate.h"     /* ThreadArchState */
-#include "priv_initimg_pathscan.h"
+#include "pub_core_pathscan.h"        /* find_executable */
 #include "pub_core_initimg.h"         /* self */
 
 /* --- !!! --- EXTERNAL HEADERS start --- !!! --- */
@@ -73,7 +73,7 @@ static void load_client ( /*MOD*/ExeInfo* info,
    SysRes res;
 
    vg_assert( VG_(args_the_exename) != NULL);
-   exe_name = ML_(find_executable)( VG_(args_the_exename) );
+   exe_name = VG_(find_executable)( VG_(args_the_exename) );
 
    if (!exe_name) {
       VG_(printf)("valgrind: %s: command not found\n", VG_(args_the_exename));
@@ -726,6 +726,7 @@ Addr setup_client_stack( void*  init_sp,
             Bool auxv_2_07, hw_caps_2_07;
             Bool auxv_3_0, hw_caps_3_0;
             Bool auxv_3_1, hw_caps_3_1;
+            Bool auxv_scv_supported, hw_caps_scv_supported;
 
 	    /* The HWCAP2 field may contain an arch_2_07 entry that indicates
              * if the processor is compliant with the 2.07 ISA. (i.e. Power 8
@@ -750,6 +751,14 @@ Addr setup_client_stack( void*  init_sp,
                 PPC_FEATURE2_HAS_ISEL         0x08000000
                 PPC_FEATURE2_HAS_TAR          0x04000000
                 PPC_FEATURE2_HAS_VCRYPTO      0x02000000
+                PPC_FEATURE2_HTM_NOSC         0x01000000
+                PPC_FEATURE2_ARCH_3_00        0x00800000
+                PPC_FEATURE2_HAS_IEEE128      0x00400000
+                PPC_FEATURE2_DARN             0x00200000
+                PPC_FEATURE2_SCV              0x00100000
+                PPC_FEATURE2_HTM_NO_SUSPEND   0x00080000
+                PPC_FEATURE2_ARCH_3_1         0x00040000
+                PPC_FEATURE2_MMA              0x00020000
             */
             auxv_2_07 = (auxv->u.a_val & 0x80000000ULL) == 0x80000000ULL;
             hw_caps_2_07 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA2_07)
@@ -788,6 +797,19 @@ Addr setup_client_stack( void*  init_sp,
 
                 ADD PUBLIC LINK WHEN AVAILABLE
             */
+
+            /* Check for SCV support */
+            auxv_scv_supported = (auxv->u.a_val & 0x00100000ULL)
+               == 0x00100000ULL;
+            hw_caps_scv_supported =
+               (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_SCV)
+               == VEX_HWCAPS_PPC64_SCV;
+
+            /* Verify the scv_supported setting in HWCAP2 matches the setting
+               in VEX HWCAPS.
+             */
+            vg_assert(auxv_scv_supported == hw_caps_scv_supported);
+
             /* ISA 3.1 */
             auxv_3_1 = (auxv->u.a_val & 0x00040000ULL) == 0x00040000ULL;
             hw_caps_3_1 = (vex_archinfo->hwcaps & VEX_HWCAPS_PPC64_ISA3_1)
@@ -797,6 +819,27 @@ Addr setup_client_stack( void*  init_sp,
              * matches the setting in VEX HWCAPS.
              */
             vg_assert(auxv_3_1 == hw_caps_3_1);
+
+            /* Mask unrecognized HWCAP bits.  Only keep the bits that have
+             * explicit support in VEX. Filter out HTM bits since the
+             * transaction begin instruction (tbegin) is always failed in
+             * Valgrind causing the code to execute the failure path.
+             * The DARN random number (bug #411189) and the SCV syscall
+             * (bug #431157) have been fixed.  Can now include them in the
+             * HWCAP bits.
+             */
+            auxv->u.a_val &= (0x80000000ULL     /* ARCH_2_07 */
+                              | 0x20000000ULL   /* DSCR */
+                              | 0x10000000ULL   /* EBB */
+                              | 0x08000000ULL   /* ISEL */
+                              | 0x04000000ULL   /* TAR */
+                              | 0x04000000ULL   /* VEC_CRYPTO */
+                              | 0x00800000ULL   /* ARCH_3_00 */
+                              | 0x00100000ULL   /* PPC_FEATURE2_SCV */
+                              | 0x00400000ULL   /* HAS_IEEE128 */
+                              | 0x00200000ULL   /* PPC_FEATURE2_DARN */
+                              | 0x00040000ULL   /* ARCH_3_1 */
+                              | 0x00020000ULL); /* MMA instruction support */
          }
 
             break;

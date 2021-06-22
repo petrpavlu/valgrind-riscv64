@@ -592,6 +592,30 @@ to <computeroutput>malloc.</computeroutput>.</para>
 </sect1>
 
 
+<sect1 id="manual-core.debuginfod"
+       xreflabel="Debuginfod">
+<title>Debuginfod</title>
+
+<para id="debuginfod.para.1">Valgrind supports the downloading of debuginfo
+files via debuginfod, an HTTP server for distributing ELF/DWARF debugging
+information. When a debuginfo file cannot be found locally, Valgrind is able
+to query debuginfod servers for the file using its build-id.</para>
+
+<para id="debuginfod.para.2">In order to use this feature
+<computeroutput>debuginfod-find</computeroutput> must be installed and
+<computeroutput>$DEBUGINFOD_URLS</computeroutput> must contain URLs of
+debuginfod servers. Valgrind does not support
+<computeroutput>debuginfod-find</computeroutput> verbose output that is
+normally enabled with <computeroutput>$DEBUGINFOD_PROGRESS</computeroutput>
+and <computeroutput>$DEBUGINFOD_VERBOSE</computeroutput>. These environment
+variables will be ignored.</para>
+
+<para id="debuginfod.para.3">For more information regarding debuginfod, see
+https://sourceware.org/elfutils/Debuginfod.html</para>
+
+</sect1>
+
+
 <sect1 id="manual-core.options" 
        xreflabel="Core Command-line Options">
 <title>Core Command-line Options</title>
@@ -852,7 +876,7 @@ in most cases.  We group the available options by rough categories.</para>
 
   <varlistentry id="opt.track-fds" xreflabel="--track-fds">
     <term>
-      <option><![CDATA[--track-fds=<yes|no> [default: no] ]]></option>
+      <option><![CDATA[--track-fds=<yes|no|all> [default: no] ]]></option>
     </term>
     <listitem>
       <para>When enabled, Valgrind will print out a list of open file
@@ -860,7 +884,10 @@ in most cases.  We group the available options by rough categories.</para>
       command <varname>v.info open_fds</varname>.  Along with each
       file descriptor is printed a stack backtrace of where the file
       was opened and any details relating to the file descriptor such
-      as the file name or socket details.</para>
+      as the file name or socket details. Use <option>all</option> to
+      include reporting on <computeroutput>stdin</computeroutput>,
+      <computeroutput>stdout</computeroutput> and
+      <computeroutput>stderr</computeroutput>.</para>
     </listitem>
   </varlistentry>
 
@@ -1459,6 +1486,10 @@ that can report errors, e.g. Memcheck, but not Cachegrind.</para>
       you want to use it, you will have to recompile it by hand using
       the command shown at the top
       of <computeroutput>auxprogs/valgrind-di-server.c</computeroutput>.</para>
+
+      <para>Valgrind can also download debuginfo via debuginfod. See the
+      DEBUGINFOD section for more information.</para>
+
     </listitem>
   </varlistentry>
 

@@ -417,6 +417,7 @@
 /drd/tests/std_string
 /drd/tests/std_thread
 /drd/tests/std_thread2
+/drd/tests/swapcontext
 /drd/tests/tc01_simple_race
 /drd/tests/tc02_simple_tls
 /drd/tests/tc03_re_excl
@@ -794,6 +795,7 @@
 /memcheck/tests/cond_ld_st
 /memcheck/tests/custom-overlap
 /memcheck/tests/custom_alloc
+/memcheck/tests/cxx17_aligned_new
 /memcheck/tests/deep-backtrace
 /memcheck/tests/deep_templates
 /memcheck/tests/demangle
@@ -1048,6 +1050,7 @@
 /memcheck/tests/linux/lsframe2
 /memcheck/tests/linux/Makefile
 /memcheck/tests/linux/Makefile.in
+/memcheck/tests/linux/memfd
 /memcheck/tests/linux/rfcomm
 /memcheck/tests/linux/sigqueue
 /memcheck/tests/linux/stack_changes
@@ -1063,6 +1066,10 @@
 /memcheck/tests/linux/sys-openat
 /memcheck/tests/linux/sys-execveat
 /memcheck/tests/linux/check_execveat
+/memcheck/tests/linux/enomem
+/memcheck/tests/linux/debuginfod-check
+/memcheck/tests/linux/debuginfod-check.vgtest
+/memcheck/tests/linux/.debuginfod/
 
 # /memcheck/tests/mips32/
 /memcheck/tests/mips32/*.stderr.diff
@@ -1108,13 +1115,13 @@
 /memcheck/tests/s390x/*.stdout.out
 /memcheck/tests/s390x/Makefile
 /memcheck/tests/s390x/Makefile.in
-/memcheck/tests/s390x/cs
-/memcheck/tests/s390x/csg
-/memcheck/tests/s390x/cds
 /memcheck/tests/s390x/cdsg
 /memcheck/tests/s390x/cu21
 /memcheck/tests/s390x/cu42
 /memcheck/tests/s390x/ltgjhe
+/memcheck/tests/s390x/vstrc
+/memcheck/tests/s390x/vfae
+/memcheck/tests/s390x/vistr
 
 # /memcheck/tests/solaris/
 /memcheck/tests/solaris/*.stderr.diff
@@ -2092,6 +2099,7 @@
 /tests/true
 /tests/vg_regtest
 /tests/x86_amd64_features
+/tests/arm64_features
 
 # /VEX/
 /VEX/libvex*.a

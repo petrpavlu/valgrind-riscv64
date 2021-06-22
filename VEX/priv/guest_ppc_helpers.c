@@ -318,6 +318,55 @@ ULong generate_C_FPCC_helper( ULong irType, ULong src_hi, ULong src )
 }
 
 
+UInt generate_DFP_FPRF_value_helper( UInt gfield,
+                                     ULong exponent,
+                                     UInt exponent_bias,
+                                     Int min_norm_exp,
+                                     UInt sign,
+                                     UInt T_value_is_zero )
+{
+   UInt gfield_5_bit_mask = 0xF8000000;
+   UInt gfield_upper_5_bits = (gfield & gfield_5_bit_mask) >> (32 - 5);
+   UInt gfield_6_bit_mask = 0xF8000000;
+   UInt gfield_upper_6_bits = (gfield & gfield_6_bit_mask) >> (32 - 6);
+   UInt fprf_value = 0;
+   Int  unbiased_exponent = exponent - exponent_bias;
+
+   /* The assumption is the gfield bits are left justified. Mask off
+       the most significant 5-bits in the 32-bit wide field.  */
+   if ( T_value_is_zero == 1) {
+      if (sign == 0)
+         fprf_value = 0b00010;  // positive zero
+      else
+         fprf_value = 0b10010;  // negative zero
+  } else if ( unbiased_exponent < min_norm_exp ) {
+      if (sign == 0)
+         fprf_value = 0b10100;  // posative subnormal
+      else
+         fprf_value = 0b11000;  // negative subnormal
+
+  } else if ( gfield_upper_5_bits == 0b11110 ) {  // infinity
+      if (sign == 0)
+         fprf_value = 0b00101;  // positive infinity
+      else
+         fprf_value = 0b01001;  // negative infinity
+
+   } else if ( gfield_upper_6_bits == 0b111110 ) {
+      fprf_value = 0b10001;  // Quiet NaN
+
+   } else if ( gfield_upper_6_bits == 0b111111 ) {
+      fprf_value = 0b10001;  // Signaling NaN
+
+   } else {
+      if (sign == 0)
+         fprf_value = 0b00100;  // positive normal
+      else
+         fprf_value = 0b01000;  // negative normal
+   }
+
+   return fprf_value;
+}
+
 /*---------------------------------------------------------------*/
 /*--- Misc BCD clean helpers.                                 ---*/
 /*---------------------------------------------------------------*/
@@ -652,6 +701,738 @@ ULong vector_evaluate64_helper( ULong srcA, ULong srcB, ULong srcC,
 #undef MAX_IMM_BITS
 }
 
+/*--------------------------------------------------*/
+/*---- VSX Vector Generate PCV from Mask helpers ---*/
+/*--------------------------------------------------*/
+static void write_VSX_entry (VexGuestPPC64State* gst, UInt reg_offset,
+                             ULong *vsx_entry)
+{
+   U128* pU128_dst;
+   pU128_dst = (U128*) (((UChar*) gst) + reg_offset);
+
+   /* The U128 type is defined as an array of unsigned intetgers.  */
+   /* Writing in LE order */
+   (*pU128_dst)[0] = (UInt)(vsx_entry[1] & 0xFFFFFFFF);
+   (*pU128_dst)[1] = (UInt)(vsx_entry[1] >> 32);
+   (*pU128_dst)[2] = (UInt)(vsx_entry[0] & 0xFFFFFFFF);
+   (*pU128_dst)[3] = (UInt)(vsx_entry[0] >> 32);
+   return;
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_byte_mask_dirty_helper( VexGuestPPC64State* gst,
+                                            ULong src_hi, ULong src_lo,
+                                            UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      for( index = 0; index < 16; index++) {
+         i = 15 - index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+               result[half_sel] |= j << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (index + (unsigned long long)0x10) << shift_by;
+         }
+      }
+
+
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse byte elements in a source vector specified
+         by the byte-element mask in VSR[VRB+32] into the leftmost byte
+         elements of a result vector.
+      */
+      for( index = 0; index < 16; index++) {
+         i = 15 - index;
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 8)
+               result[1] |= (index) << (15 - j)*8;
+            else
+               result[0] |= (index) << (7 - j)*8;
+            j++;
+         }
+      }
+      /* The algorithim says set to undefined, leave as 0
+      for( index = 3 - j; index < 4; index++) {
+         result |= (0 << (index*8));
+      }
+      */
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost byte elements of a source vector into the
+         byte elements of a result vector specified by the byte-element mask
+         in VSR[VRB+32].  */
+      for( index = 0; index < 16; index++) {
+         i = index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         /* mod shift amount by 8 since src is either the upper or lower
+            64-bits.  */
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+               result[half_sel] |= j << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (index + (unsigned long long)0x10) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse byte elements in a source vector specified
+         by the byte-element mask in VSR[VRB+32] into the rightmost byte
+         elements of a result vector.  */
+
+      for( index = 0; index < 16; index++) {
+         i = index;
+
+         shift_by = i*8;
+
+         if ( i >= 8) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 7;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 8)
+               result[0] |= (index) << (j-8)*8;
+            else
+               result[1] |= (index) << j*8;
+            j++;
+         }
+      }
+
+      /* The algorithim says set to undefined, leave as 0
+      for( index = 3 - j; index < 4; index++) {
+         result |= (0 << (index*8));
+      }
+      */
+
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_byte_mask_dirty_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_hword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                             ULong src_hi, ULong src_lo,
+                                             UInt reg_offset,
+                                             UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost halfword elements of a source vector into
+         the halfword elements of a result vector specified by the halfword-
+         element mask in VSR[VRB+32].
+      */
+      for( index = 0; index < 8; index++) {
+         i = 7 - index;
+
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            // half-word i, byte 0
+            result[half_sel] |= (2*j + 0x0) << (shift_by+8);
+            // half-word i, byte 1
+            result[half_sel] |= (2*j + 0x1) << shift_by;
+            j++;
+         } else {
+            result[half_sel] |= (2*index + 0x10) << (shift_by+8);
+            result[half_sel] |= (2*index + 0x11) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b01) {    // big endian expansion
+      /* If IMM=0b00001,let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse halfword elements in a source vector
+         specified by the halfword-element mask in VSR[VRB+32] into the
+         leftmost halfword elements of a result vector.
+      */
+      for( index = 0; index < 8; index++) {
+         i = 7 - index;
+
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 4) {
+               // half-word i, byte 0
+               result[1] |= (2*index + 0x0) << ((7 - j)*16 + 8);
+               // half-word i, byte 1
+               result[1] |= (2*index + 0x1) << ((7 - j)*16);
+            } else {
+               // half-word i, byte 0
+               result[0] |= (2*index + 0x0) << ((3 - j)*16 + 8);
+               // half-word i, byte 1
+               result[0] |= (2*index + 0x1) << ((3 - j)*16);
+            }
+            j++;
+         }
+      }
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost halfword elements of a source vector into
+         the halfword elements of a result vector specified by the halfword-
+         element mask in VSR[VRB+32].
+       */
+      for( index = 0; index < 8; index++) {
+         i = index;
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            // half-word i, byte 0
+            result[half_sel] |= (2*j + 0x00) << shift_by;
+            // half-word i, byte 1
+            result[half_sel] |= (2*j + 0x01) << (shift_by+8);
+            j++;
+
+         } else {
+            // half-word i, byte 0
+            result[half_sel] |= (2*index + 0x10) << shift_by;
+            // half-word i, byte 1
+            result[half_sel] |= (2*index + 0x11) << (shift_by+8);
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse halfword elements in a source vector
+         specified by the halfword-element mask in VSR[VRB+32] into the
+         rightmost halfword elements of a result vector.  */
+      for( index = 0; index < 8; index++) {
+         i = index;
+         shift_by = i*16;
+
+         if ( i >= 4) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 15;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 4) {
+               // half-word j, byte 0
+               result[0] |= (2*index + 0x0) << ((j-4)*16);
+               // half-word j, byte 1
+               result[0] |= (2*index + 0x1) << ((j-4)*16+8);
+            } else {
+               // half-word j, byte 0
+               result[1] |= (2*index + 0x0) << (j*16);
+               // half-word j, byte 1
+               result[1] |= (2*index + 0x1) << ((j*16)+8);
+            }
+            j++;
+         }
+      }
+
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_hword_dirty_mask_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_word_mask_dirty_helper( VexGuestPPC64State* gst,
+                                            ULong src_hi, ULong src_lo,
+                                            UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  i, shift_by, sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost word elements of a source vector into the
+         word elements of a result vector specified by the word-element mask
+         in VSR[VRB+32].
+      */
+      for( index = 0; index < 4; index++) {
+         i = 3 - index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (4*j+0) << (shift_by+24);  // word i, byte 0
+            result[half_sel] |= (4*j+1) << (shift_by+16);  // word i, byte 1
+            result[half_sel] |= (4*j+2) << (shift_by+8);   // word i, byte 2
+            result[half_sel] |= (4*j+3) << shift_by;       // word i, byte 3
+            j++;
+         } else {
+            result[half_sel] |= (4*index + 0x10) << (shift_by+24);
+            result[half_sel] |= (4*index + 0x11) << (shift_by+16);
+            result[half_sel] |= (4*index + 0x12) << (shift_by+8);
+            result[half_sel] |= (4*index + 0x13) << shift_by;
+         }
+      }
+
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse word elements in a source vector specified
+         by the word-element mask in VSR[VRB+32] into the leftmost word
+         elements of a result vector.
+      */
+      for( index = 0; index < 4; index++) {
+         i = 3 - index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 2) {
+               // word j, byte 0
+               result[1] |= (4*index+0) << ((3 - j)*32 + 24);
+               // word j, byte 1
+               result[1] |= (4*index+1) << ((3 - j)*32 + 16);
+               // word j, byte 2
+               result[1] |= (4*index+2) << ((3 - j)*32 + 8);
+               // word j, byte 3
+               result[1] |= (4*index+3) << ((3 - j)*32 + 0);
+            } else {
+               result[0] |= (4*index+0) << ((1 - j)*32 + 24);
+               result[0] |= (4*index+1) << ((1 - j)*32 + 16);
+               result[0] |= (4*index+2) << ((1 - j)*32 + 8);
+               result[0] |= (4*index+3) << ((1 - j)*32 + 0);
+            }
+            j++;
+         }
+      }
+
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost word elements of a source vector into the
+         word elements of a result vector specified by the word-element mask
+         in VSR[VRB+32].
+       */
+      for( index = 0; index < 4; index++) {
+         i = index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (4*j+0) << (shift_by + 0);  // word j, byte 0
+            result[half_sel] |= (4*j+1) << (shift_by + 8);  // word j, byte 1
+            result[half_sel] |= (4*j+2) << (shift_by + 16); // word j, byte 2
+            result[half_sel] |= (4*j+3) << (shift_by + 24); // word j, byte 3
+            j++;
+         } else {
+            result[half_sel] |= (4*index + 0x10) << (shift_by + 0);
+            result[half_sel] |= (4*index + 0x11) << (shift_by + 8);
+            result[half_sel] |= (4*index + 0x12) << (shift_by + 16);
+            result[half_sel] |= (4*index + 0x13) << (shift_by + 24);
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse word elements in a source vector specified
+         by the word-element mask in VSR[VRB+32] into the rightmost word
+         elements of a result vector.  */
+      for( index = 0; index < 4; index++) {
+         i =index;
+
+         shift_by = i*32;
+
+         if ( i >= 2) {
+            src = src_hi;
+            shift_by = shift_by - 64;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = shift_by + 31;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j >= 2){
+               // word j, byte 0
+               result[0] |= (4*index + 0x0) << ((j-2)*32+0);
+               // word j, byte 1
+               result[0] |= (4*index + 0x1) << ((j-2)*32+8);
+               // word j, byte 2
+               result[0] |= (4*index + 0x2) << ((j-2)*32+16);
+               // word j, byte 3
+               result[0] |= (4*index + 0x3) << ((j-2)*32+24);
+            } else {
+               result[1] |= (4*index + 0x0) << (j*32+0);
+               result[1] |= (4*index + 0x1) << (j*32+8);
+               result[1] |= (4*index + 0x2) << (j*32+16);
+               result[1] |= (4*index + 0x3) << (j*32+24);
+            }
+            j++;
+         }
+      }
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_word_mask_dirty_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+
+   write_VSX_entry( gst, reg_offset, result);
+}
+
+/* CALLED FROM GENERATED CODE */
+void vector_gen_pvc_dword_mask_dirty_helper( VexGuestPPC64State* gst,
+                                             ULong src_hi, ULong src_lo,
+                                             UInt reg_offset, UInt imm ) {
+   /* The function computes the 128-bit result then writes it directly
+      into the guest state VSX register.  */
+   UInt  sel_shift_by, half_sel;
+   ULong index, src, result[2];
+   ULong j, i;
+
+   result[0] = 0;
+   result[1] = 0;
+   j = 0;
+
+   /* The algorithm in the ISA is written with IBM numbering zero on left and
+      N-1 on right. The loop index is converted to "i" to match the algorithm
+      for claritiy of matching the C code to the algorithm in the ISA.  */
+
+   if (imm == 0b00) {    // big endian expansion
+      /* If IMM=0b00000, let pcv be the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement an
+         expansion of the leftmost doubleword elements of a source vector into
+         the doubleword elements of a result vector specified by the
+         doubleword-element mask in VSR[VRB+32].
+      */
+      for( index = 0; index < 2; index++) {
+         i = 1 - index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (8*j + 0x0) << 56; // dword i, byte 0
+            result[half_sel] |= (8*j + 0x1) << 48; // dword i, byte 1
+            result[half_sel] |= (8*j + 0x2) << 40; // dword i, byte 2
+            result[half_sel] |= (8*j + 0x3) << 32; // dword i, byte 3
+            result[half_sel] |= (8*j + 0x4) << 24; // dword i, byte 4
+            result[half_sel] |= (8*j + 0x5) << 16; // dword i, byte 5
+            result[half_sel] |= (8*j + 0x6) << 8;  // dword i, byte 6
+            result[half_sel] |= (8*j + 0x7) << 0;  // dword i, byte 7
+            j++;
+         } else {
+            result[half_sel] |= (8*index + 0x10) << 56;
+            result[half_sel] |= (8*index + 0x11) << 48;
+            result[half_sel] |= (8*index + 0x12) << 40;
+            result[half_sel] |= (8*index + 0x13) << 32;
+            result[half_sel] |= (8*index + 0x14) << 24;
+            result[half_sel] |= (8*index + 0x15) << 16;
+            result[half_sel] |= (8*index + 0x16) << 8;
+            result[half_sel] |= (8*index + 0x17) << 0;
+         }
+      }
+   } else if (imm == 0b01) {    // big endian compression
+      /* If IMM=0b00001, let pcv be the the permute control vector required to
+         enable a left-indexed permute (vperm or xxperm) to implement a
+         compression of the sparse doubleword elements in a source vector
+         specified by the doubleword-element mask in VSR[VRB+32] into the
+         leftmost doubleword elements of a result vector.
+      */
+      for( index = 0; index < 2; index++) {
+         i = 1 - index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            if (j == 1) {
+               result[1] |= (8*index + 0x0) << 56;   // double-word j, byte 0
+               result[1] |= (8*index + 0x1) << 48;   // double-word j, byte 1
+               result[1] |= (8*index + 0x2) << 40;   // double-word j, byte 2
+               result[1] |= (8*index + 0x3) << 32;   // double-word j, byte 3
+               result[1] |= (8*index + 0x4) << 24;   // double-word j, byte 4
+               result[1] |= (8*index + 0x5) << 16;   // double-word j, byte 5
+               result[1] |= (8*index + 0x6) << 8;    // double-word j, byte 6
+               result[1] |= (8*index + 0x7) << 0;    // double-word j, byte 7
+            } else {
+               result[0] |= (8*index + 0x0) << 56;   // double-word j, byte 0
+               result[0] |= (8*index + 0x1) << 48;   // double-word j, byte 1
+               result[0] |= (8*index + 0x2) << 40;   // double-word j, byte 2
+               result[0] |= (8*index + 0x3) << 32;   // double-word j, byte 3
+               result[0] |= (8*index + 0x4) << 24;   // double-word j, byte 4
+               result[0] |= (8*index + 0x5) << 16;   // double-word j, byte 5
+               result[0] |= (8*index + 0x6) << 8;    // double-word j, byte 6
+               result[0] |= (8*index + 0x7) << 0;    // double-word j, byte 7
+            }
+            j++;
+         }
+      }
+   } else if (imm == 0b10) {   //little-endian expansion
+      /* If IMM=0b00010, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement an
+         expansion of the rightmost doubleword elements of a source vector
+         into the doubleword elements of a result vector specified by the
+         doubleword-element mask in VSR[VRB+32].
+       */
+
+      for( index = 0; index < 2; index++) {
+         i = index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if ( ((src >> sel_shift_by) & 0x1) == 1) {
+            result[half_sel] |= (8*j+0) << 0;  // double-word i, byte 0
+            result[half_sel] |= (8*j+1) << 8;  // double-word i, byte 1
+            result[half_sel] |= (8*j+2) << 16; // double-word i, byte 2
+            result[half_sel] |= (8*j+3) << 24; // double-word i, byte 3
+            result[half_sel] |= (8*j+4) << 32; // double-word i, byte 4
+            result[half_sel] |= (8*j+5) << 40; // double-word i, byte 5
+            result[half_sel] |= (8*j+6) << 48; // double-word i, byte 6
+            result[half_sel] |= (8*j+7) << 56; // double-word i, byte 7
+            j++;
+         } else {
+            result[half_sel] |= (8*index + 0x10) << 0;
+            result[half_sel] |= (8*index + 0x11) << 8;
+            result[half_sel] |= (8*index + 0x12) << 16;
+            result[half_sel] |= (8*index + 0x13) << 24;
+            result[half_sel] |= (8*index + 0x14) << 32;
+            result[half_sel] |= (8*index + 0x15) << 40;
+            result[half_sel] |= (8*index + 0x16) << 48;
+            result[half_sel] |= (8*index + 0x17) << 56;
+         }
+      }
+
+   } else if (imm == 0b11) {   //little-endian compression
+      /* If IMM=0b00011, let pcv be the permute control vector required to
+         enable a right-indexed permute (vpermr or xxpermr) to implement a
+         compression of the sparse doubleword elements in a source vector
+         specified by the doubleword-element mask in VSR[VRB+32] into the
+         rightmost doubleword elements of a result vector.  */
+      for( index = 0; index < 2; index++) {
+         i = index;
+
+         if ( i == 1) {
+            src = src_hi;
+            half_sel = 0;
+         } else {
+            src = src_lo;
+            half_sel = 1;
+         }
+
+         sel_shift_by = 63;
+
+         if (((src >> sel_shift_by) & 0x1) == 1) {
+            if (j == 1) {
+               result[0] |= (8*index + 0x0) << 0;    // double-word j, byte 0
+               result[0] |= (8*index + 0x1) << 8;    // double-word j, byte 1
+               result[0] |= (8*index + 0x2) << 16;   // double-word j, byte 2
+               result[0] |= (8*index + 0x3) << 24;   // double-word j, byte 3
+               result[0] |= (8*index + 0x4) << 32;   // double-word j, byte 4
+               result[0] |= (8*index + 0x5) << 40;   // double-word j, byte 5
+               result[0] |= (8*index + 0x6) << 48;   // double-word j, byte 6
+               result[0] |= (8*index + 0x7) << 56;   // double-word j, byte 7
+            } else {
+               result[1] |= (8*index + 0x0) << 0;
+               result[1] |= (8*index + 0x1) << 8;
+               result[1] |= (8*index + 0x2) << 16;
+               result[1] |= (8*index + 0x3) << 24;
+               result[1] |= (8*index + 0x4) << 32;
+               result[1] |= (8*index + 0x5) << 40;
+               result[1] |= (8*index + 0x6) << 48;
+               result[1] |= (8*index + 0x7) << 56;
+            }
+            j++;
+         }
+      }
+   } else {
+      vex_printf("ERROR, vector_gen_pvc_dword_mask_helper, imm value %u not supported.\n",
+                 imm);
+      vassert(0);
+   }
+
+   write_VSX_entry( gst, reg_offset, result);
+}
 
 /*------------------------------------------------*/
 /*---- VSX Matrix signed integer GER functions ---*/
@@ -665,16 +1446,16 @@ static UInt exts4( UInt src)
       return src & 0xF;        /* make sure high order bits are zero */
 }
 
-static UInt exts8( UInt src)
+static ULong exts8( UInt src)
 {
-   /* Input is an 8-bit value.  Extend bit 7 to bits [31:8] */
+   /* Input is an 8-bit value.  Extend bit 7 to bits [63:8] */
    if (( src >> 7 ) & 0x1)
-      return src | 0xFFFFFF00; /* sign bit is a 1, extend */
+      return src | 0xFFFFFFFFFFFFFF00ULL; /* sign bit is a 1, extend */
    else
       return src & 0xFF;        /* make sure high order bits are zero */
 }
 
-static UInt extz8( UInt src)
+static ULong extz8( UInt src)
 {
    /* Input is an 8-bit value.  Extend src on the left with zeros.  */
    return src & 0xFF;        /* make sure high order bits are zero */
@@ -881,12 +1662,12 @@ void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
                                        ULong srcB_hi, ULong srcB_lo,
                                        UInt masks_inst )
 {
-   UInt i, j, mask, sum, inst, acc_entry, prefix_inst;
+   UInt i, j, mask, inst, acc_entry, prefix_inst;
 
    UInt srcA_bytes[4][4];   /* word, byte */
    UInt srcB_bytes[4][4];   /* word, byte */
    UInt acc_word[4];
-   UInt prod0, prod1, prod2, prod3;
+   ULong prod0, prod1, prod2, prod3, sum;
    UInt result[4];
    UInt pmsk = 0;
    UInt xmsk = 0;
@@ -961,10 +1742,13 @@ void vsx_matrix_8bit_ger_dirty_helper( VexGuestPPC64State* gst,
             sum = prod0 + prod1 + prod2 + prod3;
 
             if ( inst == XVI8GER4 )
-               result[j] = sum;
+               result[j] = chop64to32( sum );
 
             else if ( inst == XVI8GER4PP )
-               result[j] = sum + acc_word[j];
+               result[j] = chop64to32( sum + acc_word[j] );
+
+            else if ( inst == XVI8GER4SPP )
+               result[j] = clampS64toS32(sum + acc_word[j]);
 
          } else {
             result[j] = 0;
@@ -1040,7 +1824,7 @@ void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
             else
                prod1 = exts16to64( srcA_word[i][1] )
                   * exts16to64( srcB_word[j][1] );
-            /* sum is UInt so the result is choped to 32-bits */
+
             sum = prod0 + prod1;
 
             if ( inst == XVI16GER2 )
@@ -1049,13 +1833,11 @@ void vsx_matrix_16bit_ger_dirty_helper( VexGuestPPC64State* gst,
             else if ( inst == XVI16GER2S )
                result[j] = clampS64toS32( sum );
 
-            else if ( inst == XVI16GER2PP ) {
+            else if ( inst == XVI16GER2PP )
                result[j] = chop64to32( sum + acc_word[j] );
-            }
 
-            else if ( inst == XVI16GER2SPP ) {
+            else if ( inst == XVI16GER2SPP )
                result[j] = clampS64toS32( sum + acc_word[j] );
-            }
 
          } else {
             result[j] = 0;
@@ -1124,6 +1906,125 @@ static Double conv_f16_to_double( ULong input )
 #  endif
 }
 
+#define BF16_SIGN_MASK   0x8000
+#define BF16_EXP_MASK    0x7F80
+#define BF16_FRAC_MASK   0x007F
+#define BF16_BIAS        127
+#define BF16_MAX_UNBIASED_EXP 127
+#define BF16_MIN_UNBIASED_EXP -126
+#define FLOAT_SIGN_MASK  0x80000000
+#define FLOAT_EXP_MASK   0x7F800000
+#define FLOAT_FRAC_MASK  0x007FFFFF
+#define FLOAT_FRAC_BIT8  0x00008000
+#define FLOAT_BIAS       127
+
+static Float conv_bf16_to_float( UInt input )
+{
+  /* input is 16-bit bfloat.
+     bias +127, exponent 8-bits, fraction 7-bits
+
+     output is 32-bit float.
+     bias +127, exponent 8-bits, fraction 22-bits
+  */
+
+  UInt input_exp, input_fraction, unbiased_exp;
+  UInt output_exp, output_fraction;
+  UInt sign;
+  union convert_t conv;
+
+  sign = (UInt)(input & BF16_SIGN_MASK);
+  input_exp = input & BF16_EXP_MASK;
+  unbiased_exp = (input_exp >> 7) - (UInt)BF16_BIAS;
+  input_fraction = input & BF16_FRAC_MASK;
+
+  if (((input_exp & BF16_EXP_MASK) == BF16_EXP_MASK) &&
+      (input_fraction != 0)) {
+     /* input is NaN or SNaN, exp all 1's, fraction != 0 */
+     output_exp = FLOAT_EXP_MASK;
+     output_fraction = input_fraction;
+
+  } else if(((input_exp & BF16_EXP_MASK) == BF16_EXP_MASK) &&
+      ( input_fraction == 0)) {
+     /* input is infinity,  exp all 1's, fraction = 0  */
+     output_exp = FLOAT_EXP_MASK;
+     output_fraction = 0;
+
+  } else if((input_exp == 0) && (input_fraction == 0)) {
+     /* input is zero */
+     output_exp = 0;
+     output_fraction = 0;
+
+  } else if((input_exp == 0) && (input_fraction != 0)) {
+     /* input is denormal */
+     output_fraction = input_fraction;
+     output_exp = (-(Int)BF16_BIAS + (Int)FLOAT_BIAS ) << 23;
+
+  } else {
+     /* result is normal */
+     output_exp = (unbiased_exp + FLOAT_BIAS) << 23;
+     output_fraction = input_fraction;
+  }
+
+  conv.u32 = sign << (31 - 15) | output_exp | (output_fraction << (23-7));
+  return conv.f;
+}
+
+static UInt conv_float_to_bf16( UInt input )
+{
+   /* input is 32-bit float stored as unsigned 32-bit.
+      bias +127, exponent 8-bits, fraction 23-bits
+
+      output is 16-bit bfloat.
+      bias +127, exponent 8-bits, fraction 7-bits
+
+      If the unbiased exponent of the input is greater than the max floating
+      point unbiased exponent value, the result of the floating point 16-bit
+      value is infinity.
+   */
+
+   UInt input_exp, input_fraction;
+   UInt output_exp, output_fraction;
+   UInt result, sign;
+
+   sign = input & FLOAT_SIGN_MASK;
+   input_exp = input & FLOAT_EXP_MASK;
+   input_fraction = input & FLOAT_FRAC_MASK;
+
+   if (((input_exp & FLOAT_EXP_MASK) == FLOAT_EXP_MASK) &&
+       (input_fraction != 0)) {
+      /* input is NaN or SNaN, exp all 1's, fraction != 0 */
+      output_exp = BF16_EXP_MASK;
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+   } else if (((input_exp & FLOAT_EXP_MASK) == FLOAT_EXP_MASK) &&
+              ( input_fraction == 0)) {
+      /* input is infinity,  exp all 1's, fraction = 0  */
+      output_exp = BF16_EXP_MASK;
+      output_fraction = 0;
+   } else if ((input_exp == 0) && (input_fraction == 0)) {
+      /* input is zero */
+      output_exp = 0;
+      output_fraction = 0;
+   } else if ((input_exp == 0) && (input_fraction != 0)) {
+      /* input is denormal */
+      output_exp = 0;
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+   } else {
+      /* result is normal */
+      output_exp = (input_exp - BF16_BIAS + FLOAT_BIAS) >> (23 - 7);
+      output_fraction = (ULong)input_fraction >> (23 - 7);
+
+      /* Round result. Look at the 8th bit position of the 32-bit floating
+         pointt fraction.  The F16 fraction is only 7 bits wide so if the 8th
+         bit of the F32 is a 1 we need to round up by adding 1 to the output
+         fraction.  */
+      if ((input_fraction & FLOAT_FRAC_BIT8) == FLOAT_FRAC_BIT8)
+         /* Round the F16 fraction up by 1 */
+         output_fraction = output_fraction + 1;
+   }
+
+   result = sign >> (31 - 15) | output_exp | output_fraction;
+   return result;
+}
 
 static Float conv_double_to_float( Double src )
 {
@@ -1160,6 +2061,36 @@ static Float negate_float( Float input )
   else
       return -input;
 }
+
+/* This C-helper takes a vector of two 32-bit floating point values
+ * and returns a vector containing two 16-bit bfloats.
+   input:    word0           word1
+   output  0x0   hword1   0x0    hword3
+   Called from generated code.
+ */
+ULong convert_from_floattobf16_helper( ULong src ) {
+   ULong resultHi, resultLo;
+
+   resultHi = (ULong)conv_float_to_bf16( (UInt)(src >> 32));
+   resultLo = (ULong)conv_float_to_bf16( (UInt)(src & 0xFFFFFFFF));
+   return (resultHi << 32) | resultLo;
+
+}
+
+/* This C-helper takes a vector of two 16-bit bfloating point values
+ * and returns a vector containing one 32-bit float.
+   input:   0x0   hword1   0x0    hword3
+   output:    word0           word1
+ */
+ULong convert_from_bf16tofloat_helper( ULong src ) {
+   ULong result;
+   union convert_t conv;
+   conv.f = conv_bf16_to_float( (UInt)(src >> 32) );
+   result = (ULong) conv.u32;
+   conv.f = conv_bf16_to_float( (UInt)(src & 0xFFFFFFFF));
+   result = (result << 32) | (ULong) conv.u32;
+   return result;
+ }
 
 void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
                                               UInt offset_ACC,
@@ -1221,23 +2152,43 @@ void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
          srcB_word[0][j] = (UInt)((srcB_lo >> (16-16*j)) & mask);
       }
 
+      /* Note the isa is not consistent in the src naming.  Will use the
+         naming src10, src11, src20, src21 used with xvf16ger2 instructions.
+      */
       for( j = 0; j < 4; j++) {
          if (((pmsk >> 1) & 0x1) == 0) {
             src10 = 0;
             src20 = 0;
          } else {
-            src10 = conv_f16_to_double((ULong)srcA_word[i][0]);
-            src20 = conv_f16_to_double((ULong)srcB_word[j][0]);
+            if (( inst  == XVF16GER2 ) || ( inst  == XVF16GER2PP )
+                || ( inst == XVF16GER2PN ) || ( inst  == XVF16GER2NP )
+                || ( inst == XVF16GER2NN )) {
+               src10 = conv_f16_to_double((ULong)srcA_word[i][0]);
+               src20 = conv_f16_to_double((ULong)srcB_word[j][0]);
+            } else {
+               /* Input is in bfloat format, result is stored in the
+                  "traditional" 64-bit float format. */
+               src10 = (double)conv_bf16_to_float((ULong)srcA_word[i][0]);
+               src20 = (double)conv_bf16_to_float((ULong)srcB_word[j][0]);
+            }
          }
 
          if ((pmsk & 0x1) == 0) {
             src11 = 0;
             src21 = 0;
          } else {
-            src11 = conv_f16_to_double((ULong)srcA_word[i][1]);
-            src21 = conv_f16_to_double((ULong)srcB_word[j][1]);
+            if (( inst  == XVF16GER2 ) || ( inst  == XVF16GER2PP )
+                || ( inst == XVF16GER2PN ) || ( inst  == XVF16GER2NP )
+                || ( inst == XVF16GER2NN )) {
+               src11 = conv_f16_to_double((ULong)srcA_word[i][1]);
+               src21 = conv_f16_to_double((ULong)srcB_word[j][1]);
+            } else {
+               /* Input is in bfloat format, result is stored in the
+                  "traditional" 64-bit float format. */
+               src11 = (double)conv_bf16_to_float((ULong)srcA_word[i][1]);
+               src21 = (double)conv_bf16_to_float((ULong)srcB_word[j][1]);
+            }
          }
-
 
          prod = src10 * src20;
          msum = prod + src11 * src21;
@@ -1246,26 +2197,26 @@ void vsx_matrix_16bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
             /* Note, we do not track the exception handling bits
                ox, ux, xx, si, mz, vxsnan and vximz in the FPSCR.  */
 
-            if ( inst == XVF16GER2 )
+            if (( inst == XVF16GER2 ) || ( inst == XVBF16GER2 ) )
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float(msum) );
 
-            else if ( inst == XVF16GER2PP )
+            else if (( inst == XVF16GER2PP ) ||  (inst == XVBF16GER2PP ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float(msum)
                   + acc_word[j] );
 
-            else if ( inst == XVF16GER2PN )
+            else if (( inst == XVF16GER2PN ) || ( inst == XVBF16GER2PN ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float(msum)
                   + negate_float( acc_word[j] ) );
 
-            else if ( inst == XVF16GER2NP )
+            else if (( inst == XVF16GER2NP ) || ( inst == XVBF16GER2NP ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float( negate_double( msum ) )
                   + acc_word[j] );
 
-            else if ( inst == XVF16GER2NN )
+            else if (( inst == XVF16GER2NN ) || ( inst == XVBF16GER2NN ))
                result[j] = reinterpret_float_as_int(
                   conv_double_to_float( negate_double( msum ) )
                   + negate_float( acc_word[j] ) );
@@ -1463,6 +2414,27 @@ void vsx_matrix_64bit_float_ger_dirty_helper( VexGuestPPC64State* gst,
       write_ACC_entry (gst, offset_ACC, acc_entry, 3 - i,
                        result_uint);
    }
+}
+
+/* CALLED FROM GENERATED CODE */
+/* DIRTY HELPER uses inline assembly to call random number instruction on
+   the host machine.  Note, the dirty helper takes the value returned from
+   the host and returns it.  The helper does not change the guest state
+   or guest memory.  */
+ULong darn_dirty_helper ( UInt L )
+{
+   ULong val = 0xFFFFFFFFFFFFFFFFULL;  /* error */
+
+#  if defined (HAS_DARN)
+   if ( L == 0)
+      __asm__ __volatile__("darn  %0,0" : "=r"(val));
+   else if (L == 1)
+      __asm__ __volatile__("darn  %0,1" : "=r"(val));
+   else if (L == 2)
+      __asm__ __volatile__("darn  %0,2" : "=r"(val));
+# endif
+
+   return val;
 }
 
 /*----------------------------------------------*/
@@ -2190,6 +3162,35 @@ VexGuestLayout
 	      /* 11 */ ALWAYSDEFD64(guest_C_FPCC)
             }
         };
+
+UInt copy_paste_abort_dirty_helper(UInt addr, UInt op) {
+#  if defined(__powerpc__)
+   ULong ret;
+   UInt cr;
+
+   if (op == COPY_INST)
+      __asm__ __volatile__ ("copy 0,%0" :: "r" (addr));
+
+   else if (op == PASTE_INST)
+      __asm__ __volatile__ ("paste. 0,%0" :: "r" (addr));
+
+   else if (op == CPABORT_INST)
+      __asm__ __volatile__ ("cpabort");
+
+   else
+      /* Unknown operation */
+      vassert(0);
+
+   /* Return the CR0 value. Contains status for the paste instruction. */
+   __asm__ __volatile__ ("mfocrf %0,128" : "=r" (cr));
+   __asm__ __volatile__ ("srawi %0,%1,28" : "=r" (ret) : "r" (cr));
+   /* Make sure the upper bits of the return value are zero per the hack
+      described in function dis_copy_paste().  */
+   return 0xFF & ret;
+# else
+   return 0;
+# endif
+}
 
 /*---------------------------------------------------------------*/
 /*--- end                                 guest_ppc_helpers.c ---*/

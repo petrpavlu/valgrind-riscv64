@@ -476,6 +476,7 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
 #elif defined(VGP_ppc64be_linux) || defined(VGP_ppc64le_linux)
    ULong        word64;
    UInt old_cr = LibVEX_GuestPPC64_get_CR( &ctst->arch.vex );
+   UInt flag = ctst->arch.vex.guest_syscall_flag;
    /* %r3 = 0 */
    ctst->arch.vex.guest_GPR3 = 0;
    /* %cr0.so = 0 */
@@ -488,7 +489,7 @@ static SysRes clone_new_thread ( Word (*fn)(void *),
    /* VG_(printf)("word64 = 0x%llx\n", word64); */
    res = VG_(mk_SysRes_ppc64_linux)
       (/*val*/(UInt)(word64 & 0xFFFFFFFFULL), 
-       /*errflag*/ (UInt)((word64 >> (32+28)) & 1));
+       /*errflag*/ (UInt)((word64 >> (32+28)) & 1), flag);
 #elif defined(VGP_s390x_linux)
    ULong        r2;
    ctst->arch.vex.guest_r2 = 0;
@@ -946,7 +947,7 @@ PRE(sys_clone)
          ("Valgrind does not support general clone().");
    }
 
-   if (SUCCESS) {
+   if (SUCCESS && RES != 0) {
       if (ARG_FLAGS & (VKI_CLONE_PARENT_SETTID | VKI_CLONE_PIDFD))
          POST_MEM_WRITE(ARG3, sizeof(Int));
       if (ARG_FLAGS & (VKI_CLONE_CHILD_SETTID | VKI_CLONE_CHILD_CLEARTID))
@@ -5143,7 +5144,7 @@ PRE(sys_shmctl)
    PRINT("sys_shmctl ( %ld, %ld, %#" FMT_REGWORD "x )", SARG1, SARG2, ARG3);
    PRE_REG_READ3(long, "shmctl",
                  int, shmid, int, cmd, struct shmid_ds *, buf);
-#ifdef VGP_amd64_linux
+#if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2|VKI_IPC_64,ARG3);
 #else
    ML_(generic_PRE_sys_shmctl)(tid, ARG1,ARG2,ARG3);
@@ -5152,7 +5153,7 @@ PRE(sys_shmctl)
 
 POST(sys_shmctl)
 {
-#ifdef VGP_amd64_linux
+#if defined(VGP_amd64_linux) || defined(VGP_arm64_linux)
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2|VKI_IPC_64,ARG3);
 #else
    ML_(generic_POST_sys_shmctl)(tid, RES,ARG1,ARG2,ARG3);
@@ -5761,6 +5762,22 @@ PRE(sys_openat)
       return;
    }
 
+   /* And for /proc/self/exe or /proc/<pid>/exe case. */
+
+   VG_(sprintf)(name, "/proc/%d/exe", VG_(getpid)());
+   if (ML_(safe_to_deref)( (void*)(Addr)ARG2, 1 )
+       && (VG_(strcmp)((HChar *)(Addr)ARG2, name) == 0 
+           || VG_(strcmp)((HChar *)(Addr)ARG2, "/proc/self/exe") == 0)) {
+      sres = VG_(dup)( VG_(cl_exec_fd) );
+      SET_STATUS_from_SysRes( sres );
+      if (!sr_isError(sres)) {
+         OffT off = VG_(lseek)( sr_Res(sres), 0, VKI_SEEK_SET );
+         if (off < 0)
+            SET_STATUS_Failure( VKI_EMFILE );
+      }
+      return;
+   }
+
    /* Otherwise handle normally */
    *flags |= SfMayBlock;
 }
@@ -5885,8 +5902,14 @@ PRE(sys_newfstatat)
          SARG1, ARG2, (HChar*)(Addr)ARG2, ARG3);
    PRE_REG_READ3(long, "fstatat",
                  int, dfd, char *, file_name, struct stat *, buf);
-   PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
-   PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+   // See the comment about Rust in PRE(sys_statx). When glibc does support
+   // statx rust uses that instead of the system call, but glibc's statx is
+   // implemented in terms of fstatat, so the filename being NULL is
+   // transferred here.
+   if (ARG2 != 0) {
+      PRE_MEM_RASCIIZ( "fstatat(file_name)", ARG2 );
+      PRE_MEM_WRITE( "fstatat(buf)", ARG3, sizeof(struct vki_stat) );
+   }
 }
 
 POST(sys_newfstatat)
@@ -6784,6 +6807,7 @@ PRE(sys_fcntl)
    case VKI_F_GETSIG:
    case VKI_F_GETLEASE:
    case VKI_F_GETPIPE_SZ:
+   case VKI_F_GET_SEALS:
       PRINT("sys_fcntl ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
       PRE_REG_READ2(long, "fcntl", unsigned int, fd, unsigned int, cmd);
       break;
@@ -6798,6 +6822,7 @@ PRE(sys_fcntl)
    case VKI_F_SETOWN:
    case VKI_F_SETSIG:
    case VKI_F_SETPIPE_SZ:
+   case VKI_F_ADD_SEALS:
       PRINT("sys_fcntl[ARG3=='arg'] ( %" FMT_REGWORD "u, %" FMT_REGWORD
             "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "fcntl",
@@ -6930,6 +6955,7 @@ PRE(sys_fcntl64)
    case VKI_F_GETSIG:
    case VKI_F_SETSIG:
    case VKI_F_GETLEASE:
+   case VKI_F_GET_SEALS:
       PRINT("sys_fcntl64 ( %" FMT_REGWORD "u, %" FMT_REGWORD "u )", ARG1, ARG2);
       PRE_REG_READ2(long, "fcntl64", unsigned int, fd, unsigned int, cmd);
       break;
@@ -6941,6 +6967,7 @@ PRE(sys_fcntl64)
    case VKI_F_SETFL:
    case VKI_F_SETLEASE:
    case VKI_F_NOTIFY:
+   case VKI_F_ADD_SEALS:
       PRINT("sys_fcntl64[ARG3=='arg'] ( %" FMT_REGWORD "u, %" FMT_REGWORD
             "u, %" FMT_REGWORD "u )", ARG1, ARG2, ARG3);
       PRE_REG_READ3(long, "fcntl64",
@@ -7976,6 +8003,11 @@ PRE(sys_ioctl)
       break;
    case VKI_FIBMAP:
       PRE_MEM_READ( "ioctl(FIBMAP)", ARG3, sizeof(int));
+      break;
+   case VKI_FICLONE:
+      /* The direction of FICLONE (W) is incorrectly specified
+       * as it expects a file descriptor and not a pointer to
+       * user data */
       break;
 
    case VKI_FBIOGET_VSCREENINFO: /* 0x4600 */
@@ -10913,6 +10945,8 @@ POST(sys_ioctl)
       break;
    case VKI_FIBMAP:
       POST_MEM_WRITE(ARG3, sizeof(int));
+      break;
+   case VKI_FICLONE:
       break;
 
    case VKI_FBIOGET_VSCREENINFO: //0x4600
