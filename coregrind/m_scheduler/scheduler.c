@@ -1011,6 +1011,8 @@ void run_thread_for_a_while ( /*OUT*/HWord* two_words,
    tst->arch.vex.guest_LLaddr = (RegWord)(-1);
 #  elif defined(VGP_arm64_linux)
    tst->arch.vex.guest_LLSC_SIZE = 0;
+#  elif defined(VGP_riscv64_linux)
+   tst->arch.vex.guest_LLSC_SIZE = 0;
 #  endif
 
    if (0) {

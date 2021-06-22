@@ -183,6 +183,10 @@ static IRTemp newTemp(/*MOD*/ IRSB* irsb, IRType ty)
 #define OFFB_NRADDR        offsetof(VexGuestRISCV64State, guest_NRADDR)
 #define OFFB_IP_AT_SYSCALL offsetof(VexGuestRISCV64State, guest_IP_AT_SYSCALL)
 
+#define OFFB_LLSC_SIZE offsetof(VexGuestRISCV64State, guest_LLSC_SIZE)
+#define OFFB_LLSC_ADDR offsetof(VexGuestRISCV64State, guest_LLSC_ADDR)
+#define OFFB_LLSC_DATA offsetof(VexGuestRISCV64State, guest_LLSC_DATA)
+
 /*------------------------------------------------------------*/
 /*--- Integer registers                                    ---*/
 /*------------------------------------------------------------*/
@@ -845,6 +849,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
                                  /*OUT*/ IRSB*         irsb,
                                  UInt                  insn,
                                  Addr                  guest_pc_curr_instr,
+                                 const VexAbiInfo*     abiinfo,
                                  Bool                  sigill_diag)
 {
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
@@ -1722,12 +1727,33 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rd == 0 || rs2 != 0) {
          /* Invalid LR.W, fall through. */
       } else {
-         /* TODO Implement support for abiinfo->guest__use_fallback_LLSC? */
          if (aqrl & 0x1)
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
-         IRTemp res = newTemp(irsb, Ity_I32);
-         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), NULL /*LL*/));
-         putIReg32(irsb, rd, mkexpr(res));
+
+         if (abiinfo->guest__use_fallback_LLSC) {
+            /* Get address of the load. */
+            IRTemp ea = newTemp(irsb, Ity_I64);
+            assign(irsb, ea, getIReg64(rs1));
+
+            /* Load the value. */
+            IRTemp res = newTemp(irsb, Ity_I64);
+            assign(irsb, res, unop(Iop_32Sto64, loadLE(Ity_I32, mkexpr(ea))));
+
+            /* Set up the LLSC fallback data. */
+            stmt(irsb, IRStmt_Put(OFFB_LLSC_DATA, mkexpr(res)));
+            stmt(irsb, IRStmt_Put(OFFB_LLSC_ADDR, mkexpr(ea)));
+            stmt(irsb, IRStmt_Put(OFFB_LLSC_SIZE, mkU64(4)));
+
+            /* Write the result to the destination register. */
+            putIReg64(irsb, rd, mkexpr(res));
+         } else {
+            /* TODO Rework the non-fallback mode by recognizing common LR+SC
+               sequences and simulating them as one. */
+            IRTemp res = newTemp(irsb, Ity_I32);
+            stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), NULL /*LL*/));
+            putIReg32(irsb, rd, mkexpr(res));
+         }
+
          if (aqrl & 0x2)
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
@@ -1746,7 +1772,9 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             suffix = ".aqrl";
             break;
          }
-         DIP("lr.w%s %s, (%s)\n", suffix, nameIReg64(rd), nameIReg64(rs1));
+         DIP("lr.w%s %s, (%s)%s\n", suffix, nameIReg64(rd), nameIReg64(rs1),
+             abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
+                                               : "");
          return True;
       }
    }
@@ -1761,15 +1789,72 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rd == 0) {
          /* Invalid SC.W, fall through. */
       } else {
-         /* TODO Implement support for abiinfo->guest__use_fallback_LLSC? */
          if (aqrl & 0x1)
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
-         IRTemp res = newTemp(irsb, Ity_I1);
-         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), getIReg32(rs2)));
-         /* IR semantics: res is 1 if store succeeds, 0 if it fails. Need to
-            set rd to 1 on failure, 0 on success. */
-         putIReg64(irsb, rd,
-                   binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)), mkU64(1)));
+
+         if (abiinfo->guest__use_fallback_LLSC) {
+            /* Get address of the load. */
+            IRTemp ea = newTemp(irsb, Ity_I64);
+            assign(irsb, ea, getIReg64(rs1));
+
+            /* Get the continuation address. */
+            IRConst* nia = IRConst_U64(guest_pc_curr_instr + 4);
+
+            /* Mark the SC initially as failed. */
+            putIReg64(irsb, rd, mkU64(1));
+
+            /* Set that no transaction is in progress. */
+            IRTemp size = newTemp(irsb, Ity_I64);
+            assign(irsb, size, IRExpr_Get(OFFB_LLSC_SIZE, Ity_I64));
+            stmt(irsb,
+                 IRStmt_Put(OFFB_LLSC_SIZE, mkU64(0) /* "no transaction" */));
+
+            /* Fail if no or wrong-size transaction. */
+            stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(size), mkU64(4)),
+                                   Ijk_Boring, nia, OFFB_PC));
+
+            /* Fail if the address doesn't match the LL address. */
+            stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(ea),
+                                         IRExpr_Get(OFFB_LLSC_ADDR, Ity_I64)),
+                                   Ijk_Boring, nia, OFFB_PC));
+
+            /* Fail if the data doesn't match the LL data. */
+            IRTemp data = newTemp(irsb, Ity_I64);
+            assign(irsb, data, IRExpr_Get(OFFB_LLSC_DATA, Ity_I64));
+            stmt(irsb, IRStmt_Exit(
+                          binop(Iop_CmpNE64,
+                                unop(Iop_32Sto64, loadLE(Ity_I32, mkexpr(ea))),
+                                mkexpr(data)),
+                          Ijk_Boring, nia, OFFB_PC));
+
+            /* Try to CAS the new value in. */
+            IRTemp old  = newTemp(irsb, Ity_I32);
+            IRTemp expd = newTemp(irsb, Ity_I32);
+            assign(irsb, expd, unop(Iop_64to32, mkexpr(data)));
+            stmt(irsb, IRStmt_CAS(mkIRCAS(/*oldHi*/ IRTemp_INVALID, old,
+                                          Iend_LE, mkexpr(ea),
+                                          /*expdHi*/ NULL, mkexpr(expd),
+                                          /*dataHi*/ NULL, getIReg32(rs2))));
+
+            /* Fail if the CAS failed (old != expd). */
+            stmt(irsb,
+                 IRStmt_Exit(binop(Iop_CmpNE64, unop(Iop_32Sto64, mkexpr(old)),
+                                   unop(Iop_32Sto64, mkexpr(expd))),
+                             Ijk_Boring, nia, OFFB_PC));
+
+            /* Otherwise mark the operation as successful. */
+            putIReg64(irsb, rd, mkU64(0));
+         } else {
+            IRTemp res = newTemp(irsb, Ity_I1);
+            stmt(irsb,
+                 IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), getIReg32(rs2)));
+            /* IR semantics: res is 1 if store succeeds, 0 if it fails. Need to
+               set rd to 1 on failure, 0 on success. */
+            putIReg64(
+               irsb, rd,
+               binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)), mkU64(1)));
+         }
+
          if (aqrl & 0x2)
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
@@ -1788,8 +1873,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             suffix = ".aqrl";
             break;
          }
-         DIP("sc.w%s %s, %s, (%s)\n", suffix, nameIReg64(rd), nameIReg64(rs2),
-             nameIReg64(rs1));
+         DIP("sc.w%s %s, %s, (%s)%s\n", suffix, nameIReg64(rd), nameIReg64(rs2),
+             nameIReg64(rs1),
+             abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
+                                               : "");
          return True;
       }
    }
@@ -1913,7 +2000,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
 
    case 0b11:
       dres->len = inst_size = 4;
-      ok = dis_RISCV64_standard(dres, irsb, insn, guest_pc_curr_instr,
+      ok = dis_RISCV64_standard(dres, irsb, insn, guest_pc_curr_instr, abiinfo,
                                 sigill_diag);
       break;
 

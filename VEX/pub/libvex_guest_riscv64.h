@@ -102,6 +102,15 @@ typedef struct {
    /* Needed for Darwin: pc at the last epc insn. Used when backing up to
       restart a syscall that has been interrupted by a signal. */
    /* 312 */ ULong guest_IP_AT_SYSCALL;
+
+   /* Fallback LL/SC support. */
+   /* 320 */ ULong guest_LLSC_SIZE; /* 0==no transaction, else 4 or 8. */
+   /* 328 */ ULong guest_LLSC_ADDR; /* Address of the transaction. */
+   /* 336 */ ULong guest_LLSC_DATA; /* Original value at ADDR, sign-extended. */
+
+   /* Padding to 16 bytes. */
+   /* 344 */ ULong pad_end_0;
+   /* 352 */
 } VexGuestRISCV64State;
 
 /*------------------------------------------------------------*/
