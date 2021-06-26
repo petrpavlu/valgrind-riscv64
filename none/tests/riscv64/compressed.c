@@ -123,7 +123,7 @@ static void test_compressed_01(void)
    TESTINST_1_0(2, "c.li a0, -1", a0);
    TESTINST_1_0(2, "c.li a0, -16", a0);
 
-   TESTINST_1_0(2, "c.li t6, 0", t6);
+   TESTINST_1_0(2, "c.li t6, 1", t6);
 
    /* ---------------- c.addi16sp nzimm[9:4] ---------------- */
    TESTINST_1_1(2, "c.addi16sp sp, 16", 0x0000000000001000, sp, sp);

@@ -244,8 +244,8 @@ c.li a0, -1 ::
   output: a0=0xffffffffffffffff
 c.li a0, -16 ::
   output: a0=0xfffffffffffffff0
-c.li t6, 0 ::
-  output: t6=0x0000000000000000
+c.li t6, 1 ::
+  output: t6=0x0000000000000001
 c.addi16sp sp, 16 ::
   inputs: sp=0x0000000000001000
   output: sp=0x0000000000001010

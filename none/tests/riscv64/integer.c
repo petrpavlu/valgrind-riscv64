@@ -30,7 +30,7 @@ static void test_integer_shared(void)
    TESTINST_1_0(4, "lui a0, 524288", a0);
    TESTINST_1_0(4, "lui a0, 1048575", a0);
 
-   TESTINST_1_0(4, "li t6, 0", t6);
+   TESTINST_1_0(4, "lui t6, 1", t6);
 
    /* ---------------- auipc rd, imm[31:12] ----------------- */
    /* TODO */

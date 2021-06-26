@@ -43,8 +43,8 @@ lui a0, 524288 ::
   output: a0=0xffffffff80000000
 lui a0, 1048575 ::
   output: a0=0xfffffffffffff000
-li t6, 0 ::
-  output: t6=0x0000000000000000
+lui t6, 1 ::
+  output: t6=0x0000000000001000
 jal t0, .+4 ::
   output: t0=1f+4
   target: reached
