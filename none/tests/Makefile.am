@@ -227,7 +227,7 @@ check_PROGRAMS = \
 	floored fork fucomip \
 	ioctl_moans \
 	libvex_test \
-	libvexmultiarch_test \
+	#libvexmultiarch_test \
 	manythreads \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
