@@ -1276,11 +1276,17 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    __builtin___clear_cache(ptr, (char*)ptr + nbytes);
 
 #  elif defined(VGP_riscv64_linux)
-   Addr startaddr = (Addr)ptr;
-   Addr endaddr   = startaddr + nbytes;
+   /* Make data stores to the area visible to all RISC-V harts. */
+   __asm__ __volatile__("fence w,r");
+
+   /* Ask the kernel to execute fence.i on all harts to guarantee that an
+      instruction fetch on each hart will see any previous data stores visible
+      to the same hart. */
+   Addr   startaddr = (Addr)ptr;
+   Addr   endaddr   = startaddr + nbytes;
    SysRes sres = VG_(do_syscall3)(__NR_riscv_flush_icache, startaddr, endaddr,
                                   0 /*flags*/);
-   vg_assert( !sr_isError(sres) );
+   vg_assert(!sr_isError(sres));
 
 #  endif
 }
