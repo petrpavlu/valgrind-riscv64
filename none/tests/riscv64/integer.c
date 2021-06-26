@@ -33,7 +33,30 @@ static void test_integer_shared(void)
    TESTINST_1_0(4, "lui t6, 1", t6);
 
    /* ---------------- auipc rd, imm[31:12] ----------------- */
-   /* TODO */
+   TESTINST_1_0_AUIPC(4, "auipc a0, 0", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 1", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 2", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 4", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 8", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 16", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 32", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 64", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 128", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 256", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 512", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 1024", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 2048", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 4096", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 8192", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 16384", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 32768", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 65536", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 131072", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 262144", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 524288", a0);
+   TESTINST_1_0_AUIPC(4, "auipc a0, 1048575", a0);
+
+   TESTINST_1_0_AUIPC(4, "auipc t6, 1", t6);
 
    /* ------------------ jal rd, imm[20:1] ------------------ */
    /* Note: Only the imm[11:1] range is tested. */
@@ -578,51 +601,176 @@ static void test_integer_additions(void)
    printf("Base integer instructions, RV64I additions\n");
 
    /* --------------- lwu rd, imm[11:0](rs1) ---------------- */
-   /* TODO */
+   TESTINST_1_1_LOAD(4, "lwu a0, 0(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 4(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 8(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 16(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 32(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 64(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 128(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 256(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 512(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 1024(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, 2044(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, -4(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "lwu a0, -2048(a1)", a0, a1);
+
+   TESTINST_1_1_LOAD(4, "lwu a4, 0(a5)", a4, a5);
 
    /* ---------------- ld rd, imm[11:0](rs1) ---------------- */
-   /* TODO */
+   TESTINST_1_1_LOAD(4, "ld a0, 0(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 4(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 8(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 16(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 32(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 64(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 128(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 256(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 512(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 1024(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, 2040(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, -4(a1)", a0, a1);
+   TESTINST_1_1_LOAD(4, "ld a0, -2048(a1)", a0, a1);
+
+   TESTINST_1_1_LOAD(4, "ld a4, 0(a5)", a4, a5);
 
    /* --------------- sd rs2, imm[11:0](rs1) ---------------- */
-   /* TODO */
+   TESTINST_0_2_STORE(4, "sd a0, 0(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 4(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 8(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 16(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 32(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 64(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 128(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 256(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 512(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 1024(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, 2040(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, -4(a1)", 0xabcdef0123456789, a0, a1);
+   TESTINST_0_2_STORE(4, "sd a0, -2048(a1)", 0xabcdef0123456789, a0, a1);
 
-   /* --------------- slli rd, rs1, uimm[5:0] --------------- */
-   /* TODO */
-
-   /* --------------- srli rd, rs1, uimm[5:0] --------------- */
-   /* TODO */
-
-   /* --------------- srai rd, rs1, uimm[5:0] --------------- */
-   /* TODO */
-
-   /* TODO Shifts are duplicated.. */
+   TESTINST_0_2_STORE(4, "sd a4, 0(a5)", 0xabcdef0123456789, a4, a5);
 
    /* -------------- addiw rd, rs1, imm[11:0] --------------- */
-   /* TODO */
+   TESTINST_1_1(4, "addiw a0, a1, 1", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 2", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 4", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 8", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 16", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 32", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 64", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 128", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 256", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 1024", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 2047", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, -1", 0x0000000000001000, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, -2048", 0x0000000000001000, a0, a1);
+
+   TESTINST_1_1(4, "addiw a0, a1, 1", 0x000000007fffffff, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 1", 0x00000000fffffffe, a0, a1);
+   TESTINST_1_1(4, "addiw a0, a1, 1", 0x00000000ffffffff, a0, a1);
+   TESTINST_1_1(4, "addiw t5, t6, 1", 0x0000000000001000, t5, t6);
 
    /* -------------- slliw rd, rs1, uimm[4:0] --------------- */
-   /* TODO */
+   TESTINST_1_1(4, "slliw a0, a1, 0", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "slliw a0, a1, 1", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "slliw a0, a1, 2", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "slliw a0, a1, 4", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "slliw a0, a1, 8", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "slliw a0, a1, 16", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "slliw a0, a1, 31", 0xabcdef0123456789, a0, a1);
+
+   TESTINST_1_1(4, "slliw t5, t6, 1", 0xabcdef0123456789, t5, t6);
 
    /* -------------- srliw rd, rs1, uimm[4:0] --------------- */
-   /* TODO */
+   TESTINST_1_1(4, "srliw a0, a1, 0", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "srliw a0, a1, 1", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "srliw a0, a1, 2", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "srliw a0, a1, 4", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "srliw a0, a1, 8", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "srliw a0, a1, 16", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "srliw a0, a1, 31", 0xabcdef0123456789, a0, a1);
+
+   TESTINST_1_1(4, "srliw t5, t6, 1", 0xabcdef0123456789, t5, t6);
 
    /* -------------- sraiw rd, rs1, uimm[4:0] --------------- */
-   /* TODO */
+   TESTINST_1_1(4, "sraiw a0, a1, 0", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "sraiw a0, a1, 1", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "sraiw a0, a1, 2", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "sraiw a0, a1, 4", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "sraiw a0, a1, 8", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "sraiw a0, a1, 16", 0xabcdef0123456789, a0, a1);
+   TESTINST_1_1(4, "sraiw a0, a1, 31", 0xabcdef0123456789, a0, a1);
+
+   TESTINST_1_1(4, "srai t5, t6, 1", 0xabcdef0123456789, t5, t6);
 
    /* ------------------ addw rd, rs1, rs2 ------------------ */
-   /* TODO */
+   TESTINST_1_2(4, "addw a0, a1, a2", 0x0000000000001000, 0x0000000000002000, a0,
+                a1, a2);
+   TESTINST_1_2(4, "addw a0, a1, a2", 0x000000007fffffff, 0x0000000000000001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "addw a0, a1, a2", 0x00000000fffffffe, 0x0000000000000001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "addw a0, a1, a2", 0x00000000ffffffff, 0x0000000000000001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "addw a0, a1, a2", 0xfffffffffffffffe, 0x0000000000000001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "addw a0, a1, a2", 0xffffffffffffffff, 0x0000000000000001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "addw t4, t5, t6", 0x0000000000001000, 0x0000000000002000, t4,
+                t5, t6);
 
    /* ------------------ subw rd, rs1, rs2 ------------------ */
-   /* TODO */
+   TESTINST_1_2(4, "subw a0, a1, a2", 0x0000000000001000, 0x0000000000000fff, a0,
+                a1, a2);
+   TESTINST_1_2(4, "subw a0, a1, a2", 0x0000000000001000, 0x0000000000001000, a0,
+                a1, a2);
+   TESTINST_1_2(4, "subw a0, a1, a2", 0x0000000000001000, 0x0000000000001001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "subw a0, a1, a2", 0xffffffffffffffff, 0x0000000000000000, a0,
+                a1, a2);
+   TESTINST_1_2(4, "subw a0, a1, a2", 0x0000000100000000, 0x0000000000000001, a0,
+                a1, a2);
+   TESTINST_1_2(4, "subw t4, t5, t6", 0x0000000000001000, 0x0000000000000fff, t4,
+                t5, t6);
 
    /* ------------------ sllw rd, rs1, rs2 ------------------ */
-   /* TODO */
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 0, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 1, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 2, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 4, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 8, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 16, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 31, a0, a1, a2);
+   TESTINST_1_2(4, "sllw a0, a1, a2", 0xabcdef0123456789, 32, a0, a1, a2);
+
+   TESTINST_1_2(4, "sllw t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
 
    /* ------------------ srlw rd, rs1, rs2 ------------------ */
-   /* TODO */
+#if 0 /* TODO Enable. */
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 0, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 1, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 2, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 4, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 8, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 16, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 31, a0, a1, a2);
+   TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 32, a0, a1, a2);
+
+   TESTINST_1_2(4, "srlw t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
+#endif
 
    /* ------------------ sraw rd, rs1, rs2 ------------------ */
-   /* TODO */
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 0, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 1, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 2, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 4, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 8, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 16, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 31, a0, a1, a2);
+   TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 32, a0, a1, a2);
+
+   TESTINST_1_2(4, "sraw t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
 }
 
 int main(void)

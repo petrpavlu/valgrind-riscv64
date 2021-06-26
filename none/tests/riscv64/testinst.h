@@ -199,6 +199,29 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
+#define TESTINST_1_0_AUIPC(length, instruction, rd)                            \
+   {                                                                           \
+      unsigned long work[2 /*out*/ + 1 /*spill*/] = {0};                       \
+      /* work[0] = output rd value                                             \
+         work[1] = address of the test instruction                             \
+         work[2] = spill slot for rd                                           \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = work;                             \
+      __asm__ __volatile__(                                                    \
+         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
+         "1:;"                                                                 \
+         ASMINST_##length(instruction) ";"                                     \
+         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
+         "la t2, 1b;"                                                          \
+         "sd t2, 8(%[work]);"          /* Store address of the test instr. */  \
+         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
+         :                                                                     \
+         : [work] "r"(t1)                                                      \
+         : "t2", "memory");                                                    \
+      printf("%s ::\n", instruction);                                          \
+      printf("  output: %s=1f%+ld\n", #rd, (long)(work[0] - work[1]));         \
+   }
+
 #define JMP_RANGE(length, instruction, rs1_val, rs2_val, offset, rd, rs1, rs2) \
    {                                                                           \
       unsigned long work[5 /*out*/ + 3 /*spill*/] = {0, 0, 0, 0, 0, 0, 0, 0};  \
