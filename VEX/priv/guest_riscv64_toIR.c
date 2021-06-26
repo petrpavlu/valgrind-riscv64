@@ -1348,10 +1348,12 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rs1     = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
       /* Note: All JALR encodings are valid. */
-      ULong simm = vex_sx_to_64(imm11_0, 12);
+      ULong  simm   = vex_sx_to_64(imm11_0, 12);
+      IRTemp dst_pc = newTemp(irsb, Ity_I64);
+      assign(irsb, dst_pc, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)));
       if (rd != 0)
          putIReg64(irsb, rd, mkU64(guest_pc_curr_instr + 4));
-      putPC(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)));
+      putPC(irsb, mkexpr(dst_pc));
       dres->whatNext = Dis_StopHere;
       if (rd == 0) {
          if (rs1 == 1 /*x1/ra*/ && simm == 0) {
