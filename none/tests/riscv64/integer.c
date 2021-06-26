@@ -511,7 +511,6 @@ static void test_integer_shared(void)
    TESTINST_1_2(4, "sll t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
 
    /* ------------------ slt rd, rs1, rs2 ------------------- */
-#if 0 /* TODO Enable. */
    TESTINST_1_2(4, "slt a0, a1, a2", 0x0000000000000000, 0x0000000000000000, a0,
                 a1, a2);
    TESTINST_1_2(4, "slt a0, a1, a2", 0x0000000000000000, 0x0000000000000001, a0,
@@ -523,7 +522,6 @@ static void test_integer_shared(void)
                 t5, t6);
    TESTINST_1_2(4, "slt t4, t5, t6", 0x0000000000000000, 0x0000000000000001, t4,
                 t5, t6);
-#endif
 
    /* ------------------ sltu rd, rs1, rs2 ------------------ */
    TESTINST_1_2(4, "sltu a0, a1, a2", 0x0000000000000000, 0x0000000000000000,
@@ -558,7 +556,6 @@ static void test_integer_shared(void)
    TESTINST_1_2(4, "srl t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
 
    /* ------------------ sra rd, rs1, rs2 ------------------- */
-#if 0 /* TODO Enable. */
    TESTINST_1_2(4, "sra a0, a1, a2", 0xabcdef0123456789, 0, a0, a1, a2);
    TESTINST_1_2(4, "sra a0, a1, a2", 0xabcdef0123456789, 1, a0, a1, a2);
    TESTINST_1_2(4, "sra a0, a1, a2", 0xabcdef0123456789, 2, a0, a1, a2);
@@ -570,7 +567,6 @@ static void test_integer_shared(void)
    TESTINST_1_2(4, "sra a0, a1, a2", 0xabcdef0123456789, 64, a0, a1, a2);
 
    TESTINST_1_2(4, "sra t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
-#endif
 
    /* ------------------- or rd, rs1, rs2 ------------------- */
    TESTINST_1_2(4, "or a0, a1, a2", 0x0000ffff0000ffff, 0x00000000ffffffff, a0,

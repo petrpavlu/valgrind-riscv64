@@ -1139,8 +1139,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
                          unop(Iop_64to8, getIReg64(rs2)));
             break;
          case 0b010:
-            /* TODO slt */
-            vassert(0);
+            name = "slt";
+            expr = unop(Iop_1Uto64,
+                        binop(Iop_CmpLT64S, getIReg64(rs1), getIReg64(rs2)));
+            break;
          case 0b011:
             name = "sltu";
             expr = unop(Iop_1Uto64,
@@ -1151,9 +1153,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             expr = binop(Iop_Xor64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b101:
-            /* TODO sra */
-            name = "srl";
-            expr = binop(Iop_Shr64, getIReg64(rs1),
+            name = is_base ? "srl" : "sra";
+            expr = binop(is_base ? Iop_Shr64 : Iop_Sar64, getIReg64(rs1),
                          unop(Iop_64to8, getIReg64(rs2)));
             break;
          case 0b110:

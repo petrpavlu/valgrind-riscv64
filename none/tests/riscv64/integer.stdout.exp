@@ -1100,6 +1100,21 @@ sll a0, a1, a2 ::
 sll t4, t5, t6 ::
   inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
   output: t4=0x579bde02468acf12
+slt a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+slt a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0x0000000000000001
+  output: a0=0x0000000000000001
+slt a0, a1, a2 ::
+  inputs: a1=0x0000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+slt t4, t5, t6 ::
+  inputs: t5=0x0000000000000000, t6=0x0000000000000000
+  output: t4=0x0000000000000000
+slt t4, t5, t6 ::
+  inputs: t5=0x0000000000000000, t6=0x0000000000000001
+  output: t4=0x0000000000000001
 sltu a0, a1, a2 ::
   inputs: a1=0x0000000000000000, a2=0x0000000000000000
   output: a0=0x0000000000000000
@@ -1151,6 +1166,36 @@ srl a0, a1, a2 ::
 srl t4, t5, t6 ::
   inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
   output: t4=0x55e6f78091a2b3c4
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000000
+  output: a0=0xabcdef0123456789
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000001
+  output: a0=0xd5e6f78091a2b3c4
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000002
+  output: a0=0xeaf37bc048d159e2
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000004
+  output: a0=0xfabcdef012345678
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000008
+  output: a0=0xffabcdef01234567
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000010
+  output: a0=0xffffabcdef012345
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000020
+  output: a0=0xffffffffabcdef01
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x000000000000003f
+  output: a0=0xffffffffffffffff
+sra a0, a1, a2 ::
+  inputs: a1=0xabcdef0123456789, a2=0x0000000000000040
+  output: a0=0xabcdef0123456789
+sra t4, t5, t6 ::
+  inputs: t5=0xabcdef0123456789, t6=0x0000000000000001
+  output: t4=0xd5e6f78091a2b3c4
 or a0, a1, a2 ::
   inputs: a1=0x0000ffff0000ffff, a2=0x00000000ffffffff
   output: a0=0x0000ffffffffffff
