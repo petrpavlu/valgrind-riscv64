@@ -1,4 +1,4 @@
-Base integer instructions, shared operations
+RV64I base instruction set, shared operations
 lui a0, 0 ::
   output: a0=0x0000000000000000
 lui a0, 1 ::
@@ -1165,7 +1165,7 @@ and t4, t5, t6 ::
   output: t4=0x000000000000ffff
 fence ::
 
-Base integer instructions, RV64I additions
+RV64I base instruction set, additions
 lwu a0, 0(a1) ::
   inputs: a1=&area_mid
   output: a0=0x00000000b1e1836c

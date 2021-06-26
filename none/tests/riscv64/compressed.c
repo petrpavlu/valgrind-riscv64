@@ -4,7 +4,7 @@
 
 static void test_compressed_00(void)
 {
-   printf("Compressed instructions, quadrant 0\n");
+   printf("RV64C compressed instruction set, quadrant 0\n");
 
    /* ------------- c.addi4spn rd, nzuimm[9:2] -------------- */
    TESTINST_1_1(2, "c.addi4spn a0, sp, 4", 0x0000000000001000, a0, sp);
@@ -77,7 +77,7 @@ static void test_compressed_00(void)
 
 static void test_compressed_01(void)
 {
-   printf("Compressed instructions, quadrant 1\n");
+   printf("RV64C compressed instruction set, quadrant 1\n");
 
    /* ------------------------ c.nop ------------------------ */
    TESTINST_0_0(2, "c.nop");
@@ -301,7 +301,7 @@ static void test_compressed_01(void)
 
 static void test_compressed_10(void)
 {
-   printf("Compressed instructions, quadrant 2\n");
+   printf("RV64C compressed instruction set, quadrant 2\n");
 
    /* ------------- c.slli rd_rs1, nzuimm[5:0] -------------- */
    TESTINST_1_1(2, "c.slli a0, 1", 0xabcdef0123456789, a0, a0);

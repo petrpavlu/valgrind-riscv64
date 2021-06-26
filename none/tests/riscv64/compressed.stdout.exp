@@ -1,4 +1,4 @@
-Compressed instructions, quadrant 0
+RV64C compressed instruction set, quadrant 0
 c.addi4spn a0, sp, 4 ::
   inputs: sp=0x0000000000001000
   output: a0=0x0000000000001004
@@ -151,7 +151,7 @@ c.sd a4, 0(a5) ::
   inputs: a4=0xabcdef0123456789, a5=&area_mid
   [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 
-Compressed instructions, quadrant 1
+RV64C compressed instruction set, quadrant 1
 c.nop ::
 c.addi a0, 1 ::
   inputs: a0=0x0000000000001000
@@ -557,7 +557,7 @@ c.bnez a0, 1f ::
   inputs: a0=1
   branch: taken
 
-Compressed instructions, quadrant 2
+RV64C compressed instruction set, quadrant 2
 c.slli a0, 1 ::
   inputs: a0=0xabcdef0123456789
   output: a0=0x579bde02468acf12

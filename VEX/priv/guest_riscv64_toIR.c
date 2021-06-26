@@ -1301,7 +1301,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- RV32M Standard Extension --------------- */
+   /* -------------- RV32M standard extension --------------- */
 
    /* ------------------ mul rd, rs1, rs2 ------------------- */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b000 &&
@@ -1353,7 +1353,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- RV64M Standard Extension --------------- */
+   /* -------------- RV64M standard extension --------------- */
 
    /* ------------------ mulw rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b000 &&
@@ -1389,7 +1389,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- RV32D Standard Extension --------------- */
+   /* -------------- RV32D standard extension --------------- */
 
    /* --------------- fld rd, imm[11:0](rs1) ---------------- */
    if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b011) {
@@ -1428,7 +1428,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* -------------- RV32A Standard Extension --------------- */
+   /* -------------- RV32A standard extension --------------- */
 
    /* ------------------- lr.w rd, (rs1) -------------------- */
    if (INSN(6, 0) == 0b0101111 && INSN(14, 12) == 0b010 &&

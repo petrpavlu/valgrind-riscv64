@@ -4,7 +4,7 @@
 
 static void test_integer_shared(void)
 {
-   printf("Base integer instructions, shared operations\n");
+   printf("RV64I base instruction set, shared operations\n");
 
    /* ----------------- lui rd, imm[31:12] ------------------ */
    TESTINST_1_0(4, "lui a0, 0", a0);
@@ -598,7 +598,7 @@ static void test_integer_shared(void)
 
 static void test_integer_additions(void)
 {
-   printf("Base integer instructions, RV64I additions\n");
+   printf("RV64I base instruction set, additions\n");
 
    /* --------------- lwu rd, imm[11:0](rs1) ---------------- */
    TESTINST_1_1_LOAD(4, "lwu a0, 0(a1)", a0, a1);
