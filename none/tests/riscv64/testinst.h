@@ -249,8 +249,6 @@ static void show_block_diff(unsigned char* block1,
          "2:;"                                                                 \
          ".option pop;"                                                        \
          ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
-         /* Calculate offset of the return address from the instruction        \
-            address. */                                                        \
          "sd " #rd ", 0(%[work]);"     /* Store the output return address. */  \
          "la t2, 1b;"                                                          \
          "sd t2, 8(%[work]);"          /* Store address of the test instr. */  \
@@ -304,7 +302,8 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_0_1_BxxZ_RANGE(length, instruction, rs1_val, offset, rs1)     \
    JMP_RANGE(length, instruction, #rs1_val, "0", offset, unused, rs1, unused)
 
-#define TESTINST_0_2_Bxx_RANGE(length, instruction, rs1_val, rs2_val, offset, rs1, rs2) \
+#define TESTINST_0_2_Bxx_RANGE(length, instruction, rs1_val, rs2_val, offset,  \
+                               rs1, rs2)                                       \
    JMP_RANGE(length, instruction, #rs1_val, #rs2_val, offset, unused, rs1, rs2)
 
 #define JMP_COND(length, instruction, rs1_val, rs2_val, rs1, rs2)              \
