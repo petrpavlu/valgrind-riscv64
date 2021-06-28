@@ -43,8 +43,10 @@
 #define __NR_mknodat 33
 #define __NR_mkdirat 34
 #define __NR_unlinkat 35
+#define __NR_ftruncate 46
 #define __NR_faccessat 48
 #define __NR_chdir 49
+#define __NR_fchmodat 53
 #define __NR_openat 56
 #define __NR_close 57
 #define __NR_pipe2 59
@@ -62,6 +64,7 @@
 #define __NR_set_tid_address 96
 #define __NR_futex 98
 #define __NR_set_robust_list 99
+#define __NR_setitimer 103
 #define __NR_clock_gettime 113
 #define __NR_clock_nanosleep 115
 #define __NR_ptrace 117
@@ -85,6 +88,10 @@
 #define __NR_gettid 178
 #define __NR_mq_open 180
 #define __NR_mq_unlink 181
+#define __NR_mq_timedsend 182
+#define __NR_mq_timedreceive 183
+#define __NR_mq_notify 184
+#define __NR_mq_getsetattr 185
 #define __NR_semget 190
 #define __NR_semctl 191
 #define __NR_semtimedop 192
@@ -95,12 +102,15 @@
 #define __NR_socketpair 199
 #define __NR_bind 200
 #define __NR_listen 201
+#define __NR_accept 202
 #define __NR_connect 203
 #define __NR_getsockname 204
 #define __NR_getpeername 205
 #define __NR_sendto 206
 #define __NR_setsockopt 208
 #define __NR_getsockopt 209
+#define __NR_sendmsg 211
+#define __NR_recvmsg 212
 #define __NR_brk 214
 #define __NR_munmap 215
 #define __NR_mremap 216
