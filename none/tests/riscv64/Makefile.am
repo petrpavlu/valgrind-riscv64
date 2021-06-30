@@ -10,6 +10,7 @@ EXTRA_DIST = \
 	muldiv.stdout.exp muldiv.stderr.exp muldiv.vgtest
 
 check_PROGRAMS = \
+	allexec \
 	atomic \
 	compressed \
 	integer \
@@ -18,3 +19,5 @@ check_PROGRAMS = \
 AM_CFLAGS    += @FLAG_M64@
 AM_CXXFLAGS  += @FLAG_M64@
 AM_CCASFLAGS += @FLAG_M64@
+
+allexec_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_NONNULL@

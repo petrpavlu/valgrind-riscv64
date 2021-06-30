@@ -1897,6 +1897,7 @@
 /none/tests/riscv64/.deps
 /none/tests/riscv64/Makefile
 /none/tests/riscv64/Makefile.in
+/none/tests/riscv64/allexec
 /none/tests/riscv64/atomic
 /none/tests/riscv64/compressed
 /none/tests/riscv64/integer
