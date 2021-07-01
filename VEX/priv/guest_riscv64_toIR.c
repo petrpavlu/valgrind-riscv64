@@ -1410,6 +1410,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
 
    /* -------------- RV32D standard extension --------------- */
 
+   /* --------------- flw rd, imm[11:0](rs1) ---------------- */
+   if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b010) {
+      /* TODO Implement. */
+      return True;
+   }
+
+   /* --------------- fsw rs2, imm[11:0](rs1) --------------- */
+   if (INSN(6, 0) == 0b0100111 && INSN(14, 12) == 0b010) {
+      /* TODO Implement. */
+      return True;
+   }
+
    /* --------------- fld rd, imm[11:0](rs1) ---------------- */
    if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b011) {
       /* TODO Implement. */
