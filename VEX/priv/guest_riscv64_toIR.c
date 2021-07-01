@@ -1284,20 +1284,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ------------------ sraw rd, rs1, rs2 ------------------ */
+   /* -------------- {srlw,sraw} rd, rs1, rs2 --------------- */
    if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b101 &&
-       INSN(31, 25) == 0b0100000) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
+       INSN(29, 25) == 0b00000 && INSN(31, 31) == 0b0) {
+      Bool is_log = INSN(30, 30) == 0b0;
+      UInt rd     = INSN(11, 7);
+      UInt rs1    = INSN(19, 15);
+      UInt rs2    = INSN(24, 20);
       if (rd == 0) {
-         /* Invalid SRAW, fall through. */
+         /* Invalid {SRLW,SRAW}, fall through. */
       } else {
-         putIReg32(
-            irsb, rd,
-            binop(Iop_Sar32, getIReg32(rs1), unop(Iop_64to8, getIReg64(rs2))));
-         DIP("sraw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
+         putIReg32(irsb, rd,
+                   binop(is_log ? Iop_Shr32 : Iop_Sar32, getIReg32(rs1),
+                         unop(Iop_64to8, getIReg64(rs2))));
+         DIP("%s %s, %s, %s\n", is_log ? "srlw" : "sraw", nameIReg64(rd),
+             nameIReg64(rs1), nameIReg64(rs2));
          return True;
       }
    }

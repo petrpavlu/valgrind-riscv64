@@ -743,7 +743,6 @@ static void test_integer_additions(void)
    TESTINST_1_2(4, "sllw t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
 
    /* ------------------ srlw rd, rs1, rs2 ------------------ */
-#if 0 /* TODO Enable. */
    TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 0, a0, a1, a2);
    TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 1, a0, a1, a2);
    TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 2, a0, a1, a2);
@@ -754,7 +753,6 @@ static void test_integer_additions(void)
    TESTINST_1_2(4, "srlw a0, a1, a2", 0xabcdef0123456789, 32, a0, a1, a2);
 
    TESTINST_1_2(4, "srlw t4, t5, t6", 0xabcdef0123456789, 1, t4, t5, t6);
-#endif
 
    /* ------------------ sraw rd, rs1, rs2 ------------------ */
    TESTINST_1_2(4, "sraw a0, a1, a2", 0xabcdef0123456789, 0, a0, a1, a2);
