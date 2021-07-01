@@ -1391,6 +1391,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ remw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b110 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid REMW, fall through. */
+      } else {
+         putIReg32(irsb, rd,
+                   unop(Iop_64HIto32, binop(Iop_DivModS32to32, getIReg32(rs1),
+                                            getIReg32(rs2))));
+         DIP("remw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ----------------- remuw rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b111 &&
        INSN(31, 25) == 0b0000001) {

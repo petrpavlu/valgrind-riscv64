@@ -100,8 +100,12 @@ typedef enum {
                                  register by another. */
    RISCV64in_MULW,            /* 32-bit multiplication of two registers,
                                  producing the lower 32 bits. */
+   RISCV64in_DIVW,            /* 32-bit signed division of one register by
+                                 another. */
    RISCV64in_DIVUW,           /* 32-bit unsigned division of one register by
                                  another. */
+   RISCV64in_REMW,            /* Remainder from 32-bit signed division of one
+                                 register by another. */
    RISCV64in_REMUW,           /* Remainder from 32-bit unsigned division of one
                                  register by another. */
    RISCV64in_LD,              /* 64-bit load. */
@@ -274,12 +278,24 @@ typedef struct {
          HReg src1;
          HReg src2;
       } MULW;
+      /* 32-bit signed division of one register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } DIVW;
       /* 32-bit unsigned division of one register by another. */
       struct {
          HReg dst;
          HReg src1;
          HReg src2;
       } DIVUW;
+      /* Remainder from 32-bit signed division of one register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } REMW;
       /* Remainder from 32-bit unsigned division of one register by another. */
       struct {
          HReg dst;
@@ -416,7 +432,9 @@ RISCV64Instr* RISCV64Instr_MULHU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIVU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_REMU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_MULW(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_DIVW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIVUW(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_REMW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_REMUW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
