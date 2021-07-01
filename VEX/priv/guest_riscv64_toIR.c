@@ -1627,13 +1627,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    }
 
    /* ----------- amo{swap,add}.w rd, rs2, (rs1) ------------ */
+   /* ---------- amo{xor,and,or}.w rd, rs2, (rs1) ----------- */
+   /* ------------ amo{min,max}.w rd, rs2, (rs1) ------------ */
+   /* ----------- amo{minu,maxu}.w rd, rs2, (rs1) ----------- */
    if (INSN(6, 0) == 0b0101111 && INSN(14, 12) == 0b010) {
       UInt rd     = INSN(11, 7);
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
       UInt aqrl   = INSN(26, 25);
       UInt funct5 = INSN(31, 27);
-      if (funct5 != 0b00001 && funct5 != 0b00000) {
+      if ((funct5 & 0b00010) || funct5 == 0b00101 || funct5 == 0b01001 ||
+          funct5 == 0b01101 || funct5 == 0b10001 || funct5 == 0b10101 ||
+          funct5 == 0b11001 || funct5 == 0b11101) {
          /* Invalid AMO<x>, fall through. */
       } else {
          if (aqrl & 0x1)
@@ -1658,6 +1663,34 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          case 0b00000:
             name = "amoadd";
             res  = binop(Iop_Add32, lhs, rhs);
+            break;
+         case 0b00100:
+            name = "amoxor";
+            res  = binop(Iop_Xor32, lhs, rhs);
+            break;
+         case 0b01100:
+            name = "amoand";
+            res  = binop(Iop_And32, lhs, rhs);
+            break;
+         case 0b01000:
+            name = "amoor";
+            res  = binop(Iop_Or32, lhs, rhs);
+            break;
+         case 0b10000:
+            name = "amomin";
+            res  = IRExpr_ITE(binop(Iop_CmpLT32S, lhs, rhs), lhs, rhs);
+            break;
+         case 0b10100:
+            name = "amomax";
+            res  = IRExpr_ITE(binop(Iop_CmpLT32S, lhs, rhs), rhs, lhs);
+            break;
+         case 0b11000:
+            name = "amominu";
+            res  = IRExpr_ITE(binop(Iop_CmpLT32U, lhs, rhs), lhs, rhs);
+            break;
+         case 0b11100:
+            name = "amomaxu";
+            res  = IRExpr_ITE(binop(Iop_CmpLT32U, lhs, rhs), rhs, lhs);
             break;
          default:
             vassert(0);
