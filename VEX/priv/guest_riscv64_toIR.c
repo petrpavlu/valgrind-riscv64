@@ -1355,6 +1355,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ rem rd, rs1, rs2 ------------------- */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b110 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid REM, fall through. */
+      } else {
+         putIReg64(irsb, rd,
+                   unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
+                                             getIReg64(rs2))));
+         DIP("rem %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ------------------ remu rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b111 &&
        INSN(31, 25) == 0b0000001) {

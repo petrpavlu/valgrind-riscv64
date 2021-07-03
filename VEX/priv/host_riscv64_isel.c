@@ -591,13 +591,19 @@ static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
       }
 
       /* 64 x 64 -> (64(rem),64(div)) division */
+      case Iop_DivModS64to64:
       case Iop_DivModU64to64: {
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          *rHi      = newVRegI(env);
          *rLo      = newVRegI(env);
-         addInstr(env, RISCV64Instr_REMU(*rHi, argL, argR));
-         addInstr(env, RISCV64Instr_DIVU(*rLo, argL, argR));
+         if (e->Iex.Binop.op == Iop_DivModS64to64) {
+            addInstr(env, RISCV64Instr_REM(*rHi, argL, argR));
+            addInstr(env, RISCV64Instr_DIV(*rLo, argL, argR));
+         } else {
+            addInstr(env, RISCV64Instr_REMU(*rHi, argL, argR));
+            addInstr(env, RISCV64Instr_DIVU(*rLo, argL, argR));
+         }
          return;
       }
       default:

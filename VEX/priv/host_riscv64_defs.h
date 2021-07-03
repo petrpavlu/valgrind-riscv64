@@ -83,6 +83,8 @@ typedef enum {
                                  immediate. */
    RISCV64in_SRLI,            /* Logical right shift on a register by a 6-bit
                                  immediate. */
+   RISCV64in_SRAI,            /* Arithmetic right shift on a register by a 6-bit
+                                 immediate. */
    RISCV64in_SLLW,            /* 32-bit logical left shift on a register. */
    RISCV64in_SRLW,            /* 32-bit logical right shift on a register. */
    RISCV64in_SRAW,            /* 32-bit arithmetic right shift on a register. */
@@ -94,8 +96,11 @@ typedef enum {
                                  lower 64 bits. */
    RISCV64in_MULHU,           /* Unsigned multiplication of two registers,
                                  producing the upper 64 bits. */
+   RISCV64in_DIV,             /* Signed division of one register by another. */
    RISCV64in_DIVU,            /* Unsigned division of one register by
                                  another. */
+   RISCV64in_REM,             /* Remainder from signed division of one register
+                                 by another. */
    RISCV64in_REMU,            /* Remainder from unsigned division of one
                                  register by another. */
    RISCV64in_MULW,            /* 32-bit multiplication of two registers,
@@ -211,6 +216,12 @@ typedef struct {
          HReg src;
          UInt uimm6;
       } SRLI;
+      /* Arithmetic right shift on a register by a 6-bit immediate. */
+      struct {
+         HReg dst;
+         HReg src;
+         UInt uimm6;
+      } SRAI;
       /* 32-bit logical left shift on a register. */
       struct {
          HReg dst;
@@ -260,12 +271,24 @@ typedef struct {
          HReg src1;
          HReg src2;
       } MULHU;
+      /* Signed division of one register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } DIV;
       /* Unsigned division of one register by another. */
       struct {
          HReg dst;
          HReg src1;
          HReg src2;
       } DIVU;
+      /* Remainder from signed division of one register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } REM;
       /* Remainder from unsigned division of one register by another. */
       struct {
          HReg dst;
@@ -421,6 +444,7 @@ RISCV64Instr* RISCV64Instr_SRL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRA(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLLI(HReg dst, HReg src, UInt uimm6);
 RISCV64Instr* RISCV64Instr_SRLI(HReg dst, HReg src, UInt uimm6);
+RISCV64Instr* RISCV64Instr_SRAI(HReg dst, HReg src, UInt uimm6);
 RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRLW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2);
@@ -429,7 +453,9 @@ RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_MULHU(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_DIV(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIVU(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_REM(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_REMU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_MULW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIVW(HReg dst, HReg src1, HReg src2);
