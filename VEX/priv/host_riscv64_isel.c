@@ -137,7 +137,7 @@ static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
 static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
 
 /*------------------------------------------------------------*/
-/*--- ISEL: Integer expressions (64/32 bit)                ---*/
+/*--- ISEL: Integer expressions (64/32/16/8/1 bit)         ---*/
 /*------------------------------------------------------------*/
 
 /* Select insns for an integer-typed expression, and add them to the code list.
@@ -147,9 +147,26 @@ static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
    its best to map both vregs to the same real register, so the copies will
    often disappear later in the game.
 
-   This should handle expressions of 64- and 32-bit type. All results are
-   returned in a 64-bit register. For 32-bit expressions, the upper 32 bits are
-   arbitrary, so you should mask or sign extend partial values if necessary.
+   This should handle expressions of 64, 32, 16, 8 and 1-bit type. All results
+   are returned in a 64-bit register. For an N-bit expression, the upper 64-N
+   bits are arbitrary, so you should mask or sign-extend partial values if
+   necessary.
+
+   Note however that the riscv64 backend internally always extends the values as
+   follows:
+   * a 32/16/8-bit integer result is sign-extended to 64 bits,
+   * a 1-bit logical result is zero-extended to 64 bits.
+
+   This schema follows the approach taken by the RV64 ISA which by default
+   sign-extends any 32/16/8-bit operation result to 64 bits. Matching the isel
+   with the ISA generally results in requiring less instructions. For instance,
+   it allows that any Ico_U32 immediate can be always materialized at maximum
+   using two instructions (LUI+ADDIW).
+
+   An important consequence of this design is that any Iop_<N>Sto64 extension is
+   a no-op. On the other hand, any Iop_64to<N> operation must additionally
+   perform an N-bit sign-extension. This is the opposite situation than in most
+   other VEX backends.
 */
 
 /* -------------------------- Reg --------------------------- */
@@ -424,14 +441,6 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTIU(dst, src, 1));
          return dst;
       }
-      case Iop_1Uto64: {
-         HReg dst  = newVRegI(env);
-         HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
-         HReg mask = newVRegI(env);
-         addInstr(env, RISCV64Instr_LI(mask, 0x1));
-         addInstr(env, RISCV64Instr_AND(dst, src, mask));
-         return dst;
-      }
       case Iop_8Uto32:
       case Iop_8Uto64:
       case Iop_16Uto64:
@@ -445,17 +454,23 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SRLI(dst, tmp, shift));
          return dst;
       }
-      case Iop_32Sto64: {
-         HReg dst = newVRegI(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ADDIW(dst, src, 0));
-         return dst;
-      }
-      case Iop_64to8:
-      case Iop_64to16:
-      case Iop_64to32:
+      case Iop_1Uto64:
+      case Iop_8Sto64:
+      case Iop_16Sto64:
+      case Iop_32Sto64:
          /* These are no-ops. */
          return iselIntExpr_R(env, e->Iex.Unop.arg);
+      case Iop_64to8:
+      case Iop_64to16:
+      case Iop_64to32: {
+         UInt shift = 64 - 8 * sizeofIRType(ty);
+         HReg tmp = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_SLLI(tmp, src, shift));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_SRAI(dst, tmp, shift));
+         return dst;
+      }
       case Iop_128HIto64: {
          HReg rHi, rLo;
          iselInt128Expr(&rHi, &rLo, env, e->Iex.Unop.arg);
@@ -504,16 +519,6 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          u = e->Iex.Const.con->Ico.U64;
          break;
       case Ico_U32:
-         /* Sign-extend constants Ico_U32, Ico_U16 and Ico_U8 to 64 bits. The
-            RISC-V ISA exlusively uses sign-extended immediates in integer
-            computational instructions. Loading sign-extended values then
-            always results in the same or smaller number of instructions than
-            loading zero-extended values. For instance, this allows that any
-            Ico_U32 immediate can be materialized at maximum using two
-            instructions (LUI+ADDIW). The sign-extension is safe to do because
-            the type of a Ico_U<width> expression is guaranteed to be
-            Ity_I<width> and so the upper bits must be ignored by any uses of
-            the value. */
          vassert(ty == Ity_I32);
          u = vex_sx_to_64(e->Iex.Const.con->Ico.U32, 32);
          break;
