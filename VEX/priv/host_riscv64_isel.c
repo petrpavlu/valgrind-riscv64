@@ -421,28 +421,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          return dst;
       }
       case Iop_8Uto32:
-      case Iop_8Uto64: {
-         HReg dst  = newVRegI(env);
-         HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
-         HReg mask = newVRegI(env);
-         addInstr(env, RISCV64Instr_LI(mask, 0xff));
-         addInstr(env, RISCV64Instr_AND(dst, src, mask));
-         return dst;
-      }
-      case Iop_16Uto64: {
-         HReg dst  = newVRegI(env);
-         HReg src  = iselIntExpr_R(env, e->Iex.Unop.arg);
-         HReg mask = newVRegI(env);
-         addInstr(env, RISCV64Instr_LI(mask, 0xffff));
-         addInstr(env, RISCV64Instr_AND(dst, src, mask));
-         return dst;
-      }
+      case Iop_8Uto64:
+      case Iop_16Uto64:
       case Iop_32Uto64: {
+         UInt shift =
+            64 - 8 * sizeofIRType(typeOfIRExpr(env->type_env, e->Iex.Unop.arg));
          HReg tmp = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_SLLI(tmp, src, 32));
+         addInstr(env, RISCV64Instr_SLLI(tmp, src, shift));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_SRLI(dst, tmp, 32));
+         addInstr(env, RISCV64Instr_SRLI(dst, tmp, shift));
          return dst;
       }
       case Iop_32Sto64: {
