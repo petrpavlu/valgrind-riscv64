@@ -540,7 +540,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    /* ---------------------- MULTIPLEX ---------------------- */
    case Iex_ITE: {
       /* ITE(ccexpr, iftrue, iffalse) */
-      if (ty == Ity_I64) {
+      if (ty == Ity_I64 || ty == Ity_I32) {
          HReg dst     = newVRegI(env);
          HReg iftrue  = iselIntExpr_R(env, e->Iex.ITE.iftrue);
          HReg iffalse = iselIntExpr_R(env, e->Iex.ITE.iffalse);
