@@ -83,64 +83,64 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_1_0(length, instruction, rd)                                  \
    {                                                                           \
-      unsigned long work[1 /*out*/ + 1 /*spill*/] = {0};                       \
-      register unsigned long* t1 asm("t1") = work;                             \
+      unsigned long w[1 /*out*/ + 1 /*spill*/] = {0};                          \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rd ", 8(%[work]);"     /* Spill rd. */                         \
+         "sd " #rd ", 8(%[w]);"        /* Spill rd. */                         \
          ASMINST_##length(instruction) ";"                                     \
-         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
-         "ld " #rd ", 8(%[work]);"     /* Reload rd. */                        \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         "ld " #rd ", 8(%[w]);"        /* Reload rd. */                        \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
-      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
+      printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
    }
 
 #define TESTINST_1_1(length, instruction, rs1_val, rd, rs1)                    \
    {                                                                           \
-      unsigned long work[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {               \
+      unsigned long w[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {                  \
          0, (unsigned long)rs1_val, 0, 0};                                     \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
-         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
-         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
+         "sd " #rd ", 16(%[w]);"       /* Spill rd. */                         \
+         "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
+         "ld " #rs1 ", 8(%[w]);"       /* Load the first input. */             \
          ASMINST_##length(instruction) ";"                                     \
-         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
-         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
-         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         "ld " #rd ", 16(%[w]);"       /* Reload rd. */                        \
+         "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx\n", #rs1, (unsigned long)rs1_val);         \
-      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
+      printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
    }
 
 #define TESTINST_1_2(length, instruction, rs1_val, rs2_val, rd, rs1, rs2)      \
    {                                                                           \
-      unsigned long work[1 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {               \
+      unsigned long w[1 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {                  \
          0, (unsigned long)rs1_val, (unsigned long)rs2_val, 0, 0};             \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rd ", 24(%[work]);"    /* Spill rd. */                         \
-         "sd " #rs1 ", 32(%[work]);"   /* Spill rs1. */                        \
-         "sd " #rs2 ", 40(%[work]);"   /* Spill rs2. */                        \
-         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
-         "ld " #rs2 ", 16(%[work]);"   /* Load the second input. */            \
+         "sd " #rd ", 24(%[w]);"       /* Spill rd. */                         \
+         "sd " #rs1 ", 32(%[w]);"      /* Spill rs1. */                        \
+         "sd " #rs2 ", 40(%[w]);"      /* Spill rs2. */                        \
+         "ld " #rs1 ", 8(%[w]);"       /* Load the first input. */             \
+         "ld " #rs2 ", 16(%[w]);"      /* Load the second input. */            \
          ASMINST_##length(instruction) ";"                                     \
-         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
-         "ld " #rd ", 24(%[work]);"    /* Reload rd. */                        \
-         "ld " #rs1 ", 32(%[work]);"   /* Reload rs1. */                       \
-         "ld " #rs2 ", 40(%[work]);"   /* Reload rs2. */                       \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         "ld " #rd ", 24(%[w]);"       /* Reload rd. */                        \
+         "ld " #rs1 ", 32(%[w]);"      /* Reload rs1. */                       \
+         "ld " #rs2 ", 40(%[w]);"      /* Reload rs2. */                       \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx, %s=0x%016lx\n", #rs1,                     \
              (unsigned long)rs1_val, #rs2, (unsigned long)rs2_val);            \
-      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
+      printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
    }
 
 #define TESTINST_1_1_LOAD(length, instruction, rd, rs1)                        \
@@ -150,23 +150,23 @@ static void show_block_diff(unsigned char* block1,
       unsigned char* area2 = memalign16(N);                                    \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
-      unsigned long work[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {               \
+      unsigned long w[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {                  \
          0, (unsigned long)(area2 + N / 2), 0, 0};                             \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
-         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
-         "ld " #rs1 ", 8(%[work]);"    /* Load the first input. */             \
+         "sd " #rd ", 16(%[w]);"       /* Spill rd. */                         \
+         "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
+         "ld " #rs1 ", 8(%[w]);"       /* Load the first input. */             \
          ASMINST_##length(instruction) ";"                                     \
-         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
-         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
-         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         "ld " #rd ", 16(%[w]);"       /* Reload rd. */                        \
+         "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=&area_mid\n", #rs1);                                \
-      printf("  output: %s=0x%016lx\n", #rd, work[0]);                         \
+      printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
       show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
    }
@@ -178,19 +178,19 @@ static void show_block_diff(unsigned char* block1,
       unsigned char* area2 = memalign16(N);                                    \
       for (size_t i = 0; i < N; i++)                                           \
          area[i] = area2[i] = rand_uchar();                                    \
-      unsigned long work[2 /*in*/ + 2 /*spill*/] = {                           \
+      unsigned long w[2 /*in*/ + 2 /*spill*/] = {                              \
          (unsigned long)rs2_val, (unsigned long)(area2 + N / 2), 0, 0};        \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rs2 ", 16(%[work]);"   /* Spill rs2. */                        \
-         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
-         "ld " #rs2 ", 0(%[work]);"    /* Load the first input. */             \
-         "ld " #rs1 ", 8(%[work]);"    /* Load the second input. */            \
+         "sd " #rs2 ", 16(%[w]);"      /* Spill rs2. */                        \
+         "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
+         "ld " #rs2 ", 0(%[w]);"       /* Load the first input. */             \
+         "ld " #rs1 ", 8(%[w]);"       /* Load the second input. */            \
          ASMINST_##length(instruction) ";"                                     \
-         "ld " #rs2 ", 16(%[work]);"   /* Reload rs2. */                       \
-         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         "ld " #rs2 ", 16(%[w]);"      /* Reload rs2. */                       \
+         "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "memory");                                                          \
       printf("%s ::\n", instruction);                                          \
       printf("  inputs: %s=0x%016lx, %s=&area_mid\n", #rs2,                    \
@@ -304,50 +304,50 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_1_0_AUIPC(length, instruction, rd)                            \
    {                                                                           \
-      unsigned long work[2 /*out*/ + 1 /*spill*/] = {0};                       \
-      /* work[0] = output rd value                                             \
-         work[1] = address of the test instruction                             \
-         work[2] = spill slot for rd                                           \
+      unsigned long w[2 /*out*/ + 1 /*spill*/] = {0};                          \
+      /* w[0] = output rd value                                                \
+         w[1] = address of the test instruction                                \
+         w[2] = spill slot for rd                                              \
        */                                                                      \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rd ", 16(%[work]);"    /* Spill rd. */                         \
+         "sd " #rd ", 16(%[w]);"       /* Spill rd. */                         \
          "1:;"                                                                 \
          ASMINST_##length(instruction) ";"                                     \
-         "sd " #rd ", 0(%[work]);"     /* Save result of the operation. */     \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
          "la t2, 1b;"                                                          \
-         "sd t2, 8(%[work]);"          /* Store address of the test instr. */  \
-         "ld " #rd ", 16(%[work]);"    /* Reload rd. */                        \
+         "sd t2, 8(%[w]);"             /* Store address of the test instr. */  \
+         "ld " #rd ", 16(%[w]);"       /* Reload rd. */                        \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
-      printf("  output: %s=1f%+ld\n", #rd, (long)(work[0] - work[1]));         \
+      printf("  output: %s=1f%+ld\n", #rd, (long)(w[0] - w[1]));               \
    }
 
 #define JMP_RANGE(length, instruction, rs1_val, rs2_val, offset, rd, rs1, rs2) \
    {                                                                           \
-      unsigned long work[5 /*out*/ + 3 /*spill*/] = {0, 0, 0, 0, 0, 0, 0, 0};  \
-      /* work[0] = output rd value                                             \
-         work[1] = address of the test instruction                             \
-         work[2] = flag that rd is valid                                       \
-         work[3] = flag that rs1 is valid                                      \
-         work[4] = flag that rs2 is valid                                      \
-         work[5] = spill slot for rd                                           \
-         work[6] = spill slot for rs1                                          \
-         work[7] = spill slot for rs2                                          \
+      unsigned long w[5 /*out*/ + 3 /*spill*/] = {0, 0, 0, 0, 0, 0, 0, 0};     \
+      /* w[0] = output rd value                                                \
+         w[1] = address of the test instruction                                \
+         w[2] = flag that rd is valid                                          \
+         w[3] = flag that rs1 is valid                                         \
+         w[4] = flag that rs2 is valid                                         \
+         w[5] = spill slot for rd                                              \
+         w[6] = spill slot for rs1                                             \
+         w[7] = spill slot for rs2                                             \
        */                                                                      \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
-         "sd " #rd ", 40(%[work]);"    /* Spill rd. */                         \
+         "sd " #rd ", 40(%[w]);"       /* Spill rd. */                         \
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
-         "sd " #rs1 ", 48(%[work]);"   /* Spill rs1. */                        \
+         "sd " #rs1 ", 48(%[w]);"      /* Spill rs1. */                        \
          "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
-         "sd " #rs2 ", 56(%[work]);"   /* Spill rs2. */                        \
+         "sd " #rs2 ", 56(%[w]);"      /* Spill rs2. */                        \
          "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
          ".endif;"                                                             \
          "j 1f;"                                                               \
@@ -375,41 +375,41 @@ static void show_block_diff(unsigned char* block1,
          "2:;"                                                                 \
          ".option pop;"                                                        \
          ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
-         "sd " #rd ", 0(%[work]);"     /* Store the output return address. */  \
+         "sd " #rd ", 0(%[w]);"        /* Store the output return address. */  \
          "la t2, 1b;"                                                          \
-         "sd t2, 8(%[work]);"          /* Store address of the test instr. */  \
+         "sd t2, 8(%[w]);"             /* Store address of the test instr. */  \
          "li t2, 1;"                                                           \
-         "sd t2, 16(%[work]);"         /* Flag that rd is valid. */            \
+         "sd t2, 16(%[w]);"            /* Flag that rd is valid. */            \
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\";"                                     \
          "li t2, 1;"                                                           \
-         "sd t2, 24(%[work]);"         /* Flag that rs1 is valid. */           \
+         "sd t2, 24(%[w]);"            /* Flag that rs1 is valid. */           \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\";"                                     \
          "li t2, 1;"                                                           \
-         "sd t2, 32(%[work]);"         /* Flag that rs2 is valid. */           \
+         "sd t2, 32(%[w]);"            /* Flag that rs2 is valid. */           \
          ".endif;"                                                             \
          ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
-         "ld " #rd ", 40(%[work]);"    /* Reload rd. */                        \
+         "ld " #rd ", 40(%[w]);"       /* Reload rd. */                        \
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
-         "ld " #rs1 ", 48(%[work]);"   /* Reload rs1. */                       \
+         "ld " #rs1 ", 48(%[w]);"      /* Reload rs1. */                       \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
-         "ld " #rs2 ", 56(%[work]);"   /* Reload rs2. */                       \
+         "ld " #rs2 ", 56(%[w]);"      /* Reload rs2. */                       \
          ".endif;"                                                             \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
-      if (work[3] != 0) { /* If rs1 is valid. */                               \
+      if (w[3] != 0) { /* If rs1 is valid. */                                  \
          printf("  inputs: %s=%s", #rs1, rs1_val);                             \
-         if (work[4] != 0) /* If rs2 is valid. */                              \
+         if (w[4] != 0) /* If rs2 is valid. */                                 \
             printf(", %s=%s", #rs2, rs2_val);                                  \
          printf("\n");                                                         \
       }                                                                        \
-      if (work[2] != 0) /* If rd is valid. */                                  \
-         printf("  output: %s=1f%+ld\n", #rd, (long)(work[0] - work[1]));      \
+      if (w[2] != 0) /* If rd is valid. */                                     \
+         printf("  output: %s=1f%+ld\n", #rd, (long)(w[0] - w[1]));            \
       printf("  target: reached\n");                                           \
    }
 
@@ -434,54 +434,54 @@ static void show_block_diff(unsigned char* block1,
 
 #define JMP_COND(length, instruction, rs1_val, rs2_val, rs1, rs2)              \
    {                                                                           \
-      unsigned long work[2 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0};              \
-      /* work[0] = flag that the branch was taken                              \
-         work[1] = flag that rs1 is valid                                      \
-         work[2] = flag that rs2 is valid                                      \
-         work[3] = spill slot for rs1                                          \
-         work[4] = spill slot for rs2                                          \
+      unsigned long w[2 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0};                 \
+      /* w[0] = flag that the branch was taken                                 \
+         w[1] = flag that rs1 is valid                                         \
+         w[2] = flag that rs2 is valid                                         \
+         w[3] = spill slot for rs1                                             \
+         w[4] = spill slot for rs2                                             \
        */                                                                      \
-      register unsigned long* t1 asm("t1") = work;                             \
+      register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          "li t2, 1;"                                                           \
-         "sd t2, 0(%[work]);"          /* Set result to "taken". */            \
+         "sd t2, 0(%[w]);"             /* Set result to "taken". */            \
          ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
-         "sd " #rs1 ", 24(%[work]);"   /* Spill rs1. */                        \
+         "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
          "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
-         "sd " #rs2 ", 32(%[work]);"   /* Spill rs2. */                        \
+         "sd " #rs2 ", 32(%[w]);"      /* Spill rs2. */                        \
          "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
          ".endif;"                                                             \
          ASMINST_##length(instruction) ";"                                     \
          "li t2, 0;"                                                           \
-         "sd t2, 0(%[work]);"          /* Set result to "not taken". */        \
+         "sd t2, 0(%[w]);"             /* Set result to "not taken". */        \
          "1:;"                                                                 \
          ".if \"" #rs1 "\" != \"unused\";"                                     \
          "li t2, 1;"                                                           \
-         "sd t2, 8(%[work]);"          /* Flag that rs1 is valid. */           \
+         "sd t2, 8(%[w]);"             /* Flag that rs1 is valid. */           \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\";"                                     \
          "li t2, 1;"                                                           \
-         "sd t2, 16(%[work]);"         /* Flag that rs2 is valid. */           \
+         "sd t2, 16(%[w]);"            /* Flag that rs2 is valid. */           \
          ".endif;"                                                             \
          ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
-         "ld " #rs1 ", 24(%[work]);"   /* Reload rs1. */                       \
+         "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          ".endif;"                                                             \
          ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
-         "ld " #rs2 ", 32(%[work]);"   /* Reload rs2. */                       \
+         "ld " #rs2 ", 32(%[w]);"      /* Reload rs2. */                       \
          ".endif;"                                                             \
          :                                                                     \
-         : [work] "r"(t1)                                                      \
+         : [w] "r"(t1)                                                         \
          : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
-      if (work[1] != 0) { /* If rs1 is valid. */                               \
+      if (w[1] != 0) { /* If rs1 is valid. */                                  \
          printf("  inputs: %s=%s", #rs1, rs1_val);                             \
-         if (work[2] != 0) /* If rs2 is valid. */                              \
+         if (w[2] != 0) /* If rs2 is valid. */                                 \
             printf(", %s=%s", #rs2, rs2_val);                                  \
          printf("\n");                                                         \
       }                                                                        \
-      printf("  branch: %s\n", work[0] ? "taken" : "not taken");               \
+      printf("  branch: %s\n", w[0] ? "taken" : "not taken");                  \
    }
 
 #define TESTINST_0_1_BxxZ_COND(length, instruction, rs1_val, rs1)              \
