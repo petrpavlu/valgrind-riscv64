@@ -24,11 +24,6 @@
    along with this program; if not, see <http://www.gnu.org/licenses/>.
 
    The GNU General Public License is contained in the file COPYING.
-
-   Neither the names of the U.S. Department of Energy nor the
-   University of California nor the names of its contributors may be
-   used to endorse or promote products derived from this software
-   without prior written permission.
 */
 
 #ifndef __LIBVEX_PUB_GUEST_RISCV64_H
