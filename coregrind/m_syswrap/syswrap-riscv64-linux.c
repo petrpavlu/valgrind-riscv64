@@ -198,10 +198,17 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_clock_gettime, sys_clock_gettime),           /* 113 */
    LINXY(__NR_clock_nanosleep, sys_clock_nanosleep),       /* 115 */
    GENX_(__NR_kill, sys_kill),                             /* 129 */
+   LINX_(__NR_tgkill, sys_tgkill),                         /* 131 */
+   LINX_(__NR_rt_sigsuspend, sys_rt_sigsuspend),           /* 133 */
    LINXY(__NR_rt_sigaction, sys_rt_sigaction),             /* 134 */
    LINXY(__NR_rt_sigprocmask, sys_rt_sigprocmask),         /* 135 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
    GENX_(__NR_getpid, sys_getpid),                         /* 172 */
+   GENX_(__NR_getuid, sys_getuid),                         /* 174 */
+   GENX_(__NR_geteuid, sys_geteuid),                       /* 175 */
+   GENX_(__NR_getgid, sys_getgid),                         /* 176 */
+   GENX_(__NR_getegid, sys_getegid),                       /* 177 */
+   LINX_(__NR_gettid, sys_gettid),                         /* 178 */
    LINXY(__NR_mq_open, sys_mq_open),                       /* 180 */
    LINX_(__NR_mq_unlink, sys_mq_unlink),                   /* 181 */
    LINX_(__NR_mq_timedsend, sys_mq_timedsend),             /* 182 */
@@ -234,6 +241,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_prlimit64, sys_prlimit64),                   /* 261 */
    LINXY(__NR_process_vm_readv, sys_process_vm_readv),     /* 270 */
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),   /* 271 */
+   LINXY(__NR_getrandom, sys_getrandom),                   /* 278 */
    LINX_(__NR_membarrier, sys_membarrier),                 /* 283 */
 };
 

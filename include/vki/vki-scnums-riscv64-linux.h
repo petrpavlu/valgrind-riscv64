@@ -71,6 +71,8 @@
 #define __NR_sched_yield 124
 #define __NR_kill 129
 #define __NR_tkill 130
+#define __NR_tgkill 131
+#define __NR_rt_sigsuspend 133
 #define __NR_rt_sigaction 134
 #define __NR_rt_sigprocmask 135
 #define __NR_rt_sigtimedwait 137
@@ -83,7 +85,9 @@
 #define __NR_gettimeofday 169
 #define __NR_getpid 172
 #define __NR_getppid 173
+#define __NR_getuid 174
 #define __NR_geteuid 175
+#define __NR_getgid 176
 #define __NR_getegid 177
 #define __NR_gettid 178
 #define __NR_mq_open 180
@@ -124,6 +128,7 @@
 #define __NR_process_vm_readv 270
 #define __NR_process_vm_writev 271
 #define __NR_renameat2 276
+#define __NR_getrandom 278
 #define __NR_membarrier 283
 #define __NR_statx 291
 
