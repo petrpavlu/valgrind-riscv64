@@ -345,7 +345,8 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_DIVU(dst, argL, argR));
          return dst;
       }
-      case Iop_CmpEQ64: {
+      case Iop_CmpEQ64:
+      case Iop_CmpEQ32: {
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
@@ -354,7 +355,9 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTIU(dst, tmp, 1));
          return dst;
       }
-      case Iop_CmpNE64: {
+      case Iop_CmpNE64:
+      case Iop_CmpNE32:
+      case Iop_CasCmpNE32: {
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
@@ -363,24 +366,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), tmp));
          return dst;
       }
-      case Iop_CmpNE32:
-      case Iop_CasCmpNE32: {
-         HReg tmp  = newVRegI(env);
-         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_SUBW(tmp, argL, argR));
-         HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), tmp));
-         return dst;
-      }
-      case Iop_CmpLT64S: {
+      case Iop_CmpLT64S:
+      case Iop_CmpLT32S: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, RISCV64Instr_SLT(dst, argL, argR));
          return dst;
       }
-      case Iop_CmpLE64S: {
+      case Iop_CmpLE64S:
+      case Iop_CmpLE32S: {
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
@@ -389,14 +384,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTIU(dst, tmp, 1));
          return dst;
       }
-      case Iop_CmpLT64U: {
+      case Iop_CmpLT64U:
+      case Iop_CmpLT32U: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, RISCV64Instr_SLTU(dst, argL, argR));
          return dst;
       }
-      case Iop_CmpLE64U: {
+      case Iop_CmpLE64U:
+      case Iop_CmpLE32U: {
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
