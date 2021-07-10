@@ -105,6 +105,78 @@ asm(
 ".previous\n"
 );
 
+/* Perform a clone system call. Clone is strange because it has fork()-like
+   return-twice semantics, so it needs special handling here.
+
+   Upon entry, we have:
+
+      Word (*fn)(void*)   in a0
+      void*  child_stack  in a1
+      int    flags        in a2
+      void*  arg          in a3
+      pid_t* child_tid    in a4
+      pid_t* parent_tid   in a5
+      void*  tls_ptr      in a6
+
+   System call requires:
+
+      int    $__NR_clone  in a7
+      int    flags        in a0
+      void*  child_stack  in a1
+      pid_t* parent_tid   in a2
+      void*  tls_ptr      in a3
+      pid_t* child_tid    in a4
+
+   Returns a Long encoded in the linux-riscv64 way, not a SysRes.
+*/
+#define __NR_CLONE VG_STRINGIFY(__NR_clone)
+#define __NR_EXIT  VG_STRINGIFY(__NR_exit)
+
+/* See priv_syswrap-linux.h for arg profile. */
+asm(
+".text\n"
+".globl do_syscall_clone_riscv64_linux\n"
+"do_syscall_clone_riscv64_linux:\n"
+        // set up child stack, temporarily preserving fn and arg
+"       addi   a1, a1, -16\n"       // make space on stack
+"       sd     a3, 8(a1)\n"         // save arg
+"       sd     a0, 0(a1)\n"         // save fn
+
+        // setup syscall
+"       li     a7, "__NR_CLONE"\n"  // syscall number
+"       mv     a0, a2\n"            // syscall arg1: flags
+"       mv     a1, a1\n"            // syscall arg2: child_stack
+"       mv     a2, a5\n"            // syscall arg3: parent_tid
+"       mv     a3, a6\n"            // syscall arg4: tls_ptr
+"       mv     a4, a4\n"            // syscall arg5: child_tid
+
+"       ecall\n"                    // clone()
+
+"       bnez   a0, 1f\n"            // child if retval == 0
+
+        // CHILD - call thread function
+"       ld     a1, 0(sp)\n"         // pop fn
+"       ld     a0, 8(sp)\n"         // pop fn arg1: arg
+"       addi   sp, sp, 16\n"
+"       jalr   a1\n"                // call fn
+
+        // exit with result
+"       mv     a0, a0\n"            // arg1: return value from fn
+"       li     a7, "__NR_EXIT"\n"
+
+"       ecall\n"
+
+        // Exit returned?!
+"       unimp\n"
+
+"1:\n"  // PARENT or ERROR.  a0 holds return value from the clone syscall.
+"       ret\n"
+".previous\n"
+);
+
+#undef __NR_CLONE
+#undef __NR_EXIT
+
 /* ---------------------------------------------------------------------
    More thread stuff
    ------------------------------------------------------------------ */

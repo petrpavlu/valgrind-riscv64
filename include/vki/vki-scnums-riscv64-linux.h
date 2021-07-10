@@ -60,6 +60,7 @@
 #define __NR_ppoll 73
 #define __NR_readlinkat 78
 #define __NR3264_fstatat 79
+#define __NR_exit 93
 #define __NR_exit_group 94
 #define __NR_set_tid_address 96
 #define __NR_futex 98
