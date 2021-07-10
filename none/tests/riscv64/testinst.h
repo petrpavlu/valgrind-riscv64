@@ -199,6 +199,109 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
+#define TESTINST_2_1_LRSC(length, lr_instruction, sc_instruction, lr_rd,       \
+                          sc_rd, rs1)                                          \
+   {                                                                           \
+      const size_t   N     = 32;                                               \
+      unsigned char* area  = memalign16(N);                                    \
+      unsigned char* area2 = memalign16(N);                                    \
+      for (size_t i = 0; i < N; i++)                                           \
+         area2[i] = rand_uchar();                                              \
+      unsigned long w[4 /*out*/ + 1 /*in*/ + 3 /*spill*/];                     \
+      /* w[0] = output lr_rd value                                             \
+         w[1] = modded lr_rd value                                             \
+         w[2] = output sc_rd value, first instruction                          \
+         w[3] = output sc_rd value, second instruction                         \
+         w[4] = address of the area midpoint                                   \
+         w[5] = spill slot for lr_rd                                           \
+         w[6] = spill slot for sc_rd                                           \
+         w[7] = spill slot for rs1                                             \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = w;                                \
+      do {                                                                     \
+         w[0] = w[1] = w[2] = w[3] = w[5] = w[6] = w[7] = 0;                   \
+         w[4] = (unsigned long)(area2 + N / 2);                                \
+         for (size_t i = 0; i < N; i++)                                        \
+            area[i] = area2[i];                                                \
+         __asm__ __volatile__(                                                 \
+            "sd " #lr_rd ", 40(%[w]);" /* Spill lr_rd. */                      \
+            "sd " #sc_rd ", 48(%[w]);" /* Spill sc_rd. */                      \
+            "sd " #rs1 ", 56(%[w]);"   /* Spill rs1. */                        \
+            "ld " #rs1 ", 32(%[w]);"   /* Load the first input. */             \
+            /* Perform a load and create a reservation. */                     \
+            ASMINST_##length(lr_instruction) ";"                               \
+            "mv t2, " #lr_rd ";"       /* Record the loaded value. */          \
+            /* Store a negated value which should succeed. */                  \
+            "not " #lr_rd ", " #lr_rd ";" /* Modify the loaded value. */       \
+            ASMINST_##length(sc_instruction) ";"                               \
+            "sd t2, 0(%[w]);"          /* Save result of the lr operation. */  \
+            "sd " #lr_rd" , 8(%[w]);"  /* Save result of the not operation. */ \
+            "sd " #sc_rd ", 16(%[w]);" /* Save result of the sc operation. */  \
+            /* Store back the original value which should now fail. */         \
+            "mv " #lr_rd ", t2;"       /* Get the original value. */           \
+            ASMINST_##length(sc_instruction) ";"                               \
+            "sd " #sc_rd ", 24(%[w]);" /* Save result of the sc operation. */  \
+            "ld " #lr_rd ", 40(%[w]);" /* Reload lr_rd. */                     \
+            "ld " #sc_rd ", 48(%[w]);" /* Reload sc_rd. */                     \
+            "ld " #rs1 ", 56(%[w]);"   /* Reload rs1. */                       \
+            :                                                                  \
+            : [w] "r"(t1)                                                      \
+            : "t2", "memory");                                                 \
+         /* Re-run the test in case it happens that the first sc instruction   \
+            unexpectedly fails. */                                             \
+      } while (w[2] != 0);                                                     \
+      printf("%s ::\n", lr_instruction);                                       \
+      printf("  inputs: %s=&area_mid\n", #rs1);                                \
+      printf("  output: %s=0x%016lx\n", #lr_rd, w[0]);                         \
+      printf("%s ::\n", sc_instruction);                                       \
+      printf("  inputs: %s=&area_mid, %s=0x%016lx\n", #rs1, #lr_rd, w[1]);     \
+      printf("  output: %s=0x%016lx\n", #sc_rd, w[2]);                         \
+      show_block_diff(area, area2, N, N / 2);                                  \
+      printf("%s ::\n", sc_instruction);                                       \
+      printf("  inputs: %s=&area_mid, %s=0x%016lx\n", #rs1, #lr_rd, w[0]);     \
+      printf("  output: %s=0x%016lx\n", #sc_rd, w[3]);                         \
+      free(area);                                                              \
+   }
+
+#define TESTINST_1_2_AMOX(length, instruction, rd, rs2_val, rs2, rs1)          \
+   {                                                                           \
+      const size_t   N     = 32;                                               \
+      unsigned char* area  = memalign16(N);                                    \
+      unsigned char* area2 = memalign16(N);                                    \
+      for (size_t i = 0; i < N; i++)                                           \
+         area[i] = area2[i] = rand_uchar();                                    \
+      unsigned long w[1 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {                  \
+         0, (unsigned long)rs2_val, (unsigned long)(area2 + N / 2), 0, 0, 0};  \
+      /* w[0] = output rd value                                                \
+         w[1] = input rs2 value                                                \
+         w[2] = address of the area midpoint                                   \
+         w[3] = spill slot for rd                                              \
+         w[4] = spill slot for rs2                                             \
+         w[5] = spill slot for rs1                                             \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = w;                                \
+      __asm__ __volatile__(                                                    \
+         "sd " #rd ", 24(%[w]);"       /* Spill rd. */                         \
+         "sd " #rs2 ", 32(%[w]);"      /* Spill rs2. */                        \
+         "sd " #rs1 ", 40(%[w]);"      /* Spill rs1. */                        \
+         "ld " #rs2 ", 8(%[w]);"       /* Load the first input. */             \
+         "ld " #rs1 ", 16(%[w]);"      /* Load the second input. */            \
+         ASMINST_##length(instruction) ";"                                     \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         "ld " #rd ", 24(%[w]);"       /* Reload rd. */                        \
+         "ld " #rs2 ", 32(%[w]);"      /* Reload rs2. */                       \
+         "ld " #rs1 ", 40(%[w]);"      /* Reload rs1. */                       \
+         :                                                                     \
+         : [w] "r"(t1)                                                         \
+         : "memory");                                                          \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx, %s=&area_mid\n", #rs2,                    \
+             (unsigned long)rs2_val, #rs1);                                    \
+      printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
+      show_block_diff(area, area2, N, N / 2);                                  \
+      free(area);                                                              \
+   }
+
 #define TESTINST_1_0_AUIPC(length, instruction, rd)                            \
    {                                                                           \
       unsigned long work[2 /*out*/ + 1 /*spill*/] = {0};                       \
