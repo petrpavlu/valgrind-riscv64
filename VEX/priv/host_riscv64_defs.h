@@ -120,6 +120,7 @@ typedef enum {
    RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_CAS_W,           /* 32-bit compare-and-swap pseudoinstruction. */
+   RISCV64in_CAS_D,           /* 64-bit compare-and-swap pseudoinstruction. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
    RISCV64in_CSEL,            /* Conditional-select pseudoinstruction. */
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
@@ -393,6 +394,13 @@ typedef struct {
          HReg expd;
          HReg data;
       } CAS_W;
+      /* 64-bit compare-and-swap pseudoinstruction. */
+      struct {
+         HReg old;
+         HReg addr;
+         HReg expd;
+         HReg data;
+      } CAS_D;
       /* Device I/O and memory fence. */
       struct {
       } FENCE;
@@ -476,6 +484,7 @@ RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_SC_W(HReg res, HReg src, HReg addr);
 RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
+RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond);
 RISCV64Instr* RISCV64Instr_XDirect(

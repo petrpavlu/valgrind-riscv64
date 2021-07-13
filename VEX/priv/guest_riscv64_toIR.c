@@ -134,6 +134,32 @@ static IRTemp newTemp(/*MOD*/ IRSB* irsb, IRType ty)
    return newIRTemp(irsb->tyenv, ty);
 }
 
+/* Sign-extend a 32/64-bit integer expression to 64 bits. */
+static IRExpr* widenSto64(IRType srcTy, IRExpr* e)
+{
+   switch (srcTy) {
+   case Ity_I64:
+      return e;
+   case Ity_I32:
+      return unop(Iop_32Sto64, e);
+   default:
+      vpanic("widenSto64(riscv64)");
+   }
+}
+
+/* Narrow a 64-bit integer expression to 32/64 bits. */
+static IRExpr* narrowFrom64(IRType dstTy, IRExpr* e)
+{
+   switch (dstTy) {
+   case Ity_I64:
+      return e;
+   case Ity_I32:
+      return unop(Iop_64to32, e);
+   default:
+      vpanic("narrowFrom64(riscv64)");
+   }
+}
+
 /*------------------------------------------------------------*/
 /*--- Offsets of various parts of the riscv64 guest state  ---*/
 /*------------------------------------------------------------*/
@@ -1657,12 +1683,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ----------- amo{swap,add}.w rd, rs2, (rs1) ------------ */
-   /* ---------- amo{xor,and,or}.w rd, rs2, (rs1) ----------- */
-   /* ------------ amo{min,max}.w rd, rs2, (rs1) ------------ */
-   /* ----------- amo{minu,maxu}.w rd, rs2, (rs1) ----------- */
-   if (INSN(6, 0) == 0b0101111 && INSN(14, 12) == 0b010) {
+   /* --------- amo{swap,add}.{w,d} rd, rs2, (rs1) ---------- */
+   /* -------- amo{xor,and,or}.{w,d} rd, rs2, (rs1) --------- */
+   /* ---------- amo{min,max}.{w,d} rd, rs2, (rs1) ---------- */
+   /* --------- amo{minu,maxu}.{w,d} rd, rs2, (rs1) --------- */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01) {
       UInt rd     = INSN(11, 7);
+      Bool is_32  = INSN(12, 12) == 0b0;
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
       UInt aqrl   = INSN(26, 25);
@@ -1678,10 +1705,11 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          IRTemp addr = newTemp(irsb, Ity_I64);
          assign(irsb, addr, getIReg64(rs1));
 
-         IRTemp orig = newTemp(irsb, Ity_I32);
-         assign(irsb, orig, loadLE(Ity_I32, mkexpr(addr)));
+         IRType ty   = is_32 ? Ity_I32 : Ity_I64;
+         IRTemp orig = newTemp(irsb, ty);
+         assign(irsb, orig, loadLE(ty, mkexpr(addr)));
          IRExpr* lhs = mkexpr(orig);
-         IRExpr* rhs = getIReg32(rs2);
+         IRExpr* rhs = narrowFrom64(ty, getIReg64(rs2));
 
          /* Perform the operation. */
          const HChar* name;
@@ -1693,35 +1721,39 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             break;
          case 0b00000:
             name = "amoadd";
-            res  = binop(Iop_Add32, lhs, rhs);
+            res  = binop(is_32 ? Iop_Add32 : Iop_Add64, lhs, rhs);
             break;
          case 0b00100:
             name = "amoxor";
-            res  = binop(Iop_Xor32, lhs, rhs);
+            res  = binop(is_32 ? Iop_Xor32 : Iop_Xor64, lhs, rhs);
             break;
          case 0b01100:
             name = "amoand";
-            res  = binop(Iop_And32, lhs, rhs);
+            res  = binop(is_32 ? Iop_And32 : Iop_And64, lhs, rhs);
             break;
          case 0b01000:
             name = "amoor";
-            res  = binop(Iop_Or32, lhs, rhs);
+            res  = binop(is_32 ? Iop_Or32 : Iop_Or64, lhs, rhs);
             break;
          case 0b10000:
             name = "amomin";
-            res  = IRExpr_ITE(binop(Iop_CmpLT32S, lhs, rhs), lhs, rhs);
+            res  = IRExpr_ITE(
+               binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), lhs, rhs);
             break;
          case 0b10100:
             name = "amomax";
-            res  = IRExpr_ITE(binop(Iop_CmpLT32S, lhs, rhs), rhs, lhs);
+            res  = IRExpr_ITE(
+               binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), rhs, lhs);
             break;
          case 0b11000:
             name = "amominu";
-            res  = IRExpr_ITE(binop(Iop_CmpLT32U, lhs, rhs), lhs, rhs);
+            res  = IRExpr_ITE(
+               binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), lhs, rhs);
             break;
          case 0b11100:
             name = "amomaxu";
-            res  = IRExpr_ITE(binop(Iop_CmpLT32U, lhs, rhs), rhs, lhs);
+            res  = IRExpr_ITE(
+               binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), rhs, lhs);
             break;
          default:
             vassert(0);
@@ -1729,7 +1761,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
 
          /* Store the result back if the original value remains unchanged in
             memory. */
-         IRTemp old = newTemp(irsb, Ity_I32);
+         IRTemp old = newTemp(irsb, ty);
          stmt(irsb, IRStmt_CAS(mkIRCAS(/*oldHi*/ IRTemp_INVALID, old, Iend_LE,
                                        mkexpr(addr),
                                        /*expdHi*/ NULL, mkexpr(orig),
@@ -1739,12 +1771,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
          /* Retry if the CAS failed (i.e. when old != orig). */
-         stmt(irsb, IRStmt_Exit(
-                       binop(Iop_CasCmpNE32, mkexpr(old), mkexpr(orig)),
-                       Ijk_Boring, IRConst_U64(guest_pc_curr_instr), OFFB_PC));
+         stmt(irsb, IRStmt_Exit(binop(is_32 ? Iop_CasCmpNE32 : Iop_CasCmpNE64,
+                                      mkexpr(old), mkexpr(orig)),
+                                Ijk_Boring, IRConst_U64(guest_pc_curr_instr),
+                                OFFB_PC));
          /* Otherwise we succeeded. */
          if (rd != 0)
-            putIReg32(irsb, rd, mkexpr(old));
+            putIReg64(irsb, rd, widenSto64(ty, mkexpr(old)));
 
          const HChar* suffix;
          switch (aqrl) {
@@ -1761,8 +1794,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             suffix = ".aqrl";
             break;
          }
-         DIP("%s.w%s %s, %s, (%s)\n", name, suffix, nameIReg64(rd),
-             nameIReg64(rs2), nameIReg64(rs1));
+         DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d", suffix,
+             nameIReg64(rd), nameIReg64(rs2), nameIReg64(rs1));
          return True;
       }
    }

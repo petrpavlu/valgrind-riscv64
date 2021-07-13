@@ -510,6 +510,17 @@ RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data)
+{
+   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                  = RISCV64in_CAS_D;
+   i->RISCV64in.CAS_D.old  = old;
+   i->RISCV64in.CAS_D.addr = addr;
+   i->RISCV64in.CAS_D.expd = expd;
+   i->RISCV64in.CAS_D.data = data;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_FENCE(void)
 {
    RISCV64Instr* i = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -911,6 +922,21 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.CAS_W.addr);
       vex_printf("); bne t0, zero, 1b; 2:");
       return;
+   case RISCV64in_CAS_D:
+      vex_printf("(CAS_D) 1: lr.d ");
+      ppHRegRISCV64(i->RISCV64in.CAS_D.old);
+      vex_printf(", (");
+      ppHRegRISCV64(i->RISCV64in.CAS_D.addr);
+      vex_printf("); bne ");
+      ppHRegRISCV64(i->RISCV64in.CAS_D.old);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.CAS_D.expd);
+      vex_printf(", 2f; sc.d t0, ");
+      ppHRegRISCV64(i->RISCV64in.CAS_D.data);
+      vex_printf(", (");
+      ppHRegRISCV64(i->RISCV64in.CAS_D.addr);
+      vex_printf("); bne t0, zero, 1b; 2:");
+      return;
    case RISCV64in_FENCE:
       vex_printf("fence");
       return;
@@ -1233,6 +1259,12 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.CAS_W.expd);
       addHRegUse(u, HRmRead, i->RISCV64in.CAS_W.data);
       return;
+   case RISCV64in_CAS_D:
+      addHRegUse(u, HRmWrite, i->RISCV64in.CAS_D.old);
+      addHRegUse(u, HRmRead, i->RISCV64in.CAS_D.addr);
+      addHRegUse(u, HRmRead, i->RISCV64in.CAS_D.expd);
+      addHRegUse(u, HRmRead, i->RISCV64in.CAS_D.data);
+      return;
    case RISCV64in_FENCE:
       return;
    case RISCV64in_CSEL:
@@ -1480,6 +1512,12 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.CAS_W.addr);
       mapReg(m, &i->RISCV64in.CAS_W.expd);
       mapReg(m, &i->RISCV64in.CAS_W.data);
+      return;
+   case RISCV64in_CAS_D:
+      mapReg(m, &i->RISCV64in.CAS_D.old);
+      mapReg(m, &i->RISCV64in.CAS_D.addr);
+      mapReg(m, &i->RISCV64in.CAS_D.expd);
+      mapReg(m, &i->RISCV64in.CAS_D.data);
       return;
    case RISCV64in_FENCE:
       return;
@@ -2364,6 +2402,25 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = emit_R(p, 0b0101111, old, 0b010, addr, 0b00000, 0b0001000);
       p = emit_B(p, 0b1100011, (12 >> 1) & 0xfff, 0b001, old, expd);
       p = emit_R(p, 0b0101111, 5 /*x5/t0*/, 0b010, addr, data, 0b0001100);
+      p = emit_B(p, 0b1100011, (-12 >> 1) & 0xfff, 0b001, 5 /*x5/t0*/,
+                 0 /*x0/zero*/);
+      goto done;
+   }
+   case RISCV64in_CAS_D: {
+      /* 1: lr.d old, (addr)
+            bne old, expd, 2f
+            sc.d t0, data, (addr)
+            bne t0, zero, 1b
+         2:
+       */
+      UInt old  = iregEnc(i->RISCV64in.CAS_D.old);
+      UInt addr = iregEnc(i->RISCV64in.CAS_D.addr);
+      UInt expd = iregEnc(i->RISCV64in.CAS_D.expd);
+      UInt data = iregEnc(i->RISCV64in.CAS_D.data);
+
+      p = emit_R(p, 0b0101111, old, 0b011, addr, 0b00000, 0b0001000);
+      p = emit_B(p, 0b1100011, (12 >> 1) & 0xfff, 0b001, old, expd);
+      p = emit_R(p, 0b0101111, 5 /*x5/t0*/, 0b011, addr, data, 0b0001100);
       p = emit_B(p, 0b1100011, (-12 >> 1) & 0xfff, 0b001, 5 /*x5/t0*/,
                  0 /*x0/zero*/);
       goto done;
