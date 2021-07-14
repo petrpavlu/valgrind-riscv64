@@ -345,6 +345,27 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_DIVU(dst, argL, argR));
          return dst;
       }
+      case Iop_DivU32: {
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_DIVUW(dst, argL, argR));
+         return dst;
+      }
+      case Iop_DivS64: {
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_DIV(dst, argL, argR));
+         return dst;
+      }
+      case Iop_DivS32: {
+         HReg dst  = newVRegI(env);
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         addInstr(env, RISCV64Instr_DIVW(dst, argL, argR));
+         return dst;
+      }
       case Iop_CmpEQ64:
       case Iop_CmpEQ32: {
          HReg tmp  = newVRegI(env);

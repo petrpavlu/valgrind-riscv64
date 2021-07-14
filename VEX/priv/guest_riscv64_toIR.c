@@ -1360,6 +1360,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ div rd, rs1, rs2 ------------------- */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b100 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid DIV, fall through. */
+      } else {
+         putIReg64(irsb, rd, binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2)));
+         DIP("div %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ------------------ divu rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b101 &&
        INSN(31, 25) == 0b0000001) {
@@ -1425,6 +1441,38 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg32(irsb, rd, binop(Iop_Mul32, getIReg32(rs1), getIReg32(rs2)));
          DIP("mulw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
+   /* ------------------ divw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b100 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid DIVW, fall through. */
+      } else {
+         putIReg32(irsb, rd, binop(Iop_DivS32, getIReg32(rs1), getIReg32(rs2)));
+         DIP("divw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
+   /* ----------------- divuw rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b101 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid DIVUW, fall through. */
+      } else {
+         putIReg32(irsb, rd, binop(Iop_DivU32, getIReg32(rs1), getIReg32(rs2)));
+         DIP("divuw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
              nameIReg64(rs2));
          return True;
       }
