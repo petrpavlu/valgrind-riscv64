@@ -91,6 +91,7 @@
 #define __NR_getgid 176
 #define __NR_getegid 177
 #define __NR_gettid 178
+#define __NR_sysinfo 179
 #define __NR_mq_open 180
 #define __NR_mq_unlink 181
 #define __NR_mq_timedsend 182
@@ -112,6 +113,7 @@
 #define __NR_getsockname 204
 #define __NR_getpeername 205
 #define __NR_sendto 206
+#define __NR_recvfrom 207
 #define __NR_setsockopt 208
 #define __NR_getsockopt 209
 #define __NR_sendmsg 211
@@ -123,6 +125,7 @@
 #define __NR_execve 221
 #define __NR3264_mmap 222
 #define __NR_mprotect 226
+#define __NR_madvise 233
 #define __NR_arch_specific_syscall 244
 #define __NR_wait4 260
 #define __NR_prlimit64 261
