@@ -32,6 +32,39 @@ mul a0, a1, a2 ::
 mul t4, t5, t6 ::
   inputs: t5=0x0000000000001000, t6=0x0000000000002000
   output: t4=0x0000000002000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x0000000000005000, a2=0x0000000000002000
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x0000000000000002
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0x7fffffffffffffff
+  output: a0=0x3fffffffffffffff
+mulh a0, a1, a2 ::
+  inputs: a1=0x7fffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0xffffffffffffffff
+mulh a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x0000000000000002
+  output: a0=0xffffffffffffffff
+mulh a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0xffffffffffffffff
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x8000000000000000, a2=0x8000000000000000
+  output: a0=0x4000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0x0000000000000001, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulh a0, a1, a2 ::
+  inputs: a1=0xffffffffffffffff, a2=0x0000000000000000
+  output: a0=0x0000000000000000
+mulh t4, t5, t6 ::
+  inputs: t5=0x0000000000001000, t6=0x0000000000002000
+  output: t4=0x0000000000000000
 mulhu a0, a1, a2 ::
   inputs: a1=0x0000000000005000, a2=0x0000000000002000
   output: a0=0x0000000000000000

@@ -33,7 +33,6 @@ static void test_muldiv_shared(void)
                 t5, t6);
 
    /* ------------------ mulh rd, rs1, rs2 ------------------ */
-#if 0 /* TODO Enable. */
    TESTINST_1_2(4, "mulh a0, a1, a2", 0x0000000000005000, 0x0000000000002000,
                 a0, a1, a2);
    TESTINST_1_2(4, "mulh a0, a1, a2", 0x7fffffffffffffff, 0x0000000000000002,
@@ -56,7 +55,6 @@ static void test_muldiv_shared(void)
                 a0, a1, a2);
    TESTINST_1_2(4, "mulh t4, t5, t6", 0x0000000000001000, 0x0000000000002000,
                 t4, t5, t6);
-#endif
 
    /* ----------------- mulhsu rd, rs1, rs2 ----------------- */
 #if 0 /* TODO Enable. */

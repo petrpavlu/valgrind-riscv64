@@ -90,6 +90,8 @@ typedef enum {
                                  a sx-12-bit immediate. */
    RISCV64in_MUL,             /* Multiplication of two registers, producing the
                                  lower 64 bits. */
+   RISCV64in_MULH,            /* Signed multiplication of two registers,
+                                 producing the upper 64 bits. */
    RISCV64in_MULHU,           /* Unsigned multiplication of two registers,
                                  producing the upper 64 bits. */
    RISCV64in_DIV,             /* Signed division of one register by another. */
@@ -267,6 +269,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } MUL;
+      /* Signed multiplication of two registers, producing the upper 64 bits. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } MULH;
       /* Unsigned multiplication of two registers, producing the upper 64 bits.
        */
       struct {
@@ -463,6 +471,7 @@ RISCV64Instr* RISCV64Instr_SLT(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_MULH(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_MULHU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIV(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_DIVU(HReg dst, HReg src1, HReg src2);

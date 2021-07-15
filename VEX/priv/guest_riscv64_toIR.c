@@ -1342,6 +1342,24 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ mulh rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b001 &&
+       INSN(31, 25) == 0b0000001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rd == 0) {
+         /* Invalid MULH, fall through. */
+      } else {
+         putIReg64(irsb, rd,
+                   unop(Iop_128HIto64,
+                        binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2))));
+         DIP("mulh %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ----------------- mulhu rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b011 &&
        INSN(31, 25) == 0b0000001) {

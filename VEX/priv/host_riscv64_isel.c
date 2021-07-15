@@ -626,12 +626,16 @@ static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
    if (e->tag == Iex_Binop) {
       switch (e->Iex.Binop.op) {
       /* 64 x 64 -> 128 multiply */
+      case Iop_MullS64:
       case Iop_MullU64: {
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          *rHi      = newVRegI(env);
          *rLo      = newVRegI(env);
-         addInstr(env, RISCV64Instr_MULHU(*rHi, argL, argR));
+         if (e->Iex.Binop.op == Iop_MullS64)
+            addInstr(env, RISCV64Instr_MULH(*rHi, argL, argR));
+         else
+            addInstr(env, RISCV64Instr_MULHU(*rHi, argL, argR));
          addInstr(env, RISCV64Instr_MUL(*rLo, argL, argR));
          return;
       }
