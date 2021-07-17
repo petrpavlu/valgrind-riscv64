@@ -1324,209 +1324,111 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- RV32M standard extension --------------- */
-
-   /* ------------------ mul rd, rs1, rs2 ------------------- */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b000 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid MUL, fall through. */
-      } else {
-         putIReg64(irsb, rd, binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2)));
-         DIP("mul %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ mulh rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b001 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid MULH, fall through. */
-      } else {
-         putIReg64(irsb, rd,
-                   unop(Iop_128HIto64,
-                        binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2))));
-         DIP("mulh %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ----------------- mulhu rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b011 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid MULHU, fall through. */
-      } else {
-         putIReg64(irsb, rd,
-                   unop(Iop_128HIto64,
-                        binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2))));
-         DIP("mulhu %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ div rd, rs1, rs2 ------------------- */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b100 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid DIV, fall through. */
-      } else {
-         putIReg64(irsb, rd, binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2)));
-         DIP("div %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ divu rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b101 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid DIVU, fall through. */
-      } else {
-         putIReg64(irsb, rd, binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2)));
-         DIP("divu %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ rem rd, rs1, rs2 ------------------- */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b110 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid REM, fall through. */
-      } else {
-         putIReg64(irsb, rd,
-                   unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
-                                             getIReg64(rs2))));
-         DIP("rem %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ remu rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0110011 && INSN(14, 12) == 0b111 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid REMU, fall through. */
-      } else {
-         putIReg64(irsb, rd,
-                   unop(Iop_128HIto64, binop(Iop_DivModU64to64, getIReg64(rs1),
-                                             getIReg64(rs2))));
-         DIP("remu %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
    /* -------------- RV64M standard extension --------------- */
 
+   /* -------- {mul,mulh,mulhsu,mulhu} rd, rs1, rs2 --------- */
+   /* --------------- {div,divu} rd, rs1, rs2 --------------- */
+   /* --------------- {rem,remu} rd, rs1, rs2 --------------- */
+   if (INSN(6, 0) == 0b0110011 && INSN(31, 25) == 0b0000001) {
+      UInt rd     = INSN(11, 7);
+      UInt funct3 = INSN(14, 12);
+      UInt rs1    = INSN(19, 15);
+      UInt rs2    = INSN(24, 20);
+      /* TODO Handle mulhsu. */
+      if (rd == 0 || funct3 == 0b010) {
+         /* Invalid {MUL,DIV,REM}<x>, fall through. */
+      } else {
+         const HChar* name;
+         IRExpr*      expr;
+         switch (funct3) {
+         case 0b000:
+            name = "mul";
+            expr = binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2));
+            break;
+         case 0b001:
+            name = "mulh";
+            expr = unop(Iop_128HIto64,
+                        binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2)));
+            break;
+         case 0b010:
+            name = "mulhsu";
+            /* TODO */
+            vassert(0);
+            break;
+         case 0b011:
+            name = "mulhu";
+            expr = unop(Iop_128HIto64,
+                        binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2)));
+            break;
+         case 0b100:
+            name = "div";
+            expr = binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2));
+            break;
+         case 0b101:
+            name = "divu";
+            expr = binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2));
+            break;
+         case 0b110:
+            name = "rem";
+            expr = unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
+                                             getIReg64(rs2)));
+            break;
+         case 0b111:
+            name = "remu";
+            expr = unop(Iop_128HIto64, binop(Iop_DivModU64to64, getIReg64(rs1),
+                                             getIReg64(rs2)));
+            break;
+         default:
+            vassert(0);
+         }
+         putIReg64(irsb, rd, expr);
+         DIP("%s %s, %s, %s\n", name, nameIReg64(rd), nameIReg64(rs1),
+             nameIReg64(rs2));
+         return True;
+      }
+   }
+
    /* ------------------ mulw rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b000 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid MULW, fall through. */
+   /* -------------- {divw,divuw} rd, rs1, rs2 -------------- */
+   /* -------------- {remw,remuw} rd, rs1, rs2 -------------- */
+   if (INSN(6, 0) == 0b0111011 && INSN(31, 25) == 0b0000001) {
+      UInt rd     = INSN(11, 7);
+      UInt funct3 = INSN(14, 12);
+      UInt rs1    = INSN(19, 15);
+      UInt rs2    = INSN(24, 20);
+      if (rd == 0 || (funct3 == 0b001 || funct3 == 0b010 || funct3 == 0b011)) {
+         /* Invalid {MUL,DIV,REM}<x>W, fall through. */
       } else {
-         putIReg32(irsb, rd, binop(Iop_Mul32, getIReg32(rs1), getIReg32(rs2)));
-         DIP("mulw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ divw rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b100 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid DIVW, fall through. */
-      } else {
-         putIReg32(irsb, rd, binop(Iop_DivS32, getIReg32(rs1), getIReg32(rs2)));
-         DIP("divw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ----------------- divuw rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b101 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid DIVUW, fall through. */
-      } else {
-         putIReg32(irsb, rd, binop(Iop_DivU32, getIReg32(rs1), getIReg32(rs2)));
-         DIP("divuw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ------------------ remw rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b110 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid REMW, fall through. */
-      } else {
-         putIReg32(irsb, rd,
-                   unop(Iop_64HIto32, binop(Iop_DivModS32to32, getIReg32(rs1),
-                                            getIReg32(rs2))));
-         DIP("remw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
-         return True;
-      }
-   }
-
-   /* ----------------- remuw rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b0111011 && INSN(14, 12) == 0b111 &&
-       INSN(31, 25) == 0b0000001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid REMUW, fall through. */
-      } else {
-         putIReg32(irsb, rd,
-                   unop(Iop_64HIto32, binop(Iop_DivModU32to32, getIReg32(rs1),
-                                            getIReg32(rs2))));
-         DIP("remuw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
+         const HChar* name;
+         IRExpr*      expr;
+         switch (funct3) {
+         case 0b000:
+            name = "mulw";
+            expr = binop(Iop_Mul32, getIReg32(rs1), getIReg32(rs2));
+            break;
+         case 0b100:
+            name = "divw";
+            expr = binop(Iop_DivS32, getIReg32(rs1), getIReg32(rs2));
+            break;
+         case 0b101:
+            name = "divuw";
+            expr = binop(Iop_DivU32, getIReg32(rs1), getIReg32(rs2));
+            break;
+         case 0b110:
+            name = "remw";
+            expr = unop(Iop_64HIto32, binop(Iop_DivModS32to32, getIReg32(rs1),
+                                            getIReg32(rs2)));
+            break;
+         case 0b111:
+            name = "remuw";
+            expr = unop(Iop_64HIto32, binop(Iop_DivModU32to32, getIReg32(rs1),
+                                            getIReg32(rs2)));
+            break;
+         default:
+            vassert(0);
+         }
+         putIReg32(irsb, rd, expr);
+         DIP("%s %s, %s, %s\n", name, nameIReg64(rd), nameIReg64(rs1),
              nameIReg64(rs2));
          return True;
       }
