@@ -333,6 +333,27 @@ static void putPC(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
 }
 
 /*------------------------------------------------------------*/
+/*--- Name helpers                                         ---*/
+/*------------------------------------------------------------*/
+
+/* Obtain an acquire/release atomic-instruction suffix. */
+static const HChar* nameAqRlSuffix(UInt aqrl)
+{
+   switch (aqrl) {
+   case 0b00:
+      return "";
+   case 0b01:
+      return ".rl";
+   case 0b10:
+      return ".aq";
+   case 0b11:
+      return ".aqrl";
+   default:
+      vpanic("nameAqRlSuffix(riscv64)");
+   }
+}
+
+/*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
@@ -1537,25 +1558,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          if (aqrl & 0x2)
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
-         const HChar* suffix;
-         switch (aqrl) {
-         case 0b00:
-            suffix = "";
-            break;
-         case 0b01:
-            suffix = ".rl";
-            break;
-         case 0b10:
-            suffix = ".aq";
-            break;
-         case 0b11:
-            suffix = ".aqrl";
-            break;
-         default:
-            vassert(0);
-         }
-         DIP("lr.%s%s %s, (%s)%s\n", is_32 ? "w" : "d", suffix, nameIReg64(rd),
-             nameIReg64(rs1),
+         DIP("lr.%s%s %s, (%s)%s\n", is_32 ? "w" : "d", nameAqRlSuffix(aqrl),
+             nameIReg64(rd), nameIReg64(rs1),
              abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
                                                : "");
          return True;
@@ -1641,25 +1645,9 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          if (aqrl & 0x2)
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
-         const HChar* suffix;
-         switch (aqrl) {
-         case 0b00:
-            suffix = "";
-            break;
-         case 0b01:
-            suffix = ".rl";
-            break;
-         case 0b10:
-            suffix = ".aq";
-            break;
-         case 0b11:
-            suffix = ".aqrl";
-            break;
-         default:
-            vassert(0);
-         }
-         DIP("sc.%s%s %s, %s, (%s)%s\n", is_32 ? "w" : "d", suffix,
-             nameIReg64(rd), nameIReg64(rs2), nameIReg64(rs1),
+         DIP("sc.%s%s %s, %s, (%s)%s\n", is_32 ? "w" : "d",
+             nameAqRlSuffix(aqrl), nameIReg64(rd), nameIReg64(rs2),
+             nameIReg64(rs1),
              abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
                                                : "");
          return True;
@@ -1762,25 +1750,9 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          if (rd != 0)
             putIReg64(irsb, rd, widenSto64(ty, mkexpr(old)));
 
-         const HChar* suffix;
-         switch (aqrl) {
-         case 0b00:
-            suffix = "";
-            break;
-         case 0b01:
-            suffix = ".rl";
-            break;
-         case 0b10:
-            suffix = ".aq";
-            break;
-         case 0b11:
-            suffix = ".aqrl";
-            break;
-         default:
-            vassert(0);
-         }
-         DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d", suffix,
-             nameIReg64(rd), nameIReg64(rs2), nameIReg64(rs1));
+         DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d",
+             nameAqRlSuffix(aqrl), nameIReg64(rd), nameIReg64(rs2),
+             nameIReg64(rs1));
          return True;
       }
    }
