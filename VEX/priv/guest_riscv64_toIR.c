@@ -580,6 +580,8 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          name = "and";
          op   = Iop_And64;
          break;
+      default:
+         vassert(0);
       }
       putIReg64(irsb, rd_rs1, binop(op, getIReg64(rd_rs1), getIReg64(rs2)));
       DIP("c.%s %s, %s\n", name, nameIReg64(rd_rs1), nameIReg64(rs2));
@@ -999,6 +1001,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             name = "lwu";
             expr = unop(Iop_32Uto64, loadLE(Ity_I32, ea));
             break;
+         default:
+            vassert(0);
          }
          putIReg64(irsb, rd, expr);
          DIP("%s %s, %lld(%s)\n", name, nameIReg64(rd), (Long)simm,
@@ -1038,6 +1042,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             name = "sd";
             expr = getIReg64(rs2);
             break;
+         default:
+            vassert(0);
          }
          storeLE(irsb, ea, expr);
          DIP("%s %s, %lld(%s)\n", name, nameIReg64(rs2), (Long)simm,
@@ -1186,6 +1192,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             name = "and";
             expr = binop(Iop_And64, getIReg64(rs1), getIReg64(rs2));
             break;
+         default:
+            vassert(0);
          }
          putIReg64(irsb, rd, expr);
          DIP("%s %s, %s, %s\n", name, nameIReg64(rd), nameIReg64(rs1),
@@ -1543,6 +1551,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          case 0b11:
             suffix = ".aqrl";
             break;
+         default:
+            vassert(0);
          }
          DIP("lr.%s%s %s, (%s)%s\n", is_32 ? "w" : "d", suffix, nameIReg64(rd),
              nameIReg64(rs1),
@@ -1645,6 +1655,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          case 0b11:
             suffix = ".aqrl";
             break;
+         default:
+            vassert(0);
          }
          DIP("sc.%s%s %s, %s, (%s)%s\n", is_32 ? "w" : "d", suffix,
              nameIReg64(rd), nameIReg64(rs2), nameIReg64(rs1),
@@ -1764,6 +1776,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          case 0b11:
             suffix = ".aqrl";
             break;
+         default:
+            vassert(0);
          }
          DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d", suffix,
              nameIReg64(rd), nameIReg64(rs2), nameIReg64(rs1));
