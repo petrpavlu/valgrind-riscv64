@@ -903,9 +903,9 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* -------------- b{eq,ne} rs1, rs2, imm[12:1] --------------- */
-   /* -------------- b{lt,ge} rs1, rs2, imm[12:1] --------------- */
-   /* -------------- b{lt,ge}u rs1, rs2, imm[12:1] -------------- */
+   /* ------------ {beq,bne} rs1, rs2, imm[12:1] ------------ */
+   /* ------------ {blt,bge} rs1, rs2, imm[12:1] ------------ */
+   /* ----------- {bltu,bgeu} rs1, rs2, imm[12:1] ----------- */
    if (INSN(6, 0) == 0b1100011) {
       UInt funct3  = INSN(14, 12);
       UInt rs1     = INSN(19, 15);
@@ -958,8 +958,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ------------ l{b,h,w,d} rd, imm[11:0](rs1) ------------ */
-   /* ------------ l{b,h,w}u rd, imm[11:0](rs1) ------------- */
+   /* ---------- {lb,lh,lw,ld} rd, imm[11:0](rs1) ----------- */
+   /* ---------- {lbu,lhu,lwu} rd, imm[11:0](rs1) ----------- */
    if (INSN(6, 0) == 0b0000011) {
       UInt funct3  = INSN(14, 12);
       UInt rd      = INSN(11, 7);
@@ -1011,7 +1011,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ----------- s{b,h,w,d} rs2, imm[11:0](rs1) ------------ */
+   /* ---------- {sb,sh,sw,sd} rs2, imm[11:0](rs1) ---------- */
    if (INSN(6, 0) == 0b0100011) {
       UInt funct3  = INSN(14, 12);
       UInt rs1     = INSN(19, 15);
@@ -1442,7 +1442,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- RV32D standard extension --------------- */
+   /* -------------- RV64D standard extension --------------- */
 
    /* --------------- flw rd, imm[11:0](rs1) ---------------- */
    if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b010) {
@@ -1493,7 +1493,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* -------------- RV32A standard extension --------------- */
+   /* -------------- RV64A standard extension --------------- */
 
    /* ----------------- lr.{w,d} rd, (rs1) ------------------ */
    if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01 &&
