@@ -999,11 +999,6 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    HReg     hreg, hregHI;
    ISelEnv* env;
 
-   /* TODO */
-#if 0
-   RISCV64AMode *amCounter, *amFailAddr;
-#endif
-
    /* Do some sanity checks. */
    vassert(arch_host == VexArchRISCV64);
 
@@ -1061,12 +1056,13 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    env->vreg_ctr = j;
 
    /* The very first instruction must be an event check. */
-   /* TODO */
-#if 0
-   amCounter  = ARM64AMode_RI9(hregRISCV64_x8(), offs_Host_EvC_Counter);
-   amFailAddr = ARM64AMode_RI9(hregRISCV64_x8(), offs_Host_EvC_FailAddr);
-   addInstr(env, ARM64Instr_EvCheck(amCounter, amFailAddr));
-#endif
+   HReg base             = get_baseblock_register();
+   Int  soff12_amCounter = offs_Host_EvC_Counter - BASEBLOCK_OFFSET_ADJUSTMENT;
+   vassert(soff12_amCounter >= -2048 && soff12_amCounter < 2048);
+   Int soff12_amFailAddr = offs_Host_EvC_FailAddr - BASEBLOCK_OFFSET_ADJUSTMENT;
+   vassert(soff12_amFailAddr >= -2048 && soff12_amFailAddr < 2048);
+   addInstr(env, RISCV64Instr_EvCheck(base, soff12_amCounter, base,
+                                      soff12_amFailAddr));
 
    /* TODO */
 #if 0

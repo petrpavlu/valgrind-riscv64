@@ -128,6 +128,7 @@ typedef enum {
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
    RISCV64in_XAssisted,       /* Assisted transfer to guest address. */
+   RISCV64in_EvCheck,         /* Event check. */
 } RISCV64InstrTag;
 
 typedef struct {
@@ -445,6 +446,17 @@ typedef struct {
          HReg       cond;   /* Condition, can be INVALID_REG for "always". */
          IRJumpKind jk;
       } XAssisted;
+      /* Event check. */
+      struct {
+         HReg base_amCounter;   /* Base to access the guest state for
+                                   host_EvC_Counter. */
+         Int soff12_amCounter;  /* Offset from the base register to access
+                                   host_EvC_COUNTER. */
+         HReg base_amFailAddr;  /* Base to access the guest state for for
+                                   host_EvC_FAILADDR. */
+         Int soff12_amFailAddr; /* Offset from the base register to access
+                                   host_EvC_FAILADDR. */
+      } EvCheck;
    } RISCV64in;
 } RISCV64Instr;
 
@@ -501,6 +513,10 @@ RISCV64Instr* RISCV64Instr_XDirect(
 RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond);
 RISCV64Instr* RISCV64Instr_XAssisted(
    HReg dstGA, HReg base, Int soff12, HReg cond, IRJumpKind jk);
+RISCV64Instr* RISCV64Instr_EvCheck(HReg base_amCounter,
+                                   Int  soff12_amCounter,
+                                   HReg base_amFailAddr,
+                                   Int  soff12_amFailAddr);
 
 /*------------------------------------------------------------*/
 /*--- Misc helpers                                         ---*/

@@ -586,6 +586,20 @@ RISCV64Instr* RISCV64Instr_XAssisted(
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_EvCheck(HReg base_amCounter,
+                                   Int  soff12_amCounter,
+                                   HReg base_amFailAddr,
+                                   Int  soff12_amFailAddr)
+{
+   RISCV64Instr* i = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag          = RISCV64in_EvCheck;
+   i->RISCV64in.EvCheck.base_amCounter    = base_amCounter;
+   i->RISCV64in.EvCheck.soff12_amCounter  = soff12_amCounter;
+   i->RISCV64in.EvCheck.base_amFailAddr   = base_amFailAddr;
+   i->RISCV64in.EvCheck.soff12_amFailAddr = soff12_amFailAddr;
+   return i;
+}
+
 void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
 {
    vassert(mode64 == True);
@@ -1014,6 +1028,17 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
                  (Int)i->RISCV64in.XAssisted.jk);
       vex_printf("; li t0, <disp_cp_xassisted>; c.jr 0(t0); 1:");
       return;
+   case RISCV64in_EvCheck:
+      vex_printf("(evCheck) lw t0, %d(", i->RISCV64in.EvCheck.soff12_amCounter);
+      ppHRegRISCV64(i->RISCV64in.EvCheck.base_amCounter);
+      vex_printf("); c.addiw t0, -1; sw t0, %d(",
+                 i->RISCV64in.EvCheck.soff12_amCounter);
+      ppHRegRISCV64(i->RISCV64in.EvCheck.base_amCounter);
+      vex_printf("); bge t0, zero, 1f; ld t0, %d(",
+                 i->RISCV64in.EvCheck.soff12_amFailAddr);
+      ppHRegRISCV64(i->RISCV64in.EvCheck.base_amFailAddr);
+      vex_printf("); c.jr 0(t0); 1:");
+      return;
    default:
       vpanic("ppRISCV64Instr");
    }
@@ -1315,6 +1340,10 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       if (!hregIsInvalid(i->RISCV64in.XAssisted.cond))
          addHRegUse(u, HRmRead, i->RISCV64in.XAssisted.cond);
       return;
+   case RISCV64in_EvCheck:
+      addHRegUse(u, HRmRead, i->RISCV64in.EvCheck.base_amCounter);
+      addHRegUse(u, HRmRead, i->RISCV64in.EvCheck.base_amFailAddr);
+      return;
    default:
       ppRISCV64Instr(i, mode64);
       vpanic("getRegUsage_RISCV64Instr");
@@ -1569,6 +1598,10 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.XAssisted.base);
       if (!hregIsInvalid(i->RISCV64in.XAssisted.cond))
          mapReg(m, &i->RISCV64in.XAssisted.cond);
+      return;
+   case RISCV64in_EvCheck:
+      mapReg(m, &i->RISCV64in.EvCheck.base_amCounter);
+      mapReg(m, &i->RISCV64in.EvCheck.base_amFailAddr);
       return;
    default:
       ppRISCV64Instr(i, mode64);
@@ -2690,6 +2723,41 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       goto done;
    }
 
+   case RISCV64in_EvCheck: {
+      /*    lw t0, soff12_amCounter(base_amCounter)
+            c.addiw t0, -1
+            sw t0, soff12_amCounter(base_amCounter)
+            bge t0, zero, 1f
+            ld t0, soff12_amFailAddr(base_amFailAddr)
+            c.jr 0(t0)
+         1:
+      */
+      UInt base_amCounter = iregEnc(i->RISCV64in.EvCheck.base_amCounter);
+      Int  soff12_amCounter = i->RISCV64in.EvCheck.soff12_amCounter;
+      vassert(soff12_amCounter >= -2048 && soff12_amCounter < 2048);
+      UInt imm11_0_amCounter = soff12_amCounter & 0xfff;
+
+      UInt base_amFailAddr = iregEnc(i->RISCV64in.EvCheck.base_amFailAddr);
+      Int  soff12_amFailAddr = i->RISCV64in.EvCheck.soff12_amFailAddr;
+      vassert(soff12_amFailAddr >= -2048 && soff12_amFailAddr < 2048);
+      UInt imm11_0_amFailAddr = soff12_amFailAddr & 0xfff;
+
+      p = emit_I(p, 0b0000011, 5 /*x5/t0*/, 0b010, base_amCounter,
+                 imm11_0_amCounter);
+      p = emit_CI(p, 0b01, -1 & 0x3f, 5 /*x5/t0*/, 0b001);
+      p = emit_S(p, 0b0100011, imm11_0_amCounter, 0b010, base_amCounter,
+                 5 /*x5/t0*/);
+      p = emit_B(p, 0b1100011, (10 >> 1) & 0xfff, 0b101, 5 /*x5/t0*/,
+                 0 /*x0/zero*/);
+      p = emit_I(p, 0b0000011, 5 /*x5/t0*/, 0b011, base_amFailAddr,
+                 imm11_0_amFailAddr);
+      p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1000);
+
+      /* Crosscheck. */
+      vassert(evCheckSzB_RISCV64() == p - buf);
+      goto done;
+   }
+
    default:
       goto bad;
    }
@@ -2704,10 +2772,9 @@ done:
    return p - &buf[0];
 }
 
-/* Return the number of bytes emitted for an RISCV64_INSN_EVCHECK. See
-   riscv64_insn_evcheck_emit(). */
-/* FIXME */
-Int evCheckSzB_RISCV64(void) { return 0; }
+/* Return the number of bytes emitted for an RISCV64in_EvCheck, as produced by
+   emit_RISCV64Instr(). */
+Int evCheckSzB_RISCV64(void) { return 20; }
 
 /* NB: what goes on here has to be very closely coordinated with the emitInstr
    case for XDirect, above. */
