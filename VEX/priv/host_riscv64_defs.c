@@ -984,7 +984,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf("); li t0, <%s>; ", i->RISCV64in.XDirect.toFastEP
                                         ? "disp_cp_chain_me_to_fastEP"
                                         : "disp_cp_chain_me_to_slowEP");
-      vex_printf("jalr x1, 0(t0); 1:");
+      vex_printf("c.jalr 0(t0); 1:");
       return;
    case RISCV64in_XIndir:
       vex_printf("(xIndir) ");
@@ -997,8 +997,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.XIndir.dstGA);
       vex_printf(", %d(", i->RISCV64in.XIndir.soff12);
       ppHRegRISCV64(i->RISCV64in.XIndir.base);
-      vex_printf("); li t0, <disp_cp_xindir>; ");
-      vex_printf("jr 0(t0); 1:");
+      vex_printf("); li t0, <disp_cp_xindir>; c.jr 0(t0); 1:");
       return;
    case RISCV64in_XAssisted:
       vex_printf("(xAssisted) ");
@@ -1013,8 +1012,7 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.XAssisted.base);
       vex_printf("); mv s0, $IRJumpKind_to_TRCVAL(%d)",
                  (Int)i->RISCV64in.XAssisted.jk);
-      vex_printf("; li t0, <disp_cp_xassisted>; ");
-      vex_printf("jr 0(t0); 1:");
+      vex_printf("; li t0, <disp_cp_xassisted>; c.jr 0(t0); 1:");
       return;
    default:
       vpanic("ppRISCV64Instr");
