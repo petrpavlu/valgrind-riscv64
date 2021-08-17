@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 /* Division by zero triggers a SIGFPE on x86 and x86_64,
-   but not on the PowerPC architecture.
+   but not on the PowerPC, AArch64 and RISC-V architectures.
 
    On ARM-Linux, we do get a SIGFPE, but not from the faulting of a
    division instruction (there isn't any such thing) but rather
@@ -18,7 +18,7 @@
    Hence we get a SIGFPE but the SI_CODE is different from that on
    x86/amd64-linux.
  */
-#if defined(__powerpc__) || defined(__aarch64__)
+#if defined(__powerpc__) || defined(__aarch64__) || defined(__riscv)
 #  define DIVISION_BY_ZERO_TRIGGERS_FPE 0
 #  define DIVISION_BY_ZERO_SI_CODE      SI_TKILL
 #elif defined(__arm__)
