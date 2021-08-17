@@ -200,8 +200,32 @@ void VG_(cleanup_thread) ( ThreadArchState* arch )
    aren't visible outside this file, but that requires even more macro
    magic. */
 
+DECL_TEMPLATE(riscv64_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(riscv64_linux, sys_mmap);
 DECL_TEMPLATE(riscv64_linux, sys_riscv_flush_icache);
+
+PRE(sys_rt_sigreturn)
+{
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
+   PRINT("rt_sigreturn ( )");
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(tid >= 1 && tid < VG_N_THREADS);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   /* Restore register state from frame and remove it. */
+   VG_(sigframe_destroy)(tid, True);
+
+   /* Tell the driver not to update the guest state with the "result", and set
+      a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
+
+   /* Check to see if any signals arose as a result of this. */
+   *flags |= SfPollAfter;
+}
 
 PRE(sys_mmap)
 {
@@ -276,6 +300,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_rt_sigsuspend, sys_rt_sigsuspend),           /* 133 */
    LINXY(__NR_rt_sigaction, sys_rt_sigaction),             /* 134 */
    LINXY(__NR_rt_sigprocmask, sys_rt_sigprocmask),         /* 135 */
+   PLAX_(__NR_rt_sigreturn, sys_rt_sigreturn),             /* 139 */
    GENX_(__NR_getpgid, sys_getpgid),                       /* 155 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
    GENX_(__NR_getpid, sys_getpid),                         /* 172 */
