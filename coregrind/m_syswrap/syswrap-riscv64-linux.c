@@ -300,6 +300,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_rt_sigsuspend, sys_rt_sigsuspend),           /* 133 */
    LINXY(__NR_rt_sigaction, sys_rt_sigaction),             /* 134 */
    LINXY(__NR_rt_sigprocmask, sys_rt_sigprocmask),         /* 135 */
+   LINXY(__NR_rt_sigtimedwait, sys_rt_sigtimedwait),       /* 137 */
    PLAX_(__NR_rt_sigreturn, sys_rt_sigreturn),             /* 139 */
    GENX_(__NR_getpgid, sys_getpgid),                       /* 155 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
