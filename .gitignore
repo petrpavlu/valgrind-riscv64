@@ -1008,6 +1008,16 @@
 /memcheck/tests/arm64-linux/Makefile
 /memcheck/tests/arm64-linux/Makefile.in
 
+# /memcheck/tests/riscv64-linux/
+/memcheck/tests/riscv64-linux/*.stderr.diff
+/memcheck/tests/riscv64-linux/*.stderr.out
+/memcheck/tests/riscv64-linux/*.stdout.diff
+/memcheck/tests/riscv64-linux/*.stdout.out
+/memcheck/tests/riscv64-linux/.deps
+/memcheck/tests/riscv64-linux/Makefile
+/memcheck/tests/riscv64-linux/Makefile.in
+/memcheck/tests/riscv64-linux/scalar
+
 # /memcheck/tests/common/
 /memcheck/tests/common/Makefile
 /memcheck/tests/common/Makefile.in

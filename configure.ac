@@ -4973,6 +4973,7 @@ AC_CONFIG_FILES([
    memcheck/tests/amd64-linux/Makefile
    memcheck/tests/arm64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
+   memcheck/tests/riscv64-linux/Makefile
    memcheck/tests/amd64-solaris/Makefile
    memcheck/tests/x86-solaris/Makefile
    memcheck/tests/ppc32/Makefile
