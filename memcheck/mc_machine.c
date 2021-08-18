@@ -1395,6 +1395,30 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 #  undef GOF
 #  undef SZB
 
+   /* ------------------- riscv64 ------------------- */
+
+#  elif defined(VGA_riscv64)
+
+#  define GOF(_fieldname) \
+      (offsetof(VexGuestRISCV64State,guest_##_fieldname))
+#  define SZB(_fieldname) \
+      (sizeof(((VexGuestRISCV64State*)0)->guest_##_fieldname))
+
+   Int  o    = offset;
+   Int  sz   = szB;
+   Bool is48 = sz == 8 || sz == 4;
+
+   tl_assert(sz > 0);
+   tl_assert(host_is_little_endian());
+
+   /* TODO Implement. */
+
+   VG_(printf)("MC_(get_otrack_shadow_offset)(riscv64)(off=%d,sz=%d)\n",
+               offset,szB);
+   tl_assert(0);
+#  undef GOF
+#  undef SZB
+
 #  else
 #    error "FIXME: not implemented for this architecture"
 #  endif
@@ -1512,6 +1536,13 @@ IRType MC_(get_otrack_reg_array_equiv_int_type) ( IRRegArray* arr )
    /* --------------------- mips64 --------------------- */
 #  elif defined(VGA_mips64)
    VG_(printf)("get_reg_array_equiv_int_type(mips64): unhandled: ");
+   ppIRRegArray(arr);
+   VG_(printf)("\n");
+   tl_assert(0);
+
+   /* ------------------- riscv64 ------------------- */
+#  elif defined(VGA_riscv64)
+   VG_(printf)("get_reg_array_equiv_int_type(riscv64): unhandled: ");
    ppIRRegArray(arr);
    VG_(printf)("\n");
    tl_assert(0);
