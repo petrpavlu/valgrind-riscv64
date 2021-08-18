@@ -234,6 +234,9 @@ __attribute__((noinline)) void atomic_add_8bit ( char* p, int n )
       );
    } while (block[2] != 1);
 #endif
+#elif defined(VGA_riscv64)
+   /* TODO Implement. */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -450,6 +453,9 @@ __attribute__((noinline)) void atomic_add_16bit ( short* p, int n )
       );
    } while (block[2] != 1);
 #endif
+#elif defined(VGA_riscv64)
+   /* TODO Implement. */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -605,6 +611,9 @@ __attribute__((noinline)) void atomic_add_32bit ( int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
+#elif defined(VGA_riscv64)
+   /* TODO Implement. */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
@@ -707,6 +716,9 @@ __attribute__((noinline)) void atomic_add_64bit ( long long int* p, int n )
          : /*trash*/ "memory", "t0", "t1", "t2", "t3"
       );
    } while (block[2] != 1);
+#elif defined(VGA_riscv64)
+   /* TODO Implement. */
+   assert(0);
 #else
 # error "Unsupported arch"
 #endif
