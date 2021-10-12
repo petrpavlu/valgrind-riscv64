@@ -1050,13 +1050,12 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
          ppHRegRISCV64(i->RISCV64in.XDirect.cond);
          vex_printf(", zero, 1f; ");
       }
-      vex_printf("li t0, 0x%llx; ", i->RISCV64in.XDirect.dstGA);
-      vex_printf("sd t0, %d(", i->RISCV64in.XDirect.soff12);
+      vex_printf("li t0, 0x%llx; sd t0, %d(", i->RISCV64in.XDirect.dstGA,
+                 i->RISCV64in.XDirect.soff12);
       ppHRegRISCV64(i->RISCV64in.XDirect.base);
-      vex_printf("); li t0, <%s>; ", i->RISCV64in.XDirect.toFastEP
-                                        ? "disp_cp_chain_me_to_fastEP"
-                                        : "disp_cp_chain_me_to_slowEP");
-      vex_printf("c.jalr 0(t0); 1:");
+      vex_printf("); li t0, <%s>; c.jalr 0(t0); 1:",
+                 i->RISCV64in.XDirect.toFastEP ? "disp_cp_chain_me_to_fastEP"
+                                               : "disp_cp_chain_me_to_slowEP");
       return;
    case RISCV64in_XIndir:
       vex_printf("(xIndir) ");
