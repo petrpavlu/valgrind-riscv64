@@ -147,8 +147,7 @@ static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
    bits are arbitrary, so you should mask or sign-extend partial values if
    necessary.
 
-   Note however that the riscv64 backend internally always extends the values as
-   follows:
+   The riscv64 backend however normally extends the values as follows:
    * a 32/16/8-bit integer result is sign-extended to 64 bits,
    * a 1-bit logical result is zero-extended to 64 bits.
 
@@ -157,11 +156,6 @@ static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
    with the ISA generally results in requiring less instructions. For instance,
    it allows that any Ico_U32 immediate can be always materialized at maximum
    using two instructions (LUI+ADDIW).
-
-   An important consequence of this design is that any Iop_<N>Sto64 extension is
-   a no-op. On the other hand, any Iop_64to<N> operation must additionally
-   perform an N-bit sign-extension. This is the opposite situation than in most
-   other VEX backends.
 */
 
 /* -------------------------- Reg --------------------------- */
@@ -516,12 +510,17 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTIU(dst, src, 1));
          return dst;
       }
+      case Iop_1Uto64:
       case Iop_8Uto32:
       case Iop_8Uto64:
       case Iop_16Uto64:
       case Iop_32Uto64: {
-         UInt shift =
-            64 - 8 * sizeofIRType(typeOfIRExpr(env->type_env, e->Iex.Unop.arg));
+         UInt shift;
+         if (e->Iex.Unop.op == Iop_1Uto64)
+            shift = 63;
+         else
+            shift = 64 - 8 * sizeofIRType(
+                                typeOfIRExpr(env->type_env, e->Iex.Unop.arg));
          HReg tmp = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, RISCV64Instr_SLLI(tmp, src, shift));
@@ -529,16 +528,17 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SRLI(dst, tmp, shift));
          return dst;
       }
-      case Iop_1Uto64:
+      case Iop_1Sto32:
+      case Iop_1Sto64:
       case Iop_8Sto64:
       case Iop_16Sto64:
-      case Iop_32Sto64:
-         /* These are no-ops. */
-         return iselIntExpr_R(env, e->Iex.Unop.arg);
-      case Iop_64to8:
-      case Iop_64to16:
-      case Iop_64to32: {
-         UInt shift = 64 - 8 * sizeofIRType(ty);
+      case Iop_32Sto64: {
+         UInt shift;
+         if (e->Iex.Unop.op == Iop_1Sto32 || e->Iex.Unop.op == Iop_1Sto64)
+            shift = 63;
+         else
+            shift = 64 - 8 * sizeofIRType(
+                                typeOfIRExpr(env->type_env, e->Iex.Unop.arg));
          HReg tmp = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, RISCV64Instr_SLLI(tmp, src, shift));
@@ -546,6 +546,11 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SRAI(dst, tmp, shift));
          return dst;
       }
+      case Iop_64to8:
+      case Iop_64to16:
+      case Iop_64to32:
+         /* These are no-ops. */
+         return iselIntExpr_R(env, e->Iex.Unop.arg);
       case Iop_128HIto64: {
          HReg rHi, rLo;
          iselInt128Expr(&rHi, &rLo, env, e->Iex.Unop.arg);
