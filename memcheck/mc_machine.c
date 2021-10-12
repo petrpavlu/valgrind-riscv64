@@ -1411,7 +1411,49 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    tl_assert(sz > 0);
    tl_assert(host_is_little_endian());
 
-   /* TODO Implement. */
+   if (o == GOF(x0)  && is48) return -1;
+   if (o == GOF(x1)  && is48) return o;
+   if (o == GOF(x2)  && is48) return o;
+   if (o == GOF(x3)  && is48) return o;
+   if (o == GOF(x4)  && is48) return o;
+   if (o == GOF(x5)  && is48) return o;
+   if (o == GOF(x6)  && is48) return o;
+   if (o == GOF(x7)  && is48) return o;
+   if (o == GOF(x8)  && is48) return o;
+   if (o == GOF(x9)  && is48) return o;
+   if (o == GOF(x10) && is48) return o;
+   if (o == GOF(x11) && is48) return o;
+   if (o == GOF(x12) && is48) return o;
+   if (o == GOF(x13) && is48) return o;
+   if (o == GOF(x14) && is48) return o;
+   if (o == GOF(x15) && is48) return o;
+   if (o == GOF(x16) && is48) return o;
+   if (o == GOF(x17) && is48) return o;
+   if (o == GOF(x18) && is48) return o;
+   if (o == GOF(x19) && is48) return o;
+   if (o == GOF(x20) && is48) return o;
+   if (o == GOF(x21) && is48) return o;
+   if (o == GOF(x22) && is48) return o;
+   if (o == GOF(x23) && is48) return o;
+   if (o == GOF(x24) && is48) return o;
+   if (o == GOF(x25) && is48) return o;
+   if (o == GOF(x26) && is48) return o;
+   if (o == GOF(x27) && is48) return o;
+   if (o == GOF(x28) && is48) return o;
+   if (o == GOF(x29) && is48) return o;
+   if (o == GOF(x30) && is48) return o;
+   if (o == GOF(x31) && is48) return o;
+   if (o == GOF(pc)  && is48) return -1;
+
+   if (o == GOF(EMNOTE)  && sz == 4) return -1;
+   if (o == GOF(CMSTART) && sz == 8) return -1;
+   if (o == GOF(CMLEN)   && sz == 8) return -1;
+   if (o == GOF(NRADDR)  && sz == 4) return -1;
+   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
+
+   if (o == GOF(LLSC_SIZE) && sz == 8) return -1;
+   if (o == GOF(LLSC_ADDR) && sz == 8) return o;
+   if (o == GOF(LLSC_DATA) && sz == 8) return o;
 
    VG_(printf)("MC_(get_otrack_shadow_offset)(riscv64)(off=%d,sz=%d)\n",
                offset,szB);
