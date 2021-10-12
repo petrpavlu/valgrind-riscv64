@@ -69,9 +69,9 @@ typedef enum {
    RISCV64in_SUB,             /* Subtraction of one register from another. */
    RISCV64in_SUBW,            /* 32-bit subtraction of one register from
                                  another. */
-   RISCV64in_XOR,             /* Bitwise logical XOR of two registers. */
-   RISCV64in_OR,              /* Bitwise logical OR of two registers. */
-   RISCV64in_AND,             /* Bitwise logical AND of two registers. */
+   RISCV64in_XOR,             /* Bitwise XOR of two registers. */
+   RISCV64in_OR,              /* Bitwise OR of two registers. */
+   RISCV64in_AND,             /* Bitwise AND of two registers. */
    RISCV64in_SLL,             /* Logical left shift on a register. */
    RISCV64in_SRL,             /* Logical right shift on a register. */
    RISCV64in_SRA,             /* Arithmetic right shift on a register. */
@@ -174,19 +174,19 @@ typedef struct {
          HReg src1;
          HReg src2;
       } SUBW;
-      /* Bitwise logical XOR of two registers. */
+      /* Bitwise XOR of two registers. */
       struct {
          HReg dst;
          HReg src1;
          HReg src2;
       } XOR;
-      /* Bitwise logical OR of two registers. */
+      /* Bitwise OR of two registers. */
       struct {
          HReg dst;
          HReg src1;
          HReg src2;
       } OR;
-      /* Bitwise logical AND of two registers. */
+      /* Bitwise AND of two registers. */
       struct {
          HReg dst;
          HReg src1;
@@ -435,7 +435,7 @@ typedef struct {
          HReg dstGA;  /* Next guest address. */
          HReg base;   /* Base to access the guest state. */
          Int  soff12; /* Offset from the base register to access pc. */
-         HReg cond;   /* Condition, can be INVALID_REG for "always". */
+         HReg cond;   /* Condition, can be INVALID_HREG for "always". */
       } XIndir;
       /* Assisted transfer to a guest address, most general case. Not chainable.
          May be conditional. */
@@ -443,7 +443,7 @@ typedef struct {
          HReg       dstGA;  /* Next guest address. */
          HReg       base;   /* Base to access the guest state. */
          Int        soff12; /* Offset from the base register to access pc. */
-         HReg       cond;   /* Condition, can be INVALID_REG for "always". */
+         HReg       cond;   /* Condition, can be INVALID_HREG for "always". */
          IRJumpKind jk;
       } XAssisted;
       /* Event check. */
