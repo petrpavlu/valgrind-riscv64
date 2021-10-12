@@ -368,7 +368,9 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          return dst;
       }
       case Iop_CmpEQ64:
-      case Iop_CmpEQ32: {
+      case Iop_CmpEQ32:
+      case Iop_CasCmpEQ64:
+      case Iop_CasCmpEQ32: {
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
@@ -522,6 +524,27 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, RISCV64Instr_SRAI(dst, src, 32));
+         return dst;
+      }
+      case Iop_CmpNEZ8:
+      case Iop_CmpNEZ32:
+      case Iop_CmpNEZ64: {
+         HReg dst = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_SLTU(dst, hregRISCV64_x0(), src));
+         return dst;
+      }
+      case Iop_CmpwNEZ32:
+      case Iop_CmpwNEZ64: {
+         /* Use the fact that x | -x == 0 iff x == 0. Otherwise, either X or -X
+            will have a 1 in the MSB. */
+         HReg neg = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_SUB(neg, hregRISCV64_x0(), src));
+         HReg or = newVRegI(env);
+         addInstr(env, RISCV64Instr_OR(or, src, neg));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_SRAI(dst, or, 63));
          return dst;
       }
       default:
