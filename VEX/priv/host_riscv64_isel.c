@@ -427,6 +427,15 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SLTIU(dst, tmp, 1));
          return dst;
       }
+      case Iop_Max32U: {
+         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         HReg cond = newVRegI(env);
+         addInstr(env, RISCV64Instr_SLTU(cond, argL, argR));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_CSEL(dst, argR, argL, cond));
+         return dst;
+      }
       case Iop_DivModS32to32: {
          /* TODO Improve in conjunction with Iop_64HIto32. */
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
