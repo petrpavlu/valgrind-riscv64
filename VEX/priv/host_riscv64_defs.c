@@ -1108,12 +1108,21 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
    ru->regs[ru->size++]          = hregRISCV64_x25();
    ru->regs[ru->size++]          = hregRISCV64_x26();
    ru->regs[ru->size++]          = hregRISCV64_x27();
+   ru->regs[ru->size++]          = hregRISCV64_x10();
+   ru->regs[ru->size++]          = hregRISCV64_x11();
+   ru->regs[ru->size++]          = hregRISCV64_x12();
+   ru->regs[ru->size++]          = hregRISCV64_x13();
+   ru->regs[ru->size++]          = hregRISCV64_x14();
+   ru->regs[ru->size++]          = hregRISCV64_x15();
+   ru->regs[ru->size++]          = hregRISCV64_x16();
+   ru->regs[ru->size++]          = hregRISCV64_x17();
    ru->allocable_end[HRcInt64]   = ru->size - 1;
    ru->allocable                 = ru->size;
 
    /* Add the registers that are not available for allocation. */
    /* TODO */
    ru->regs[ru->size++] = hregRISCV64_x0();
+   ru->regs[ru->size++] = hregRISCV64_x2();
    ru->regs[ru->size++] = hregRISCV64_x8();
 
    initialised = True;
