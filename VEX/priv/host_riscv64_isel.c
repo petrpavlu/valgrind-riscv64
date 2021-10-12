@@ -249,7 +249,8 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_ADDIW(dst, tmp, 0));
          return dst;
       }
-      case Iop_Or64: {
+      case Iop_Or64:
+      case Iop_Or1: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
