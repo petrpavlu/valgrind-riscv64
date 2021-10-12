@@ -827,6 +827,10 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
    case Ist_IMark:
       return;
 
+   /* ------------------------ NO-OP ------------------------ */
+   case Ist_NoOp:
+      return;
+
    /* ------------------------ EXIT ------------------------- */
    case Ist_Exit: {
       if (stmt->Ist.Exit.dst->tag != Ico_U64)
