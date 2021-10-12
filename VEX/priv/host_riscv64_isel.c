@@ -578,6 +578,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SRAI(dst, or, 63));
          return dst;
       }
+      case Iop_Left32:
+      case Iop_Left64: {
+         /* Left32/64(src) = src | -src. */
+         HReg neg = newVRegI(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_SUB(neg, hregRISCV64_x0(), src));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_OR(dst, src, neg));
+         return dst;
+      }
       default:
          break;
       }
