@@ -63,6 +63,8 @@ typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
    RISCV64in_MV,              /* Copy one register to another. */
    RISCV64in_ADD,             /* Addition of two registers. */
+   RISCV64in_ADDI,            /* Addition of a register and a sx-12-bit
+                                 immediate. */
    RISCV64in_ADDW,            /* 32-bit addition of two registers. */
    RISCV64in_ADDIW,           /* 32-bit addition of a register and a sx-12-bit
                                  immediate. */
@@ -70,6 +72,8 @@ typedef enum {
    RISCV64in_SUBW,            /* 32-bit subtraction of one register from
                                  another. */
    RISCV64in_XOR,             /* Bitwise XOR of two registers. */
+   RISCV64in_XORI,            /* Bitwise XOR of a register and a sx-12-bit
+                                 immediate */
    RISCV64in_OR,              /* Bitwise OR of two registers. */
    RISCV64in_AND,             /* Bitwise AND of two registers. */
    RISCV64in_SLL,             /* Logical left shift on a register. */
@@ -150,6 +154,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } ADD;
+      /* Addition of a register and a sx-12-bit immediate. */
+      struct {
+         HReg dst;
+         HReg src;
+         Int  simm12;
+      } ADDI;
       /* 32-bit addition of two registers. */
       struct {
          HReg dst;
@@ -180,6 +190,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } XOR;
+      /* Bitwise XOR of a register and a sx-12-bit immediate. */
+      struct {
+         HReg dst;
+         HReg src;
+         Int  simm12;
+      } XORI;
       /* Bitwise OR of two registers. */
       struct {
          HReg dst;
@@ -463,11 +479,13 @@ typedef struct {
 RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
 RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_ADDI(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_ADDW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_ADDIW(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_SUB(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SUBW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_XOR(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_XORI(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_OR(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_AND(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2);
