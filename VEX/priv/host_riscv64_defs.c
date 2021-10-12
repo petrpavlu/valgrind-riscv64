@@ -1723,11 +1723,11 @@ void genReload_RISCV64(/*OUT*/ HInstr** i1,
 
 RISCV64Instr* genMove_RISCV64(HReg from, HReg to, Bool mode64)
 {
+   vassert(mode64 == True);
+
    switch (hregClass(from)) {
-#if 0
    case HRcInt64:
-      return RISCV64Instr_MovI(to, from);
-#endif
+      return RISCV64Instr_MV(to, from);
    default:
       ppHRegClass(hregClass(from));
       vpanic("genMove_RISCV64: unimplemented regclass");
