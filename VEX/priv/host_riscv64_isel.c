@@ -436,6 +436,22 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_CSEL(dst, argR, argL, cond));
          return dst;
       }
+      case Iop_32HLto64: {
+         HReg hi32s = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         HReg lo32s = iselIntExpr_R(env, e->Iex.Binop.arg2);
+
+         HReg lo32_tmp = newVRegI(env);
+         addInstr(env, RISCV64Instr_SLLI(lo32_tmp, lo32s, 32));
+         HReg lo32 = newVRegI(env);
+         addInstr(env, RISCV64Instr_SRLI(lo32, lo32_tmp, 32));
+
+         HReg hi32 = newVRegI(env);
+         addInstr(env, RISCV64Instr_SLLI(hi32, hi32s, 32));
+
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_OR(dst, hi32, lo32));
+         return dst;
+      }
       case Iop_DivModS32to32: {
          /* TODO Improve in conjunction with Iop_64HIto32. */
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
@@ -689,6 +705,13 @@ static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
          }
          return;
       }
+
+      /* 64HLto128(e1,e2) */
+      case Iop_64HLto128:
+         *rHi = iselIntExpr_R(env, e->Iex.Binop.arg1);
+         *rLo = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         return;
+
       default:
          break;
       }
