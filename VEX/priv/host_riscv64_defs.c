@@ -569,6 +569,18 @@ RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond)
    return i;
 }
 
+RISCV64Instr*
+RISCV64Instr_Call(RetLoc rloc, Addr64 target, HReg cond, Int nArgRegs)
+{
+   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                     = RISCV64in_Call;
+   i->RISCV64in.Call.rloc     = rloc;
+   i->RISCV64in.Call.target   = target;
+   i->RISCV64in.Call.cond     = cond;
+   i->RISCV64in.Call.nArgRegs = nArgRegs;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP)
 {
@@ -1019,6 +1031,18 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.CSEL.iffalse);
       vex_printf("; 2:");
       return;
+   case RISCV64in_Call:
+      vex_printf("(Call) ");
+      if (!hregIsInvalid(i->RISCV64in.Call.cond)) {
+         vex_printf("beq ");
+         ppHRegRISCV64(i->RISCV64in.Call.cond);
+         vex_printf(", zero, 1f; ");
+      }
+      vex_printf("li t0, 0x%llx; c.jalr 0(t0) [nArgRegs=%d, ",
+                 i->RISCV64in.Call.target, i->RISCV64in.Call.nArgRegs);
+      ppRetLoc(i->RISCV64in.Call.rloc);
+      vex_printf("]; 1:");
+      return;
    case RISCV64in_XDirect:
       vex_printf("(xDirect) ");
       if (!hregIsInvalid(i->RISCV64in.XDirect.cond)) {
@@ -1370,6 +1394,47 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.CSEL.iffalse);
       addHRegUse(u, HRmRead, i->RISCV64in.CSEL.cond);
       return;
+   case RISCV64in_Call:
+      /* Logic and comments copied/modified from the arm64 backend. */
+      /* First off, claim it trashes all the caller-saved registers which fall
+         within the register allocator's jurisdiction. */
+      addHRegUse(u, HRmWrite, hregRISCV64_x10());
+      addHRegUse(u, HRmWrite, hregRISCV64_x11());
+      addHRegUse(u, HRmWrite, hregRISCV64_x12());
+      addHRegUse(u, HRmWrite, hregRISCV64_x13());
+      addHRegUse(u, HRmWrite, hregRISCV64_x14());
+      addHRegUse(u, HRmWrite, hregRISCV64_x15());
+      addHRegUse(u, HRmWrite, hregRISCV64_x16());
+      addHRegUse(u, HRmWrite, hregRISCV64_x17());
+      /* Now we have to state any parameter-carrying registers which might be
+         read. This depends on nArgRegs. */
+      switch (i->RISCV64in.Call.nArgRegs) {
+      case 8:
+         addHRegUse(u, HRmRead, hregRISCV64_x17()); /*fallthru*/
+      case 7:
+         addHRegUse(u, HRmRead, hregRISCV64_x16()); /*fallthru*/
+      case 6:
+         addHRegUse(u, HRmRead, hregRISCV64_x15()); /*fallthru*/
+      case 5:
+         addHRegUse(u, HRmRead, hregRISCV64_x14()); /*fallthru*/
+      case 4:
+         addHRegUse(u, HRmRead, hregRISCV64_x13()); /*fallthru*/
+      case 3:
+         addHRegUse(u, HRmRead, hregRISCV64_x12()); /*fallthru*/
+      case 2:
+         addHRegUse(u, HRmRead, hregRISCV64_x11()); /*fallthru*/
+      case 1:
+         addHRegUse(u, HRmRead, hregRISCV64_x10());
+         break;
+      case 0:
+         break;
+      default:
+         vpanic("getRegUsage_RISCV64Instr:Call:regparms");
+      }
+      /* Finally, add the condition register. */
+      if (!hregIsInvalid(i->RISCV64in.Call.cond))
+         addHRegUse(u, HRmRead, i->RISCV64in.Call.cond);
+      return;
    /* XDirect/XIndir/XAssisted are also a bit subtle. They conditionally exit
       the block. Hence we only need to list (1) the registers that they read,
       and (2) the registers that they write in the case where the block is not
@@ -1640,6 +1705,10 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.CSEL.iftrue);
       mapReg(m, &i->RISCV64in.CSEL.iffalse);
       mapReg(m, &i->RISCV64in.CSEL.cond);
+      return;
+   case RISCV64in_Call:
+      if (!hregIsInvalid(i->RISCV64in.Call.cond))
+         mapReg(m, &i->RISCV64in.Call.cond);
       return;
    case RISCV64in_XDirect:
       mapReg(m, &i->RISCV64in.XDirect.base);
@@ -2595,6 +2664,38 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = emit_CR(p, 0b10, iftrue, dst, 0b1000);
       p = emit_CJ(p, 0b01, (4 >> 1) & 0x7ff, 0b101);
       p = emit_CR(p, 0b10, iffalse, dst, 0b1000);
+      goto done;
+   }
+   case RISCV64in_Call: {
+      /*    beq cond, zero, 1f
+            li t0, target
+            c.jalr 0(t0)
+         1:
+       */
+      UChar* ptmp = NULL;
+      if (!hregIsInvalid(i->RISCV64in.Call.cond)) {
+         ptmp = p;
+         p += 4;
+      }
+
+      /* li t0, target */
+      p = imm64_to_ireg(p, 5 /*x5/t0*/, i->RISCV64in.Call.target);
+
+      /* c.jalr 0(t0) */
+      p = emit_CR(p, 0b10, 0 /*x0/zero*/, 5 /*x5/t0*/, 0b1001);
+
+      /* Fix up the conditional jump, if there was one. */
+      if (!hregIsInvalid(i->RISCV64in.Call.cond)) {
+         /* beq cond, zero, delta */
+         UInt cond  = iregEnc(i->RISCV64in.Call.cond);
+         UInt delta = p - ptmp;
+         /* delta_min = 4 (beq) + 2 (c.li) + 2 (c.jalr) = 8 */
+         vassert(delta >= 8 && delta < 4096 && (delta & 1) == 0);
+         UInt imm12_1 = (delta >> 1) & 0xfff;
+
+         emit_B(ptmp, 0b1100011, imm12_1, 0b000, cond, 0 /*x0/zero*/);
+      }
+
       goto done;
    }
 

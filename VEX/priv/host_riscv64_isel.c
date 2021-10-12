@@ -132,6 +132,316 @@ static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
 static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
 
 /*------------------------------------------------------------*/
+/*--- ISEL: Function call helpers                          ---*/
+/*------------------------------------------------------------*/
+
+/* Used only in doHelperCall(). See the big comment in doHelperCall() regarding
+   handling of register-parameter arguments. This function figures out whether
+   evaluation of an expression might require use of a fixed register. If in
+   doubt return True (safe but suboptimal).
+*/
+static Bool mightRequireFixedRegs(IRExpr* e)
+{
+   switch (e->tag) {
+   // TODO case Iex_VECRET:
+   case Iex_GSPTR:
+   case Iex_RdTmp:
+   case Iex_Const:
+   case Iex_Get:
+      return False;
+   default:
+      return True;
+   }
+}
+
+/* Do a complete function call. |guard| is a Ity_Bit expression indicating
+   whether or not the call happens. If guard==NULL, the call is unconditional.
+   |retloc| is set to indicate where the return value is after the call. The
+   caller (of this fn) must generate code to add |stackAdjustAfterCall| to the
+   stack pointer after the call is done. Returns True iff it managed to handle
+   this combination of arg/return types, else returns False. */
+// TODO Review return value handling and asserts.
+static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
+                         /*OUT*/ RetLoc* retloc,
+                         ISelEnv*        env,
+                         IRExpr*         guard,
+                         IRCallee*       cee,
+                         IRType          retTy,
+                         IRExpr**        args)
+{
+   HReg   cond;
+   HReg   argregs[RISCV64_N_ARGREGS];
+   HReg   tmpregs[RISCV64_N_ARGREGS];
+   Bool   go_fast;
+   Int    n_args, i, nextArgReg;
+
+   vassert(RISCV64_N_ARGREGS == 8);
+
+   /* Set default returns.  We'll update them later if needed. */
+   *stackAdjustAfterCall = 0;
+   *retloc               = mk_RetLoc_INVALID();
+
+   /* These are used for cross-checking that IR-level constraints on the use of
+      IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
+   UInt nVECRETs = 0;
+   UInt nGSPTRs  = 0;
+
+   /* Marshal args for a call and do the call.
+
+      This function only deals with a tiny set of possibilities, which cover all
+      helpers in practice. The restrictions are that only arguments in registers
+      are supported, hence only RISCV64_N_REGPARMS x 64 integer bits in total
+      can be passed. In fact the only supported arg type is I64.
+
+      Note that the cee->regparms field is meaningless on riscv64 hosts (since
+      we only implement one calling convention) and so we always ignore it.
+
+      The return type can be I{64,32,16,8} or V128. In the V128 case, it is
+      expected that |args| will contain the special node IRExpr_VECRET(), in
+      which case this routine generates code to allocate space on the stack for
+      the vector return value.  Since we are not passing any scalars on the
+      stack, it is enough to preallocate the return space before marshalling any
+      arguments, in this case.
+
+      |args| may also contain IRExpr_GSPTR(), in which case the value in the
+      guest state pointer register minus BASEBLOCK_OFFSET_ADJUSTMENT is passed
+      as the corresponding argument.
+
+      Generating code which is both efficient and correct when parameters are to
+      be passed in registers is difficult, for the reasons elaborated in detail
+      in comments attached to doHelperCall() in VEX/priv/host_x86_isel.c. Here,
+      we use a variant of the method described in those comments.
+
+      The problem is split into two cases: the fast scheme and the slow scheme.
+      In the fast scheme, arguments are computed directly into the target (real)
+      registers. This is only safe when we can be sure that computation of each
+      argument will not trash any real registers set by computation of any other
+      argument.
+
+      In the slow scheme, all args are first computed into vregs, and once they
+      are all done, they are moved to the relevant real regs. This always gives
+      correct code, but it also gives a bunch of vreg-to-rreg moves which are
+      usually redundant but are hard for the register allocator to get rid of.
+
+      To decide which scheme to use, all argument expressions are first
+      examined. If they are all so simple that it is clear they will be
+      evaluated without use of any fixed registers, use the fast scheme, else
+      use the slow scheme. Note also that only unconditional calls may use the
+      fast scheme, since having to compute a condition expression could itself
+      trash real registers.
+
+      Note this requires being able to examine an expression and determine
+      whether or not evaluation of it might use a fixed register. That requires
+      knowledge of how the rest of this insn selector works. Currently just the
+      following 4 are regarded as safe -- hopefully they cover the majority of
+      arguments in practice: IRExpr_GSPTR, IRExpr_Tmp, IRExpr_Const, IRExpr_Get.
+   */
+
+   n_args = 0;
+   for (i = 0; args[i]; i++) {
+      IRExpr* arg = args[i];
+      if (UNLIKELY(arg->tag == Iex_VECRET))
+         nVECRETs++;
+      else if (UNLIKELY(arg->tag == Iex_GSPTR))
+         nGSPTRs++;
+      n_args++;
+   }
+
+   /* If this fails, the IR is ill-formed. */
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
+
+   /* If we have a VECRET, allocate space on the stack for the return value, and
+      record the stack pointer after that. */
+   HReg r_vecRetAddr = INVALID_HREG;
+   if (nVECRETs == 1) {
+      vassert(retTy == Ity_V128);
+      r_vecRetAddr = newVRegI(env);
+      addInstr(env,
+               RISCV64Instr_ADDI(hregRISCV64_x2(), hregRISCV64_x2(), -16));
+      addInstr(env, RISCV64Instr_MV(r_vecRetAddr, hregRISCV64_x2()));
+   } else {
+      /* If either of these fail, the IR is ill-formed. */
+      vassert(retTy != Ity_V128 && retTy != Ity_V256);
+      vassert(nVECRETs == 0);
+   }
+
+   argregs[0] = hregRISCV64_x10();
+   argregs[1] = hregRISCV64_x11();
+   argregs[2] = hregRISCV64_x12();
+   argregs[3] = hregRISCV64_x13();
+   argregs[4] = hregRISCV64_x14();
+   argregs[5] = hregRISCV64_x15();
+   argregs[6] = hregRISCV64_x16();
+   argregs[7] = hregRISCV64_x17();
+
+   tmpregs[0] = tmpregs[1] = tmpregs[2] = tmpregs[3] = INVALID_HREG;
+   tmpregs[4] = tmpregs[5] = tmpregs[6] = tmpregs[7] = INVALID_HREG;
+
+   /* First decide which scheme (slow or fast) is to be used. First assume the
+      fast scheme, and select slow if any contraindications (wow) appear. */
+
+   go_fast = True;
+
+   // TODO Review if this is really needed.
+   /* We'll need space on the stack for the return value. Avoid possible
+      complications with nested calls by using the slow scheme. */
+   if (retTy == Ity_V128 || retTy == Ity_V256)
+      go_fast = False;
+
+   if (go_fast && guard != NULL) {
+      if (guard->tag == Iex_Const && guard->Iex.Const.con->tag == Ico_U1 &&
+          guard->Iex.Const.con->Ico.U1 == True) {
+         /* Unconditional. */
+      } else {
+         /* Not manifestly unconditional -- be conservative. */
+         go_fast = False;
+      }
+   }
+
+   if (go_fast)
+      for (i = 0; i < n_args; i++) {
+         if (mightRequireFixedRegs(args[i])) {
+            go_fast = False;
+            break;
+         }
+      }
+
+   /* At this point the scheme to use has been established. Generate code to get
+      the arg values into the argument regs. If we run out of arg regs, give up.
+    */
+
+   if (go_fast) {
+
+      /* FAST SCHEME */
+      nextArgReg = 0;
+
+      for (i = 0; i < n_args; i++) {
+         IRExpr* arg = args[i];
+
+         IRType aTy = Ity_INVALID;
+         if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
+            aTy = typeOfIRExpr(env->type_env, args[i]);
+
+         if (nextArgReg >= RISCV64_N_ARGREGS)
+            return False; /* Out of argregs. */
+
+         if (aTy == Ity_I64) {
+            addInstr(env, RISCV64Instr_MV(argregs[nextArgReg],
+                                          iselIntExpr_R(env, args[i])));
+            nextArgReg++;
+         } else if (arg->tag == Iex_GSPTR) {
+            // TODO Implement?
+            vassert(0); // ATC
+            addInstr(env, RISCV64Instr_MV(argregs[nextArgReg], INVALID_HREG));
+            nextArgReg++;
+         } else if (arg->tag == Iex_VECRET) {
+            /* Because of the go_fast logic above, we can't get here, since
+               vector return values make us use the slow path instead. */
+            vassert(0);
+         } else
+            return False; /* Unhandled arg type. */
+      }
+
+      /* Fast scheme only applies for unconditional calls. Hence: */
+      cond = INVALID_HREG;
+
+   } else {
+
+      /* SLOW SCHEME; move via temporaries. */
+      nextArgReg = 0;
+
+      for (i = 0; i < n_args; i++) {
+         IRExpr* arg = args[i];
+
+         IRType aTy = Ity_INVALID;
+         if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
+            aTy = typeOfIRExpr(env->type_env, args[i]);
+
+         if (nextArgReg >= RISCV64_N_ARGREGS)
+            return False; /* Out of argregs. */
+
+         if (aTy == Ity_I64) {
+            tmpregs[nextArgReg] = iselIntExpr_R(env, args[i]);
+            nextArgReg++;
+         } else if (arg->tag == Iex_GSPTR) {
+            // TODO Implement?
+            vassert(0); // ATC
+            tmpregs[nextArgReg] = INVALID_HREG;
+            nextArgReg++;
+         } else if (arg->tag == Iex_VECRET) {
+            vassert(!hregIsInvalid(r_vecRetAddr));
+            tmpregs[nextArgReg] = r_vecRetAddr;
+            nextArgReg++;
+         } else
+            return False; /* Unhandled arg type. */
+      }
+
+      /* Compute the condition. Be a bit clever to handle the common case where
+         the guard is 1:Bit. */
+      cond = INVALID_HREG;
+      if (guard) {
+         if (guard->tag == Iex_Const && guard->Iex.Const.con->tag == Ico_U1 &&
+             guard->Iex.Const.con->Ico.U1 == True) {
+            /* Unconditional -- do nothing. */
+         } else {
+            cond = iselIntExpr_R(env, guard);
+         }
+      }
+
+      /* Move the args to their final destinations. */
+      for (i = 0; i < nextArgReg; i++) {
+         vassert(!(hregIsInvalid(tmpregs[i])));
+         addInstr(env, RISCV64Instr_MV(argregs[i], tmpregs[i]));
+      }
+   }
+
+   /* Should be assured by checks above. */
+   vassert(nextArgReg <= RISCV64_N_ARGREGS);
+
+   /* Do final checks, set the return values, and generate the call instruction
+      proper. */
+   vassert(nGSPTRs == 0 || nGSPTRs == 1);
+   vassert(nVECRETs == ((retTy == Ity_V128 || retTy == Ity_V256) ? 1 : 0));
+   vassert(*stackAdjustAfterCall == 0);
+   vassert(is_RetLoc_INVALID(*retloc));
+   switch (retTy) {
+   case Ity_INVALID:
+      /* Function doesn't return a value. */
+      *retloc = mk_RetLoc_simple(RLPri_None);
+      break;
+   case Ity_I64:
+   case Ity_I32:
+   case Ity_I16:
+   case Ity_I8:
+      *retloc = mk_RetLoc_simple(RLPri_Int);
+      break;
+   case Ity_V128:
+      *retloc               = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
+      *stackAdjustAfterCall = 16;
+      break;
+   default:
+      /* IR can denote other possible return types, but we don't handle those
+         here. */
+      vassert(0);
+   }
+
+   /* Finally, generate the call itself. This needs the *retloc value set in the
+      switch above, which is why it's at the end. */
+
+   /* nextArgReg doles out argument registers. Since these are assigned in the
+      order x10/a0 .. x17/a7, its numeric value at this point, which must be
+      between 0 and 8 inclusive, is going to be equal to the number of arg regs
+      in use for the call. Hence bake that number into the call (we'll need to
+      know it when doing register allocation, to know what regs the call reads.)
+    */
+
+   addInstr(env,
+            RISCV64Instr_Call(*retloc, (Addr64)cee->addr, cond, nextArgReg));
+
+   return True;
+}
+
+/*------------------------------------------------------------*/
 /*--- ISEL: Integer expressions (64/32/16/8/1 bit)         ---*/
 /*------------------------------------------------------------*/
 
@@ -829,6 +1139,67 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          HReg src = iselIntExpr_R(env, stmt->Ist.WrTmp.data);
          addInstr(env, RISCV64Instr_MV(dst, src));
          return;
+      }
+      break;
+   }
+
+   /* ---------------- Call to DIRTY helper ----------------- */
+   /* Call complex ("dirty") helper function. */
+   case Ist_Dirty: {
+      IRDirty* d = stmt->Ist.Dirty.details;
+
+      /* Figure out the return type, if any. */
+      IRType retty = Ity_INVALID;
+      if (d->tmp != IRTemp_INVALID)
+         retty = typeOfIRTemp(env->type_env, d->tmp);
+
+      Bool retty_ok;
+      switch (retty) {
+      case Ity_INVALID: /* Function doesn't return anything. */
+      case Ity_I64:
+      case Ity_I32:
+      case Ity_I16:
+      case Ity_I8:
+         retty_ok = True;
+         break;
+      default:
+         retty_ok = False;
+         break;
+      }
+      if (!retty_ok)
+         break;
+
+      /* Marshal args, do the call, and set the return value to 0x555..555 if
+         this is a conditional call that returns a value and the call is
+         skipped. */
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      doHelperCall(&addToSp, &rloc, env, d->guard, d->cee, retty, d->args);
+      vassert(is_sane_RetLoc(rloc));
+
+      /* Now figure out what to do with the returned value, if any. */
+      switch (retty) {
+      case Ity_INVALID: {
+         /* No return value. Nothing to do. */
+         vassert(d->tmp == IRTemp_INVALID);
+         vassert(rloc.pri == RLPri_None);
+         vassert(addToSp == 0);
+         return;
+      }
+      case Ity_I64:
+      case Ity_I32:
+      case Ity_I16:
+      case Ity_I8: {
+         vassert(rloc.pri == RLPri_Int);
+         vassert(addToSp == 0);
+         /* The returned value is in x10/a0. Park it in the register associated
+            with tmp. */
+         HReg dst = lookupIRTemp(env, d->tmp);
+         addInstr(env, RISCV64Instr_MV(dst, hregRISCV64_x10()));
+         return;
+      }
+      default:
+         vassert(0);
       }
       break;
    }

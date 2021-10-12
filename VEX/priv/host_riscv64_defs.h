@@ -64,6 +64,9 @@ ST_IN HReg hregRISCV64_x2(void) { return mkHReg(False, HRcInt64, 2, 19); }
 ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 20); }
 #undef ST_IN
 
+/* Number of registers used for argument passing in function calls. */
+#define RISCV64_N_ARGREGS 8 /* x10/a0 .. x17/a7 */
+
 /*------------------------------------------------------------*/
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
@@ -139,6 +142,7 @@ typedef enum {
    RISCV64in_CAS_D,           /* 64-bit compare-and-swap pseudoinstruction. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
    RISCV64in_CSEL,            /* Conditional-select pseudoinstruction. */
+   RISCV64in_Call,            /* Call pseudoinstruction. */
    RISCV64in_XDirect,         /* Direct transfer to guest address. */
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
    RISCV64in_XAssisted,       /* Assisted transfer to guest address. */
@@ -446,6 +450,14 @@ typedef struct {
          HReg iffalse;
          HReg cond;
       } CSEL;
+      /* Call pseudoinstruction. Call a target (an absolute address), on a given
+         condition register. */
+      struct {
+         RetLoc rloc;     /* Where the return value will be. */
+         Addr64 target;   /* Target address of the call. */
+         HReg   cond;     /* Condition, can be INVALID_HREG for "always". */
+         Int    nArgRegs; /* # regs carrying args: 0 .. 8 */
+      } Call;
       /* Update the guest pc value, then exit requesting to chain to it. May be
          conditional. */
       struct {
@@ -536,6 +548,8 @@ RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond);
+RISCV64Instr*
+RISCV64Instr_Call(RetLoc rloc, Addr64 target, HReg cond, Int nArgRegs);
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);
 RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond);
