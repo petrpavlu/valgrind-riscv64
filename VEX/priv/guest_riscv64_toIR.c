@@ -28,6 +28,30 @@
 
 /* Translates riscv64 code to IR. */
 
+/* "Special" instructions.
+
+   This instruction decoder can decode four special instructions which mean
+   nothing natively (are no-ops as far as regs/mem are concerned) but have
+   meaning for supporting Valgrind. A special instruction is flagged by
+   a 16-byte preamble:
+
+      00365613 00d65613 03365613 03d65613
+      (srli a2, a2, 3;   srli a2, a2, 13
+       srli a2, a2, 51;  srli a2, a2, 61)
+
+   Following that, one of the following 4 are allowed (standard interpretation
+   in parentheses):
+
+      00a56533 (or a0, a0, a0)   a3 = client_request ( a4 )
+      00b5e5b3 (or a1, a1, a1)   a3 = guest_NRADDR
+      00c66633 (or a2, a2, a2)   branch-and-link-to-noredir t0
+      00d6e6b3 (or a3, a3, a3)   IR injection
+
+   Any other bytes following the 16-byte preamble are illegal and constitute
+   a failure in instruction decoding. This all assumes that the preamble will
+   never occur except in specific code fragments designed for Valgrind to catch.
+*/
+
 #include "libvex_guest_riscv64.h"
 
 #include "guest_riscv64_defs.h"
@@ -54,6 +78,18 @@
 /*--- Helper bits and pieces for deconstructing the        ---*/
 /*--- riscv64 insn stream.                                 ---*/
 /*------------------------------------------------------------*/
+
+/* Do a little-endian load of a 32-bit word, regardless of the endianness of the
+   underlying host. */
+static inline UInt getUIntLittleEndianly(const UChar* p)
+{
+   UInt w = 0;
+   w      = (w << 8) | p[3];
+   w      = (w << 8) | p[2];
+   w      = (w << 8) | p[1];
+   w      = (w << 8) | p[0];
+   return w;
+}
 
 /* Do read of an instruction, which can be 16-bit (compressed) or 32-bit in
    size. */
@@ -1795,7 +1831,62 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
 
    /* Spot "Special" instructions (see comment at top of file). */
    {
-      /* TODO */
+      const UChar* code = guest_instr;
+      /* Spot the 16-byte preamble:
+            00365613   srli a2, a2, 3
+            00d65613   srli a2, a2, 13
+            03365613   srli a2, a2, 51
+            03d65613   srli a2, a2, 61
+      */
+      UInt word1 = 0x00365613;
+      UInt word2 = 0x00d65613;
+      UInt word3 = 0x03365613;
+      UInt word4 = 0x03d65613;
+      if (getUIntLittleEndianly(code + 0) == word1 &&
+          getUIntLittleEndianly(code + 4) == word2 &&
+          getUIntLittleEndianly(code + 8) == word3 &&
+          getUIntLittleEndianly(code + 12) == word4) {
+         /* Got a "Special" instruction preamble. Which one is it? */
+         dres->len = 20;
+         UInt which = getUIntLittleEndianly(code + 16);
+         if (which == 0x00a56533 /* or a0, a0, a0 */) {
+            /* a3 = client_request ( a4 ) */
+            DIP("a3 = client_request ( a4 )\n");
+            putPC(irsb, mkU64(guest_pc_curr_instr + 20));
+            dres->jk_StopHere = Ijk_ClientReq;
+            dres->whatNext    = Dis_StopHere;
+            return True;
+         } else if (which == 0x00b5e5b3 /* or a1, a1, a1 */) {
+            /* a3 = guest_NRADDR */
+            DIP("a3 = guest_NRADDR\n");
+            putIReg64(irsb, 12 /*x12/a3*/, IRExpr_Get(OFFB_NRADDR, Ity_I64));
+            return True;
+         } else if (which == 0x00c66633 /* or a2, a2, a2 */) {
+            /* branch-and-link-to-noredir t0 */
+            DIP("branch-and-link-to-noredir t0\n");
+            putIReg64(irsb, 1 /*x1/ra*/, mkU64(guest_pc_curr_instr + 20));
+            putPC(irsb, getIReg64(5 /*x5/t0*/));
+            dres->jk_StopHere = Ijk_NoRedir;
+            dres->whatNext    = Dis_StopHere;
+            return True;
+         } else if (which == 0x00d6e6b3 /* or a3, a3, a3 */) {
+            /* IR injection */
+            DIP("IR injection\n");
+            vex_inject_ir(irsb, Iend_LE);
+            /* Invalidate the current insn. The reason is that the IRop we're
+               injecting here can change. In which case the translation has to
+               be redone. For ease of handling, we simply invalidate all the
+               time. */
+            stmt(irsb, IRStmt_Put(OFFB_CMSTART, mkU64(guest_pc_curr_instr)));
+            stmt(irsb, IRStmt_Put(OFFB_CMLEN, mkU64(20)));
+            putPC(irsb, mkU64(guest_pc_curr_instr + 20));
+            dres->whatNext    = Dis_StopHere;
+            dres->jk_StopHere = Ijk_InvalICache;
+            return True;
+         }
+         /* We don't know what it is. */
+         return False;
+      }
    }
 
    /* Main riscv64 instruction decoder starts here. */

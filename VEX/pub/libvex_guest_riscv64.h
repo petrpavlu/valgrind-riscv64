@@ -78,12 +78,7 @@ typedef struct {
    /* 280 */ UInt guest_EMNOTE;
    /* 284 */ UInt pad1;
 
-   /* Translation-invalidation area description. Not used on riscv64 (there is
-      no invalidate-icache insn), but needed so as to allow users of the library
-      to uniformly assume that the guest state contains these two fields --
-      otherwise there is compilation breakage. On riscv64, these two fields are
-      set to zero by LibVEX_GuestRISCV64_initialise() and then should be ignored
-      forever thereafter. */
+   /* For clflush/clinval: record start and length of area. */
    /* 288 */ ULong guest_CMSTART;
    /* 296 */ ULong guest_CMLEN;
 
