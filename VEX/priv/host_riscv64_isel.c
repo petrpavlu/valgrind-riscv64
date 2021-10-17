@@ -537,23 +537,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SUBW(dst, argL, argR));
          return dst;
       }
-      case Iop_Xor64: {
+      case Iop_Xor64:
+      case Iop_Xor32: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, RISCV64Instr_XOR(dst, argL, argR));
          return dst;
       }
-      case Iop_Xor32: {
-         HReg tmp  = newVRegI(env);
-         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_XOR(tmp, argL, argR));
-         HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ADDIW(dst, tmp, 0));
-         return dst;
-      }
       case Iop_Or64:
+      case Iop_Or32:
       case Iop_Or1: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
@@ -561,30 +554,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_OR(dst, argL, argR));
          return dst;
       }
-      case Iop_Or32: {
-         HReg tmp  = newVRegI(env);
-         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_OR(tmp, argL, argR));
-         HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ADDIW(dst, tmp, 0));
-         return dst;
-      }
       case Iop_And64:
+      case Iop_And32:
       case Iop_And1: {
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          addInstr(env, RISCV64Instr_AND(dst, argL, argR));
-         return dst;
-      }
-      case Iop_And32: {
-         HReg tmp  = newVRegI(env);
-         HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
-         HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_AND(tmp, argL, argR));
-         HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ADDIW(dst, tmp, 0));
          return dst;
       }
       case Iop_Shl64: {
