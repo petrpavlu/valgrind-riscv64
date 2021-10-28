@@ -1859,7 +1859,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
          } else if (which == 0x00b5e5b3 /* or a1, a1, a1 */) {
             /* a3 = guest_NRADDR */
             DIP("a3 = guest_NRADDR\n");
-            putIReg64(irsb, 12 /*x12/a3*/, IRExpr_Get(OFFB_NRADDR, Ity_I64));
+            putIReg64(irsb, 13 /*x13/a3*/, IRExpr_Get(OFFB_NRADDR, Ity_I64));
             return True;
          } else if (which == 0x00c66633 /* or a2, a2, a2 */) {
             /* branch-and-link-to-noredir t0 */
