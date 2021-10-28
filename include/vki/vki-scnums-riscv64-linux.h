@@ -36,6 +36,9 @@
 
 #define __NR_getxattr 8
 #define __NR_getcwd 17
+#define __NR_eventfd2 19
+#define __NR_epoll_create1 20
+#define __NR_epoll_pwait 22
 #define __NR_dup 23
 #define __NR_dup3 24
 #define __NR3264_fcntl 25
@@ -54,12 +57,20 @@
 #define __NR3264_lseek 62
 #define __NR_read 63
 #define __NR_write 64
+#define __NR_readv 65
 #define __NR_writev 66
 #define __NR_pread64 67
+#define __NR_preadv 69
+#define __NR_pwritev 70
 #define __NR_pselect6 72
 #define __NR_ppoll 73
+#define __NR_signalfd4 74
 #define __NR_readlinkat 78
 #define __NR3264_fstatat 79
+#define __NR_timerfd_create 85
+#define __NR_timerfd_settime 86
+#define __NR_utimensat 88
+#define __NR_capget 90
 #define __NR_exit 93
 #define __NR_exit_group 94
 #define __NR_set_tid_address 96
@@ -68,15 +79,18 @@
 #define __NR_setitimer 103
 #define __NR_clock_gettime 113
 #define __NR_clock_nanosleep 115
+#define __NR_syslog 116
 #define __NR_ptrace 117
 #define __NR_sched_yield 124
 #define __NR_kill 129
 #define __NR_tkill 130
 #define __NR_tgkill 131
+#define __NR_sigaltstack 132
 #define __NR_rt_sigsuspend 133
 #define __NR_rt_sigaction 134
 #define __NR_rt_sigprocmask 135
 #define __NR_rt_sigtimedwait 137
+#define __NR_rt_sigqueueinfo 138
 #define __NR_rt_sigreturn 139
 #define __NR_getpgid 155
 #define __NR_getgroups 158
@@ -133,7 +147,12 @@
 #define __NR_process_vm_writev 271
 #define __NR_renameat2 276
 #define __NR_getrandom 278
+#define __NR_memfd_create 279
+#define __NR_execveat 281
 #define __NR_membarrier 283
+#define __NR_copy_file_range 285
+#define __NR_preadv2 286
+#define __NR_pwritev2 287
 #define __NR_statx 291
 
 #define __NR_fcntl __NR3264_fcntl

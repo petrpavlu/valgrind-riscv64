@@ -266,6 +266,9 @@ PRE(sys_riscv_flush_icache)
    sys_foo() wrappers on riscv64. */
 static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_getcwd, sys_getcwd),                         /* 17 */
+   LINXY(__NR_eventfd2, sys_eventfd2),                     /* 19 */
+   LINXY(__NR_epoll_create1, sys_epoll_create1),           /* 20 */
+   LINXY(__NR_epoll_pwait, sys_epoll_pwait),               /* 22 */
    GENXY(__NR_dup, sys_dup),                               /* 23 */
    LINXY(__NR_dup3, sys_dup3),                             /* 24 */
    LINXY(__NR_fcntl, sys_fcntl),                           /* 25 */
@@ -282,11 +285,19 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_lseek, sys_lseek),                           /* 62 */
    GENXY(__NR_read, sys_read),                             /* 63 */
    GENX_(__NR_write, sys_write),                           /* 64 */
+   GENXY(__NR_readv, sys_readv),                           /* 65 */
    GENX_(__NR_writev, sys_writev),                         /* 66 */
+   LINXY(__NR_preadv, sys_preadv),                         /* 69 */
+   LINX_(__NR_pwritev, sys_pwritev),                       /* 70 */
    LINXY(__NR_pselect6, sys_pselect6),                     /* 72 */
    LINXY(__NR_ppoll, sys_ppoll),                           /* 73 */
+   LINXY(__NR_signalfd4, sys_signalfd4),                   /* 74 */
    LINX_(__NR_readlinkat, sys_readlinkat),                 /* 78 */
    LINXY(__NR_newfstatat, sys_newfstatat),                 /* 79 */
+   LINXY(__NR_timerfd_create, sys_timerfd_create),         /* 85 */
+   LINXY(__NR_timerfd_settime, sys_timerfd_settime),       /* 86 */
+   LINX_(__NR_utimensat, sys_utimensat),                   /* 88 */
+   LINXY(__NR_capget, sys_capget),                         /* 90 */
    GENX_(__NR_exit, sys_exit),                             /* 93 */
    LINX_(__NR_exit_group, sys_exit_group),                 /* 94 */
    LINX_(__NR_set_tid_address, sys_set_tid_address),       /* 96 */
@@ -295,15 +306,20 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_setitimer, sys_setitimer),                   /* 103 */
    LINXY(__NR_clock_gettime, sys_clock_gettime),           /* 113 */
    LINXY(__NR_clock_nanosleep, sys_clock_nanosleep),       /* 115 */
+   LINXY(__NR_syslog, sys_syslog),                         /* 116 */
+   LINX_(__NR_sched_yield, sys_sched_yield),               /* 124 */
    GENX_(__NR_kill, sys_kill),                             /* 129 */
    LINX_(__NR_tgkill, sys_tgkill),                         /* 131 */
+   GENXY(__NR_sigaltstack, sys_sigaltstack),               /* 132 */
    LINX_(__NR_rt_sigsuspend, sys_rt_sigsuspend),           /* 133 */
    LINXY(__NR_rt_sigaction, sys_rt_sigaction),             /* 134 */
    LINXY(__NR_rt_sigprocmask, sys_rt_sigprocmask),         /* 135 */
    LINXY(__NR_rt_sigtimedwait, sys_rt_sigtimedwait),       /* 137 */
+   LINXY(__NR_rt_sigqueueinfo, sys_rt_sigqueueinfo),       /* 138 */
    PLAX_(__NR_rt_sigreturn, sys_rt_sigreturn),             /* 139 */
    GENX_(__NR_getpgid, sys_getpgid),                       /* 155 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
+   LINXY(__NR_prctl, sys_prctl),                           /* 167 */
    GENX_(__NR_getpid, sys_getpid),                         /* 172 */
    GENX_(__NR_getppid, sys_getppid),                       /* 173 */
    GENX_(__NR_getuid, sys_getuid),                         /* 174 */
@@ -329,9 +345,11 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_listen, sys_listen),                         /* 201 */
    LINXY(__NR_accept, sys_accept),                         /* 202 */
    LINX_(__NR_connect, sys_connect),                       /* 203 */
+   LINXY(__NR_getsockname, sys_getsockname),               /* 204 */
    LINX_(__NR_sendto, sys_sendto),                         /* 206 */
    LINXY(__NR_recvfrom, sys_recvfrom),                     /* 207 */
    LINX_(__NR_setsockopt, sys_setsockopt),                 /* 208 */
+   LINXY(__NR_getsockopt, sys_getsockopt),                 /* 209 */
    LINX_(__NR_sendmsg, sys_sendmsg),                       /* 211 */
    LINXY(__NR_recvmsg, sys_recvmsg),                       /* 212 */
    GENX_(__NR_brk, sys_brk),                               /* 214 */
@@ -348,7 +366,13 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_process_vm_readv, sys_process_vm_readv),     /* 270 */
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),   /* 271 */
    LINXY(__NR_getrandom, sys_getrandom),                   /* 278 */
+   LINXY(__NR_memfd_create, sys_memfd_create),             /* 279 */
+   LINX_(__NR_execveat, sys_execveat),                     /* 281 */
    LINX_(__NR_membarrier, sys_membarrier),                 /* 283 */
+   LINX_(__NR_copy_file_range, sys_copy_file_range),       /* 285 */
+   LINXY(__NR_preadv2, sys_preadv2),                       /* 286 */
+   LINX_(__NR_pwritev2, sys_pwritev2),                     /* 287 */
+   LINXY(__NR_statx, sys_statx),                           /* 291 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)
