@@ -1547,6 +1547,25 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
          continue;
       }
 
+      /* A problem on the first frame? Lets assume it was a bad jump.
+         We will use the link register and the current stack and frame
+         pointers and see if we can use the CFI in the next round. */
+      if (i == 1) {
+         uregs.pc = uregs.ra;
+         uregs.ra = 0;
+
+         if (sps) sps[i] = uregs.sp;
+         if (fps) fps[i] = uregs.fp;
+         ips[i++] = uregs.pc - 1;
+         if (debug)
+            VG_(printf)(
+               "USING bad-jump: pc: 0x%lx, sp: 0x%lx, fp: 0x%lx, ra: 0x%lx\n",
+               uregs.pc, uregs.sp, uregs.fp, uregs.ra);
+         uregs.pc = uregs.pc - 1;
+         RECURSIVE_MERGE(cmrf,ips,i);
+         continue;
+      }
+
       /* No luck.  We have to give up. */
       break;
    }
