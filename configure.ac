@@ -16,7 +16,7 @@
 # Do not forget to rerun ./autogen.sh
 m4_define([v_major_ver], [3])
 m4_define([v_minor_ver], [18])
-m4_define([v_micro_ver], [0])
+m4_define([v_micro_ver], [1])
 m4_define([v_suffix_ver], [GIT])
 m4_define([v_rel_date], ["?? ??? 202?"])
 m4_define([v_version],
