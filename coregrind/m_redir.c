@@ -1651,6 +1651,9 @@ void VG_(redir_initialise) ( void )
       );
    }
 
+#  elif defined(VGP_riscv64_linux)
+   /* No early intercepts are needed at this time. */
+
 #  elif defined(VGP_x86_solaris)
    /* If we're using memcheck, use these intercepts right from
       the start, otherwise ld.so makes a lot of noise. */

@@ -73,6 +73,7 @@
 
    On s390x the rightmost bit of an instruction address is zero, so the arm32
    scheme is used. */
+/* TODO Comment on riscv64. */
 
 #define VG_TT_FAST_BITS 13
 #define VG_TT_FAST_SETS (1 << VG_TT_FAST_BITS)
@@ -83,7 +84,7 @@
 #if defined(VGA_amd64) || defined(VGA_arm64) \
     || defined(VGA_ppc64be) || defined(VGA_ppc64le) \
     || (defined(VGA_mips64) && defined(VGABI_64)) \
-    || defined(VGA_s390x)
+    || defined(VGA_s390x) || defined(VGA_riscv64)
   // And all other 64-bit hosts
 # define VG_FAST_CACHE_SET_BITS 6
   // These FCS_{g,h}{0,1,2,3} are the values of

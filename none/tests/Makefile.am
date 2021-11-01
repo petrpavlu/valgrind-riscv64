@@ -35,6 +35,9 @@ endif
 if VGCONF_ARCHS_INCLUDE_NANOMIPS
 SUBDIRS += nanomips
 endif
+if VGCONF_ARCHS_INCLUDE_RISCV64
+SUBDIRS += riscv64
+endif
 
 
 # OS-specific tests
@@ -72,7 +75,7 @@ SUBDIRS += x86-solaris
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
-               linux darwin solaris freebsd amd64-linux x86-linux amd64-darwin \
+               linux darwin solaris freebsd amd64-linux x86-linux amd64-darwin riscv64 \
                x86-darwin amd64-solaris x86-solaris scripts .
 
 dist_noinst_SCRIPTS = \
@@ -230,7 +233,7 @@ check_PROGRAMS = \
 	floored fork fucomip \
 	ioctl_moans \
 	libvex_test \
-	libvexmultiarch_test \
+	#libvexmultiarch_test \
 	manythreads \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \

@@ -3419,7 +3419,7 @@ POST(sys_newfstat)
 #endif
 
 #if !defined(VGO_solaris) && !defined(VGP_arm64_linux) && \
-    !defined(VGP_nanomips_linux)
+    !defined(VGP_nanomips_linux) && !defined(VGP_riscv64_linux)
 static vki_sigset_t fork_saved_mask;
 
 // In Linux, the sys_fork() function varies across architectures, but we
@@ -3470,7 +3470,7 @@ PRE(sys_fork)
       VG_(sigprocmask)(VKI_SIG_SETMASK, &fork_saved_mask, NULL);
    }
 }
-#endif // !defined(VGO_solaris) && !defined(VGP_arm64_linux)
+#endif
 
 PRE(sys_ftruncate)
 {

@@ -277,7 +277,7 @@ static void fill_prstatus(const ThreadState *tst,
    prs->pr_sid = VG_(getpgrp)();
 #endif
    
-#if defined(VGP_s390x_linux)
+#if defined(VGP_s390x_linux) || defined(VGP_riscv64_linux)
    /* prs->pr_reg has struct type. Need to take address. */
    regs = (struct vki_user_regs_struct *)&(prs->pr_reg);
 #elif defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
@@ -527,7 +527,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs->es     = arch->vex.guest_ES;
    regs->fs     = arch->vex.guest_FS;
    regs->gs     = arch->vex.guest_GS;
-
+#elif defined(VGP_riscv64_linux)
+   /* TODO Implement. */
 #else
 #  error Unknown ELF platform
 #endif
@@ -663,6 +664,8 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
 #  undef DO
+#elif defined(VGP_riscv64_linux)
+   /* TODO Implement. */
 
 #else
 #  error Unknown ELF platform

@@ -1,0 +1,14 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AllowAllParametersOfDeclarationOnNextLine: true
+BinPackParameters: false
+BreakBeforeBraces: Linux
+ContinuationIndentWidth: 3
+IndentWidth: 3
+PointerAlignment: Left
+...

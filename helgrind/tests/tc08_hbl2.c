@@ -35,6 +35,7 @@
 #undef PLAT_s390x_linux
 #undef PLAT_mips32_linux
 #undef PLAT_mips64_linux
+#undef PLAT_riscv64_linux
 #undef PLAT_x86_solaris
 #undef PLAT_amd64_solaris
 
@@ -68,6 +69,8 @@
 #endif
 #elif defined(__linux__) && defined(__nanomips__)
 #  define PLAT_nanomips_linux 1
+#elif defined(__linux__) && defined(__riscv) && (__riscv_xlen == 64)
+#  define PLAT_riscv64_linux 1
 #elif defined(__sun__) && defined(__i386__)
 #  define PLAT_x86_solaris 1
 #elif defined(__sun__) && defined(__x86_64__)
@@ -151,6 +154,11 @@
       : /*out*/ : /*in*/ "r"(&(_lval))              \
       : /*trash*/ "$t0", "$t1", "memory"            \
    )
+#elif defined(PLAT_riscv64_linux)
+   /* TODO Implement. */
+#include <assert.h>
+#  define INC(_lval,_lqual)                         \
+     assert(0);
 #else
 #  error "Fix Me for this platform"
 #endif

@@ -1178,7 +1178,7 @@ ULong VG_(di_notify_mmap)( Addr a, Bool allow_SkFileV, Int use_fd )
    is_rx_map = seg->hasR && seg->hasX;
    is_rw_map = seg->hasR && seg->hasW;
 #  elif defined(VGA_amd64) || defined(VGA_ppc64be) || defined(VGA_ppc64le)  \
-        || defined(VGA_arm) || defined(VGA_arm64)
+        || defined(VGA_arm) || defined(VGA_arm64) || defined(VGA_riscv64)
    is_rx_map = seg->hasR && seg->hasX && !seg->hasW;
    is_rw_map = seg->hasR && seg->hasW && !seg->hasX;
 #  elif defined(VGP_s390x_linux)
@@ -2888,6 +2888,8 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;
+#           elif defined(VGP_riscv64_linux)
+            I_die_here;
 #           else
 #             error "Unsupported arch"
 #           endif
@@ -3159,6 +3161,13 @@ static Addr compute_cfa ( const D3UnwindRegs* uregs,
       case CFIC_ARM64_X29REL: 
          cfa = cfsi_m->cfa_off + uregs->x29;
          break;
+#     elif defined(VGP_riscv64_linux)
+      case CFIC_IA_SPREL:
+         cfa = cfsi_m->cfa_off + uregs->sp;
+         break;
+      case CFIC_IA_BPREL:
+         cfa = cfsi_m->cfa_off + uregs->fp;
+         break;
 #     else
 #       error "Unsupported arch"
 #     endif
@@ -3230,6 +3239,15 @@ Addr ML_(get_CFA) ( Addr ip, Addr sp, Addr fp,
      return compute_cfa(&uregs,
                         min_accessible,  max_accessible, ce->di, ce->cfsi_m);
    }
+#elif defined(VGA_riscv64)
+   { D3UnwindRegs uregs;
+     uregs.pc = ip;
+     uregs.sp = sp;
+     uregs.fp = fp;
+     uregs.ra = 0;
+     return compute_cfa(&uregs,
+                        min_accessible,  max_accessible, ce->di, ce->cfsi_m);
+   }
 
 #  else
    return 0; /* indicates failure */
@@ -3281,6 +3299,8 @@ void VG_(ppUnwindInfo) (Addr from, Addr to)
    For arm64, the unwound registers are: X29(FP) X30(LR) SP PC.
 
    For s390, the unwound registers are: R11(FP) R14(LR) R15(SP) F0..F7 PC.
+
+   TODO Add description for riscv64.
 */
 Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,
@@ -3303,6 +3323,8 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    ipHere = uregsHere->pc;
 #  elif defined(VGA_ppc32) || defined(VGA_ppc64be) || defined(VGA_ppc64le)
 #  elif defined(VGP_arm64_linux)
+   ipHere = uregsHere->pc;
+#  elif defined(VGP_riscv64_linux)
    ipHere = uregsHere->pc;
 #  else
 #    error "Unknown arch"
@@ -3449,6 +3471,15 @@ Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
    COMPUTE(uregsPrev.sp,  uregsHere->sp,  cfsi_m->sp_how,  cfsi_m->sp_off);
    COMPUTE(uregsPrev.x30, uregsHere->x30, cfsi_m->x30_how, cfsi_m->x30_off);
    COMPUTE(uregsPrev.x29, uregsHere->x29, cfsi_m->x29_how, cfsi_m->x29_off);
+#  elif defined(VGP_riscv64_linux)
+   /* Compute register values in the caller's frame. Notice that the previous
+      pc is equal to the previous ra and is calculated as such. The previous ra
+      is however set to 0 here as this helps to promptly fail cases where an
+      inner frame uses the CFIR_SAME rule for ra which is bogus. */
+   COMPUTE(uregsPrev.pc, uregsHere->ra, cfsi_m->ra_how, cfsi_m->ra_off);
+   COMPUTE(uregsPrev.sp, uregsHere->sp, cfsi_m->sp_how, cfsi_m->sp_off);
+   COMPUTE(uregsPrev.fp, uregsHere->fp, cfsi_m->fp_how, cfsi_m->fp_off);
+   uregsPrev.ra = 0;
 #  else
 #    error "Unknown arch"
 #  endif

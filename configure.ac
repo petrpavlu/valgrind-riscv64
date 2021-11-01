@@ -8,7 +8,30 @@
 ##------------------------------------------------------------##
 
 # Process this file with autoconf to produce a configure script.
-AC_INIT([Valgrind],[3.18.0],[valgrind-users@lists.sourceforge.net])
+#
+# Define major, minor, micro and suffix here once, then reuse them
+# for version number in valgrind.h and vg-entities (documentation).
+# suffix must be empty for a release, otherwise it is GIT or RC1, etc.
+# Also set the (expected/last) release date here.
+# Do not forget to rerun ./autogen.sh
+m4_define([v_major_ver], [3])
+m4_define([v_minor_ver], [19])
+m4_define([v_micro_ver], [0])
+m4_define([v_suffix_ver], [GIT])
+m4_define([v_rel_date], ["?? ??? 202?"])
+m4_define([v_version],
+	  m4_if(v_suffix_ver, [],
+		[v_major_ver.v_minor_ver.v_micro_ver],
+		[v_major_ver.v_minor_ver.v_micro_ver.v_suffix_ver]))
+AC_INIT([Valgrind],[v_version],[valgrind-users@lists.sourceforge.net])
+
+# For valgrind.h
+AC_SUBST(VG_VER_MAJOR, v_major_ver)
+AC_SUBST(VG_VER_MINOR, v_minor_ver)
+
+# For docs/xml/vg-entities.xml
+AC_SUBST(VG_DATE, v_rel_date)
+
 AC_CONFIG_SRCDIR(coregrind/m_main.c)
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([foreign dist-bzip2 subdir-objects])
@@ -290,6 +313,11 @@ case "${host_cpu}" in
         AC_MSG_RESULT([ok (${host_cpu})])
         ARCH_MAX="nanomips"
         ;;
+
+     riscv64)
+       AC_MSG_RESULT([ok (${host_cpu})])
+       ARCH_MAX="riscv64"
+       ;;
 
      *) 
 	AC_MSG_RESULT([no (${host_cpu})])
@@ -932,6 +960,17 @@ case "$ARCH_MAX-$VGCONF_OS" in
         fi
         AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
         ;;
+     riscv64-linux)
+        VGCONF_ARCH_PRI="riscv64"
+        VGCONF_ARCH_SEC=""
+        VGCONF_PLATFORM_PRI_CAPS="RISCV64_LINUX"
+        VGCONF_PLATFORM_SEC_CAPS=""
+        valt_load_address_pri_norml="0x58000000"
+        valt_load_address_pri_inner="0x38000000"
+        valt_load_address_sec_norml="0xUNSET"
+        valt_load_address_sec_inner="0xUNSET"
+        AC_MSG_RESULT([ok (${ARCH_MAX}-${VGCONF_OS})])
+        ;;
     *)
         VGCONF_ARCH_PRI="unknown"
         VGCONF_ARCH_SEC="unknown"
@@ -984,6 +1023,8 @@ AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_MIPS64,
                test x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX ) 
 AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_NANOMIPS,
                test x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX )
+AM_CONDITIONAL(VGCONF_ARCHS_INCLUDE_RISCV64,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX )
 
 # Set up VGCONF_PLATFORMS_INCLUDE_<platform>.  Either one or two of these
 # become defined.
@@ -1019,6 +1060,8 @@ AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD,
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_FREEBSD)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_AMD64_FREEBSD, 
                test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD)
+AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_RISCV64_LINUX,
+               test x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX)
 AM_CONDITIONAL(VGCONF_PLATFORMS_INCLUDE_X86_DARWIN,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN \
                  -o x$VGCONF_PLATFORM_SEC_CAPS = xX86_DARWIN)
@@ -1045,7 +1088,8 @@ AM_CONDITIONAL(VGCONF_OS_IS_LINUX,
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS32_LINUX \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
-                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX)
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xNANOMIPS_LINUX \
+                 -o x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX)
 AM_CONDITIONAL(VGCONF_OS_IS_FREEBSD,
                test x$VGCONF_PLATFORM_PRI_CAPS = xX86_FREEBSD \
                  -o x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_FREEBSD)
@@ -4672,7 +4716,8 @@ elif test x$VGCONF_PLATFORM_PRI_CAPS = xAMD64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xPPC64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xARM64_LINUX \
        -o x$VGCONF_PLATFORM_PRI_CAPS = xMIPS64_LINUX \
-       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX ; then
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xS390X_LINUX \
+       -o x$VGCONF_PLATFORM_PRI_CAPS = xRISCV64_LINUX ; then
   mflag_primary=$FLAG_M64
 elif test x$VGCONF_PLATFORM_PRI_CAPS = xX86_DARWIN ; then
   mflag_primary="$FLAG_M32 -arch i386"
@@ -5121,7 +5166,9 @@ AC_CONFIG_FILES([
    glibc-2.X.supp
    glibc-2.X-helgrind.supp
    glibc-2.X-drd.supp
+   include/valgrind.h
    docs/Makefile 
+   docs/xml/vg-entities.xml
    tests/Makefile 
    tests/vg_regtest 
    perf/Makefile 
@@ -5145,6 +5192,7 @@ AC_CONFIG_FILES([
    memcheck/tests/amd64-linux/Makefile
    memcheck/tests/arm64-linux/Makefile
    memcheck/tests/x86-linux/Makefile
+   memcheck/tests/riscv64-linux/Makefile
    memcheck/tests/amd64-solaris/Makefile
    memcheck/tests/x86-solaris/Makefile
    memcheck/tests/amd64-freebsd/Makefile
@@ -5189,6 +5237,7 @@ AC_CONFIG_FILES([
    none/tests/mips32/Makefile
    none/tests/mips64/Makefile
    none/tests/nanomips/Makefile
+   none/tests/riscv64/Makefile
    none/tests/linux/Makefile
    none/tests/darwin/Makefile
    none/tests/solaris/Makefile
@@ -5255,6 +5304,7 @@ AC_OUTPUT
 
 cat<<EOF
 
+                    Version: ${VERSION}
          Maximum build arch: ${ARCH_MAX}
          Primary build arch: ${VGCONF_ARCH_PRI}
        Secondary build arch: ${VGCONF_ARCH_SEC}

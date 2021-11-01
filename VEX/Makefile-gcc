@@ -12,6 +12,7 @@ PUB_HEADERS = 	pub/libvex_basictypes.h 		\
 		pub/libvex_guest_s390x.h		\
 		pub/libvex_s390x_common.h		\
 		pub/libvex_guest_mips32.h		\
+		pub/libvex_guest_riscv64.h		\
 		pub/libvex_guest_offsets.h
 
 PRIV_HEADERS = 	priv/host_x86_defs.h			\
@@ -20,6 +21,8 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/host_ppc_defs.h			\
 		priv/host_s390_defs.h			\
 		priv/host_mips_defs.h			\
+		priv/host_nanomips_defs.h		\
+		priv/host_riscv64_defs.h		\
 		priv/host_generic_maddf.h	        \
 		priv/host_generic_regs.h	        \
 		priv/host_generic_simd64.h	        \
@@ -34,7 +37,10 @@ PRIV_HEADERS = 	priv/host_x86_defs.h			\
 		priv/guest_arm_defs.h			\
 		priv/guest_ppc_defs.h			\
 		priv/guest_mips_defs.h			\
+		priv/guest_nanomips_defs.h		\
+		priv/guest_riscv64_defs.h		\
 		priv/mips_defs.h			\
+		priv/common_nanomips_defs.h		\
 		priv/s390_disasm.h		        \
 		priv/s390_defs.h		        \
 		priv/ir_match.h			        \
@@ -44,7 +50,7 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/ir_match.o			        \
 		priv/ir_opt.o				\
 		priv/ir_inject.o			\
-		priv/main_main.o			\
+		priv/multiarch_main_main.o		\
 		priv/main_globals.o			\
 		priv/main_util.o			\
 		priv/s390_disasm.o			\
@@ -55,6 +61,8 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_ppc_defs.o			\
 		priv/host_s390_defs.o			\
 		priv/host_mips_defs.o			\
+		priv/host_nanomips_defs.o		\
+		priv/host_riscv64_defs.o		\
 		priv/host_x86_isel.o			\
 		priv/host_amd64_isel.o			\
 		priv/host_arm_isel.o			\
@@ -62,12 +70,15 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/host_ppc_isel.o			\
 		priv/host_s390_isel.o			\
 		priv/host_mips_isel.o			\
+		priv/host_nanomips_isel.o		\
+		priv/host_riscv64_isel.o		\
 		priv/host_generic_maddf.o	        \
 		priv/host_generic_regs.o	        \
 		priv/host_generic_simd64.o	        \
 		priv/host_generic_simd128.o	        \
 		priv/host_generic_simd256.o	        \
 		priv/host_generic_reg_alloc2.o		\
+		priv/host_generic_reg_alloc3.o		\
 		priv/guest_generic_x87.o	        \
 		priv/guest_generic_bb_to_IR.o		\
 		priv/guest_x86_helpers.o		\
@@ -77,6 +88,8 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_ppc_helpers.o		\
 		priv/guest_s390_helpers.o		\
 		priv/guest_mips_helpers.o		\
+		priv/guest_nanomips_helpers.o		\
+		priv/guest_riscv64_helpers.o		\
 		priv/guest_x86_toIR.o			\
 		priv/guest_amd64_toIR.o			\
 		priv/guest_arm_toIR.o			\
@@ -84,7 +97,9 @@ LIB_OBJS = 	priv/ir_defs.o                          \
 		priv/guest_ppc_toIR.o                   \
 		priv/guest_s390_toIR.o			\
 		priv/guest_mipsdsp_toIR.o		\
-		priv/guest_mips_toIR.o
+		priv/guest_mips_toIR.o			\
+		priv/guest_nanomips_toIR.o		\
+		priv/guest_riscv64_toIR.o
 
 PUB_INCLUDES = -Ipub
 
@@ -173,6 +188,12 @@ TAG-mips-linux:
 	if [ ! -f TAG-mips32-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
 	touch TAG-mips32-linux
 
+libvex-nanomips-linux.a: TAG-nanomips-linux libvex.a
+	mv -f libvex.a libvex-nanomips-linux.a
+TAG-nanomips-linux:
+	if [ ! -f TAG-nanomips-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-nanomips-linux
+
 libvex-ppc32-aix5.a: TAG-ppc32-aix5 libvex.a
 	mv -f libvex.a libvex-ppc32-aix5.a
 TAG-ppc32-aix5:
@@ -202,6 +223,12 @@ libvex-arm64-linux.a: TAG-arm64-linux libvex.a
 TAG-arm64-linux:
 	if [ ! -f TAG-arm64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
 	touch TAG-arm64-linux
+
+libvex-riscv64-linux.a: TAG-riscv64-linux libvex.a
+	mv -f libvex.a libvex-riscv64-linux.a
+TAG-riscv64-linux:
+	if [ ! -f TAG-riscv64-linux ] ; then rm -f $(LIB_OBJS) TAG-* libvex.a ; fi
+	touch TAG-riscv64-linux
 
 
 clean:
@@ -255,9 +282,9 @@ priv/ir_opt.o: $(ALL_HEADERS) priv/ir_opt.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/ir_opt.o \
 					 -c priv/ir_opt.c
 
-priv/main_main.o: $(ALL_HEADERS) priv/main_main.c
-	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main_main.o \
-					 -c priv/main_main.c
+priv/multiarch_main_main.o: $(ALL_HEADERS) priv/multiarch_main_main.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/multiarch_main_main.o \
+					 -c priv/multiarch_main_main.c
 
 priv/main_globals.o: $(ALL_HEADERS) priv/main_globals.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/main_globals.o \
@@ -295,6 +322,14 @@ priv/host_mips_defs.o: $(ALL_HEADERS) priv/host_mips_defs.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_mips_defs.o \
 					 -c priv/host_mips_defs.c
 
+priv/host_nanomips_defs.o: $(ALL_HEADERS) priv/host_nanomips_defs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_nanomips_defs.o \
+					 -c priv/host_nanomips_defs.c
+
+priv/host_riscv64_defs.o: $(ALL_HEADERS) priv/host_riscv64_defs.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_riscv64_defs.o \
+					 -c priv/host_riscv64_defs.c
+
 priv/host_x86_isel.o: $(ALL_HEADERS) priv/host_x86_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_x86_isel.o \
 					 -c priv/host_x86_isel.c
@@ -323,6 +358,14 @@ priv/host_mips_isel.o: $(ALL_HEADERS) priv/host_mips_isel.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_mips_isel.o \
 					 -c priv/host_mips_isel.c
 
+priv/host_nanomips_isel.o: $(ALL_HEADERS) priv/host_nanomips_isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_nanomips_isel.o \
+					 -c priv/host_nanomips_isel.c
+
+priv/host_riscv64_isel.o: $(ALL_HEADERS) priv/host_riscv64_isel.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_riscv64_isel.o \
+					 -c priv/host_riscv64_isel.c
+
 priv/host_generic_maddf.o: $(ALL_HEADERS) priv/host_generic_maddf.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_maddf.o \
 					 -c priv/host_generic_maddf.c
@@ -346,6 +389,10 @@ priv/host_generic_simd256.o: $(ALL_HEADERS) priv/host_generic_simd256.c
 priv/host_generic_reg_alloc2.o: $(ALL_HEADERS) priv/host_generic_reg_alloc2.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_reg_alloc2.o \
 					 -c priv/host_generic_reg_alloc2.c
+
+priv/host_generic_reg_alloc3.o: $(ALL_HEADERS) priv/host_generic_reg_alloc3.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/host_generic_reg_alloc3.o \
+					 -c priv/host_generic_reg_alloc3.c
 
 priv/guest_x86_toIR.o: $(ALL_HEADERS) priv/guest_x86_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_x86_toIR.o \
@@ -379,6 +426,10 @@ priv/guest_arm64_helpers.o: $(ALL_HEADERS) priv/guest_arm64_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm64_helpers.o \
 					 -c priv/guest_arm64_helpers.c
 
+priv/guest_riscv64_helpers.o: $(ALL_HEADERS) priv/guest_riscv64_helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_riscv64_helpers.o \
+					 -c priv/guest_riscv64_helpers.c
+
 priv/guest_arm_toIR.o: $(ALL_HEADERS) priv/guest_arm_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_arm_toIR.o \
 					 -c priv/guest_arm_toIR.c
@@ -403,6 +454,10 @@ priv/guest_s390_toIR.o: $(ALL_HEADERS) priv/guest_s390_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_s390_toIR.o \
 					 -c priv/guest_s390_toIR.c
 
+priv/guest_riscv64_toIR.o: $(ALL_HEADERS) priv/guest_riscv64_toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_riscv64_toIR.o \
+					 -c priv/guest_riscv64_toIR.c
+
 priv/s390_disasm.o: $(ALL_HEADERS) priv/s390_disasm.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/s390_disasm.o \
 					 -c priv/s390_disasm.c
@@ -411,6 +466,10 @@ priv/guest_mips_helpers.o: $(ALL_HEADERS) priv/guest_mips_helpers.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_mips_helpers.o \
 					 -c priv/guest_mips_helpers.c
 
+priv/guest_nanomips_helpers.o: $(ALL_HEADERS) priv/guest_nanomips_helpers.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_nanomips_helpers.o \
+					 -c priv/guest_nanomips_helpers.c
+
 priv/guest_mipsdsp_toIR.o: $(ALL_HEADERS) priv/guest_mipsdsp_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_mipsdsp_toIR.o \
 					 -c priv/guest_mipsdsp_toIR.c
@@ -418,3 +477,7 @@ priv/guest_mipsdsp_toIR.o: $(ALL_HEADERS) priv/guest_mipsdsp_toIR.c
 priv/guest_mips_toIR.o: $(ALL_HEADERS) priv/guest_mips_toIR.c
 	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_mips_toIR.o \
 					 -c priv/guest_mips_toIR.c
+
+priv/guest_nanomips_toIR.o: $(ALL_HEADERS) priv/guest_nanomips_toIR.c
+	$(CC) $(CCFLAGS) $(ALL_INCLUDES) -o priv/guest_nanomips_toIR.o \
+					 -c priv/guest_nanomips_toIR.c
