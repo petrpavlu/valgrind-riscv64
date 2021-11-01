@@ -69,6 +69,10 @@
 # /auxprogs/auxchecks/
 /auxprogs/auxchecks/*
 
+# /docs/
+/docs/print/
+/docs/xml/vg-entities.xml
+
 # /cachegrind/
 /cachegrind/*.so
 /cachegrind/.deps
@@ -694,6 +698,7 @@
 /include/Makefile.in
 /include/Makefile
 /include/tool.h
+/include/valgrind.h
 /include/vgversion.h
 
 # /include/vki/
