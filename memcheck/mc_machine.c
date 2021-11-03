@@ -1449,7 +1449,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
    if (o == GOF(CMSTART) && sz == 8) return -1;
    if (o == GOF(CMLEN)   && sz == 8) return -1;
    if (o == GOF(NRADDR)  && sz == 4) return -1;
-   if (o == GOF(IP_AT_SYSCALL) && sz == 8) return -1;
 
    if (o == GOF(LLSC_SIZE) && sz == 8) return -1;
    if (o == GOF(LLSC_ADDR) && sz == 8) return o;

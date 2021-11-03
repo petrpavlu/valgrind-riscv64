@@ -139,7 +139,7 @@ VexGuestLayout riscv64guest_layout = {
    .sizeof_IP = 8,
 
    /* Describe any sections to be regarded by Memcheck as 'always-defined'. */
-   .n_alwaysDefd = 7,
+   .n_alwaysDefd = 6,
 
    .alwaysDefd = {
       /* 0 */ ALWAYSDEFD(guest_x0),
@@ -148,7 +148,6 @@ VexGuestLayout riscv64guest_layout = {
       /* 3 */ ALWAYSDEFD(guest_CMSTART),
       /* 4 */ ALWAYSDEFD(guest_CMLEN),
       /* 5 */ ALWAYSDEFD(guest_NRADDR),
-      /* 6 */ ALWAYSDEFD(guest_IP_AT_SYSCALL),
    },
 };
 

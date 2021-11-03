@@ -121,10 +121,6 @@ typedef struct {
       pseudo-register shortly afterwards, the translation can find out what the
       corresponding no-redirection address was. Note, this is only set for
       wrap-style redirects, not for replace-style ones. */
-
-   /* Needed for Darwin: pc at the last epc insn. Used when backing up to
-      restart a syscall that has been interrupted by a signal. */
-   /* 312 */ ULong guest_IP_AT_SYSCALL;
    /* 560 */ ULong guest_NRADDR;
 
    /* Fallback LL/SC support. */

@@ -238,7 +238,6 @@ static IRExpr* narrowFrom64(IRType dstTy, IRExpr* e)
 #define OFFB_CMSTART       offsetof(VexGuestRISCV64State, guest_CMSTART)
 #define OFFB_CMLEN         offsetof(VexGuestRISCV64State, guest_CMLEN)
 #define OFFB_NRADDR        offsetof(VexGuestRISCV64State, guest_NRADDR)
-#define OFFB_IP_AT_SYSCALL offsetof(VexGuestRISCV64State, guest_IP_AT_SYSCALL)
 
 #define OFFB_LLSC_SIZE offsetof(VexGuestRISCV64State, guest_LLSC_SIZE)
 #define OFFB_LLSC_ADDR offsetof(VexGuestRISCV64State, guest_LLSC_ADDR)
