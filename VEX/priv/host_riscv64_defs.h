@@ -59,9 +59,32 @@ ST_IN HReg hregRISCV64_x15(void) { return mkHReg(False, HRcInt64, 15, 15); }
 ST_IN HReg hregRISCV64_x16(void) { return mkHReg(False, HRcInt64, 16, 16); }
 ST_IN HReg hregRISCV64_x17(void) { return mkHReg(False, HRcInt64, 17, 17); }
 
-ST_IN HReg hregRISCV64_x0(void) { return mkHReg(False, HRcInt64, 0, 18); }
-ST_IN HReg hregRISCV64_x2(void) { return mkHReg(False, HRcInt64, 2, 19); }
-ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 20); }
+ST_IN HReg hregRISCV64_f0(void) { return mkHReg(False, HRcFlt64, 0, 18); }
+ST_IN HReg hregRISCV64_f1(void) { return mkHReg(False, HRcFlt64, 1, 19); }
+ST_IN HReg hregRISCV64_f2(void) { return mkHReg(False, HRcFlt64, 2, 20); }
+ST_IN HReg hregRISCV64_f3(void) { return mkHReg(False, HRcFlt64, 3, 21); }
+ST_IN HReg hregRISCV64_f4(void) { return mkHReg(False, HRcFlt64, 4, 22); }
+ST_IN HReg hregRISCV64_f5(void) { return mkHReg(False, HRcFlt64, 5, 23); }
+ST_IN HReg hregRISCV64_f6(void) { return mkHReg(False, HRcFlt64, 6, 24); }
+ST_IN HReg hregRISCV64_f7(void) { return mkHReg(False, HRcFlt64, 7, 25); }
+
+ST_IN HReg hregRISCV64_f10(void) { return mkHReg(False, HRcFlt64, 10, 26); }
+ST_IN HReg hregRISCV64_f11(void) { return mkHReg(False, HRcFlt64, 11, 27); }
+ST_IN HReg hregRISCV64_f12(void) { return mkHReg(False, HRcFlt64, 12, 28); }
+ST_IN HReg hregRISCV64_f13(void) { return mkHReg(False, HRcFlt64, 13, 29); }
+ST_IN HReg hregRISCV64_f14(void) { return mkHReg(False, HRcFlt64, 14, 30); }
+ST_IN HReg hregRISCV64_f15(void) { return mkHReg(False, HRcFlt64, 15, 31); }
+ST_IN HReg hregRISCV64_f16(void) { return mkHReg(False, HRcFlt64, 16, 32); }
+ST_IN HReg hregRISCV64_f17(void) { return mkHReg(False, HRcFlt64, 17, 33); }
+
+ST_IN HReg hregRISCV64_f28(void) { return mkHReg(False, HRcFlt64, 0, 34); }
+ST_IN HReg hregRISCV64_f29(void) { return mkHReg(False, HRcFlt64, 0, 35); }
+ST_IN HReg hregRISCV64_f30(void) { return mkHReg(False, HRcFlt64, 0, 36); }
+ST_IN HReg hregRISCV64_f31(void) { return mkHReg(False, HRcFlt64, 0, 37); }
+
+ST_IN HReg hregRISCV64_x0(void) { return mkHReg(False, HRcInt64, 0, 38); }
+ST_IN HReg hregRISCV64_x2(void) { return mkHReg(False, HRcInt64, 2, 39); }
+ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 40); }
 #undef ST_IN
 
 /* Number of registers used for argument passing in function calls. */
