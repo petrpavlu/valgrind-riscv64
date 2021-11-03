@@ -9838,23 +9838,24 @@ static Bool dis_int_store_ds_prefix ( UInt prefix,
             if (host_endness == VexEndnessBE) {
 
                /* upper 64-bits */
-               assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val ) );
+               assign( EA_hi, mkexpr(EA));
 
                /* lower 64-bits */
-               assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val+8 ) );
+               assign( EA_lo, binop(Iop_Add64, mkexpr(EA), mkU64(8)));
+
             } else {
                /* upper 64-bits */
-               assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val+8 ) );
+               assign( EA_hi, binop(Iop_Add64, mkexpr(EA), mkU64(8)));
 
                /* lower 64-bits */
-               assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val ) );
+               assign( EA_lo, mkexpr(EA));
             }
          } else {
             /* upper half of upper 64-bits */
-            assign( EA_hi, ea_rAor0_simm( rA_addr, immediate_val+4 ) );
+            assign( EA_hi, binop(Iop_Add32, mkexpr(EA), mkU32(4)));
 
             /* lower half of upper 64-bits */
-            assign( EA_lo, ea_rAor0_simm( rA_addr, immediate_val+12 ) );
+            assign( EA_lo, binop(Iop_Add32, mkexpr(EA), mkU32(12)));
          }
 
          /* Note, the store order for stq instruction is the same for BE
@@ -25359,19 +25360,17 @@ dis_vx_load ( UInt prefix, UInt theInstr )
 
       else
          irx_addr = mkexpr( EA );
-
-      byte = load( Ity_I64, irx_addr );
+      /* byte load */
+      byte = load( Ity_I8, irx_addr );
       putVSReg( XT, binop( Iop_64HLtoV128,
-                            binop( Iop_And64,
-                                   byte,
-                                   mkU64( 0xFF ) ),
+                           unop( Iop_8Uto64, byte ),
                            mkU64( 0 ) ) );
       break;
    }
 
    case 0x32D: // lxsihzx
    {
-      IRExpr *byte;
+      IRExpr *hword;
       IRExpr* irx_addr;
 
       DIP("lxsihzx %u,r%u,r%u\n", (UInt)XT, rA_addr, rB_addr);
@@ -25382,11 +25381,10 @@ dis_vx_load ( UInt prefix, UInt theInstr )
       else
          irx_addr = mkexpr( EA );
 
-      byte = load( Ity_I64, irx_addr );
+      hword = load( Ity_I16, irx_addr );
       putVSReg( XT, binop( Iop_64HLtoV128,
-                            binop( Iop_And64,
-                                   byte,
-                                   mkU64( 0xFFFF ) ),
+                            unop( Iop_16Uto64,
+                                  hword ),
                            mkU64( 0 ) ) );
       break;
    }
