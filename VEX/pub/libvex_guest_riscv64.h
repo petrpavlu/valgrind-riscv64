@@ -73,34 +73,67 @@ typedef struct {
    /* 264 */ ULong guest_x31;
    /* 272 */ ULong guest_pc;
 
+   /* Floating-point state. */
+   /* 280 */ ULong guest_f0;
+   /* 288 */ ULong guest_f1;
+   /* 296 */ ULong guest_f2;
+   /* 304 */ ULong guest_f3;
+   /* 312 */ ULong guest_f4;
+   /* 320 */ ULong guest_f5;
+   /* 328 */ ULong guest_f6;
+   /* 336 */ ULong guest_f7;
+   /* 344 */ ULong guest_f8;
+   /* 352 */ ULong guest_f9;
+   /* 360 */ ULong guest_f10;
+   /* 368 */ ULong guest_f11;
+   /* 376 */ ULong guest_f12;
+   /* 384 */ ULong guest_f13;
+   /* 392 */ ULong guest_f14;
+   /* 400 */ ULong guest_f15;
+   /* 408 */ ULong guest_f16;
+   /* 416 */ ULong guest_f17;
+   /* 424 */ ULong guest_f18;
+   /* 432 */ ULong guest_f19;
+   /* 440 */ ULong guest_f20;
+   /* 448 */ ULong guest_f21;
+   /* 456 */ ULong guest_f22;
+   /* 464 */ ULong guest_f23;
+   /* 472 */ ULong guest_f24;
+   /* 480 */ ULong guest_f25;
+   /* 488 */ ULong guest_f26;
+   /* 496 */ ULong guest_f27;
+   /* 504 */ ULong guest_f28;
+   /* 512 */ ULong guest_f29;
+   /* 520 */ ULong guest_f30;
+   /* 528 */ ULong guest_f31;
+   /* 536 */ UInt  guest_fcsr;
+
    /* Various pseudo-regs mandated by Vex or Valgrind. */
    /* Emulation notes. */
-   /* 280 */ UInt guest_EMNOTE;
-   /* 284 */ UInt pad1;
+   /* 540 */ UInt guest_EMNOTE;
 
    /* For clflush/clinval: record start and length of area. */
-   /* 288 */ ULong guest_CMSTART;
-   /* 296 */ ULong guest_CMLEN;
+   /* 544 */ ULong guest_CMSTART;
+   /* 552 */ ULong guest_CMLEN;
 
    /* Used to record the unredirected guest address at the start of a
       translation whose start has been redirected. By reading this
       pseudo-register shortly afterwards, the translation can find out what the
       corresponding no-redirection address was. Note, this is only set for
       wrap-style redirects, not for replace-style ones. */
-   /* 304 */ ULong guest_NRADDR;
 
    /* Needed for Darwin: pc at the last epc insn. Used when backing up to
       restart a syscall that has been interrupted by a signal. */
    /* 312 */ ULong guest_IP_AT_SYSCALL;
+   /* 560 */ ULong guest_NRADDR;
 
    /* Fallback LL/SC support. */
-   /* 320 */ ULong guest_LLSC_SIZE; /* 0==no transaction, else 4 or 8. */
-   /* 328 */ ULong guest_LLSC_ADDR; /* Address of the transaction. */
-   /* 336 */ ULong guest_LLSC_DATA; /* Original value at ADDR, sign-extended. */
+   /* 568 */ ULong guest_LLSC_SIZE; /* 0==no transaction, else 4 or 8. */
+   /* 576 */ ULong guest_LLSC_ADDR; /* Address of the transaction. */
+   /* 584 */ ULong guest_LLSC_DATA; /* Original value at ADDR, sign-extended. */
 
    /* Padding to 16 bytes. */
-   /* 344 */ ULong pad_end_0;
-   /* 352 */
+   /* 592 */
 } VexGuestRISCV64State;
 
 /*------------------------------------------------------------*/
