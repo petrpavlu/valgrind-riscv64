@@ -529,6 +529,7 @@ static void fill_prstatus(const ThreadState *tst,
    regs->es     = arch->vex.guest_ES;
    regs->fs     = arch->vex.guest_FS;
    regs->gs     = arch->vex.guest_GS;
+
 #else
 #  error Unknown ELF platform
 #endif
