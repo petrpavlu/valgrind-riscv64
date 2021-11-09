@@ -1294,7 +1294,7 @@ Int VG_(socket) ( Int domain, Int type, Int protocol )
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-        || defined(VGO_freebsd) || defined(VGP_riscv64_linux)
+        || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall3)(__NR_socket, domain, type, protocol );
    return sr_isError(res) ? -1 : sr_Res(res);
@@ -1350,7 +1350,7 @@ Int my_connect ( Int sockfd, struct vki_sockaddr_in* serv_addr, Int addrlen )
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-        || defined(VGO_freebsd) || defined(VGP_riscv64_linux)
+        || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall3)(__NR_connect, sockfd, (UWord)serv_addr, addrlen);
    return sr_isError(res) ? -1 : sr_Res(res);
@@ -1398,7 +1398,7 @@ Int VG_(write_socket)( Int sd, const void *msg, Int count )
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-        || defined(VGO_freebsd) || defined(VGP_riscv64_linux)
+        || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall6)(__NR_sendto, sd, (UWord)msg, 
                                        count, VKI_MSG_NOSIGNAL, 0,0);
@@ -1435,8 +1435,8 @@ Int VG_(getsockname) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
-        || defined(VGP_nanomips_linux) || defined(VGO_freebsd) \
-        || defined(VGP_riscv64_linux)
+        || defined(VGP_nanomips_linux) || defined(VGP_riscv64_linux) \
+        || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall3)( __NR_getsockname,
                            (UWord)sd, (UWord)name, (UWord)namelen );
@@ -1475,8 +1475,8 @@ Int VG_(getpeername) ( Int sd, struct vki_sockaddr *name, Int *namelen)
 
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_mips64_linux) || defined(VGP_arm64_linux) \
-        || defined(VGP_nanomips_linux) || defined(VGO_freebsd) \
-        || defined(VGP_riscv64_linux)
+        || defined(VGP_nanomips_linux) || defined(VGP_riscv64_linux) \
+        || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall3)( __NR_getpeername,
                            (UWord)sd, (UWord)name, (UWord)namelen );
@@ -1518,7 +1518,7 @@ Int VG_(getsockopt) ( Int sd, Int level, Int optname, void *optval,
 #  elif defined(VGP_amd64_linux) || defined(VGP_arm_linux) \
         || defined(VGP_mips32_linux) || defined(VGP_mips64_linux) \
         || defined(VGP_arm64_linux) || defined(VGP_nanomips_linux) \
-        || defined(VGO_freebsd) || defined(VGP_riscv64_linux)
+        || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes res;
    res = VG_(do_syscall5)( __NR_getsockopt,
                            (UWord)sd, (UWord)level, (UWord)optname, 

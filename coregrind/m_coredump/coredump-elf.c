@@ -489,6 +489,8 @@ static void fill_prstatus(const ThreadState *tst,
    regs[VKI_MIPS32_EF_CP0_STATUS] = arch->vex.guest_CP0_status;
    regs[VKI_MIPS32_EF_CP0_EPC]    = arch->vex.guest_PC;
 #  undef DO
+#elif defined(VGP_riscv64_linux)
+   /* TODO Implement. */
 #elif defined(VGP_amd64_freebsd)
    regs->rflags = LibVEX_GuestAMD64_get_rflags( &arch->vex );
    regs->rsp    = arch->vex.guest_RSP;
@@ -527,8 +529,6 @@ static void fill_prstatus(const ThreadState *tst,
    regs->es     = arch->vex.guest_ES;
    regs->fs     = arch->vex.guest_FS;
    regs->gs     = arch->vex.guest_GS;
-#elif defined(VGP_riscv64_linux)
-   /* TODO Implement. */
 #else
 #  error Unknown ELF platform
 #endif
@@ -655,6 +655,9 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
 #  undef DO
 #elif defined(VGP_nanomips_linux)
 
+#elif defined(VGP_riscv64_linux)
+   /* TODO Implement. */
+
 #elif defined(VGP_x86_freebsd)
 
 #elif defined(VGP_amd64_freebsd)
@@ -664,8 +667,6 @@ static void fill_fpu(const ThreadState *tst, vki_elf_fpregset_t *fpu)
    DO(0);  DO(1);  DO(2);  DO(3);  DO(4);  DO(5);  DO(6);  DO(7);
    DO(8);  DO(9);  DO(10); DO(11); DO(12); DO(13); DO(14); DO(15);
 #  undef DO
-#elif defined(VGP_riscv64_linux)
-   /* TODO Implement. */
 
 #else
 #  error Unknown ELF platform

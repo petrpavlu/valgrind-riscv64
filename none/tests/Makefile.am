@@ -75,8 +75,8 @@ SUBDIRS += x86-solaris
 endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
-               linux darwin solaris freebsd amd64-linux x86-linux amd64-darwin riscv64 \
-               x86-darwin amd64-solaris x86-solaris scripts .
+               riscv64 linux darwin solaris freebsd amd64-linux x86-linux \
+               amd64-darwin x86-darwin amd64-solaris x86-solaris scripts .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \

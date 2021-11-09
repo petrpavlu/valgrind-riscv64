@@ -851,7 +851,7 @@ Int VG_(getgroups)( Int size, UInt* list )
         || defined(VGO_darwin) || defined(VGP_s390x_linux)    \
         || defined(VGP_mips32_linux) || defined(VGP_arm64_linux) \
         || defined(VGO_solaris) || defined(VGP_nanomips_linux) \
-        || defined(VGO_freebsd) || defined(VGP_riscv64_linux)
+        || defined(VGP_riscv64_linux) || defined(VGO_freebsd)
    SysRes sres;
    sres = VG_(do_syscall2)(__NR_getgroups, size, (Addr)list);
    if (sr_isError(sres))
