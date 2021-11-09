@@ -661,7 +661,7 @@ static SyscallTableEntry syscall_table[] = {
    GENX_(__NR_geteuid,           sys_geteuid),            //  49
 
    GENX_(__NR_getegid,           sys_getegid),            //  50
-// _____(__NR_acct,              sys_acct),               //  51
+   GENX_(__NR_acct,              sys_acct),               //  51
    LINX_(__NR_umount2,           sys_umount),             //  52
 // _____(__NR_lock,              sys_lock),               //  53
    LINXY(__NR_ioctl,             sys_ioctl),              //  54
@@ -900,8 +900,8 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_tgkill,            sys_tgkill),             // 250
 // _____(__NR_utimes,            sys_utimes),             // 251
-// _____(__NR_statfs64,          sys_statfs64),           // 252
-// _____(__NR_fstatfs64,         sys_fstatfs64),          // 253
+   GENXY(__NR_statfs64,          sys_statfs64),           // 252
+   GENXY(__NR_fstatfs64,         sys_fstatfs64),          // 253
 // /* #define __NR_fadvise64_64    254     32bit only */
 
 // _____(__NR_rtas,              sys_rtas),               // 255
@@ -1022,6 +1022,9 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_io_uring_setup,    sys_io_uring_setup),    // 425
    LINXY(__NR_io_uring_enter,    sys_io_uring_enter),    // 426
    LINXY(__NR_io_uring_register, sys_io_uring_register), // 427
+
+   GENX_(__NR_clone3,            sys_ni_syscall),        // 435
+   LINXY(__NR_close_range,       sys_close_range),       // 436
 
    LINX_(__NR_faccessat2,        sys_faccessat2),       // 439
 };

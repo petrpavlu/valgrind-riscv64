@@ -4970,6 +4970,8 @@ enum vki_bpf_cmd {
 	VKI_BPF_BTF_LOAD,
 	VKI_BPF_BTF_GET_FD_BY_ID,
 	VKI_BPF_TASK_FD_QUERY,
+	VKI_BPF_MAP_LOOKUP_AND_DELETE_ELEM,
+	VKI_BPF_MAP_FREEZE,
 };
 
 enum vki_bpf_map_type {
@@ -5372,6 +5374,9 @@ struct vki_itimerspec64 {
 #endif
 
 #define VKI_RLIM64_INFINITY (~0ULL)
+
+#define VKI_CLOSE_RANGE_UNSHARE (1U << 1)
+#define VKI_CLOSE_RANGE_CLOEXEC (1U << 2)
 
 /*--------------------------------------------------------------------*/
 /*--- end                                                          ---*/
