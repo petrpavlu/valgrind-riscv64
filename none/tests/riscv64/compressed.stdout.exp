@@ -38,70 +38,126 @@ c.addi4spn a0, sp, 4 ::
 c.addi4spn a5, sp, 4 ::
   inputs: sp=0x0000000000001000
   output: a0=0x0000000000000020
+c.fld fa0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xbeafe48541dc8da0
+  no memory changes
+c.fld fa0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xba6d23fbddcfb6e4
+  no memory changes
+c.fld fa0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xe23b6d7d6753321d
+  no memory changes
+c.fld fa0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x849d6e092767dabd
+  no memory changes
+c.fld fa0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xec83e542163f4e88
+  no memory changes
+c.fld fa0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x21989d257082ce6f
+  no memory changes
+c.fld fa0, 248(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x63082c1746f49884
+  no memory changes
+c.fld fa4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: fa4=0x5486cc410e1801e6
+  no memory changes
 c.lw a0, 0(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x0000000041dc8da0
+  output: a0=0x000000000720eda7
   no memory changes
 c.lw a0, 4(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffff8aa9987b
+  output: a0=0xffffffffec7a332e
   no memory changes
 c.lw a0, 8(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x00000000355229e8
+  output: a0=0xfffffffff26fc107
   no memory changes
 c.lw a0, 16(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xfffffffffeb20cc3
+  output: a0=0xffffffffb4a7dcfa
   no memory changes
 c.lw a0, 32(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffffdb9b22c9
+  output: a0=0xffffffff81406130
   no memory changes
 c.lw a0, 64(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xffffffff879ff2e1
+  output: a0=0x000000000da412a7
   no memory changes
 c.lw a0, 124(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x00000000013aaa2e
+  output: a0=0x000000006a330ec8
   no memory changes
 c.lw a4, 0(a5) ::
   inputs: a5=&area_mid
-  output: a4=0x000000000e1801e6
+  output: a4=0xffffffffd45c61ed
   no memory changes
 c.ld a0, 0(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x208080370720eda7
+  output: a0=0x82501ceacc654dae
   no memory changes
 c.ld a0, 8(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x939577469bec4e03
+  output: a0=0x6dbeca915808e621
   no memory changes
 c.ld a0, 16(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x34bc79601d480253
+  output: a0=0x863d8543d33dd28a
   no memory changes
 c.ld a0, 32(a1) ::
   inputs: a1=&area_mid
-  output: a0=0xc6ceea1bcc0b1923
+  output: a0=0x07ff662e72b0598a
   no memory changes
 c.ld a0, 64(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x0e1441b59c446e4f
+  output: a0=0x30a49d2822488e15
   no memory changes
 c.ld a0, 128(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x03e9b958b646aef6
+  output: a0=0xe539d48afb0b8e7d
   no memory changes
 c.ld a0, 248(a1) ::
   inputs: a1=&area_mid
-  output: a0=0x4d8110321460c072
+  output: a0=0x36f9f34ce2cde861
   no memory changes
 c.ld a4, 0(a5) ::
   inputs: a5=&area_mid
-  output: a4=0xb55668f4d45c61ed
+  output: a4=0x172704a799a1c1f4
   no memory changes
+c.fsd fa0, 0(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 8(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsd fa0, 16(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 32(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 64(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 128(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsd fa0, 248(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+240]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsd fa4, 0(a5) ::
+  inputs: fa4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 c.sw a0, 0(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
   [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
@@ -128,7 +184,7 @@ c.sw a4, 0(a5) ::
   [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
 c.sd a0, 0(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
-  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+  [+000]  89 67 45 23 01 .. cd ab .. .. .. .. .. .. .. ..
 c.sd a0, 8(a1) ::
   inputs: a0=0xabcdef0123456789, a1=&area_mid
   [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
@@ -582,77 +638,113 @@ c.slli a0, 63 ::
 c.slli a5, 1 ::
   inputs: a5=0xabcdef0123456789
   output: a5=0x579bde02468acf12
+c.fldsp fa0, 0(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0x09938bb5e378ccc9
+  no memory changes
+c.fldsp fa0, 8(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xd46119bc4f7b459c
+  no memory changes
+c.fldsp fa0, 16(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xcd40b4ceaa101165
+  no memory changes
+c.fldsp fa0, 32(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0x0ec2557909435825
+  no memory changes
+c.fldsp fa0, 64(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xb7e70cf3395b0d30
+  no memory changes
+c.fldsp fa0, 128(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0x6c7c4355121e0d98
+  no memory changes
+c.fldsp fa0, 256(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xee5b125eb6a74a8d
+  no memory changes
+c.fldsp fa0, 504(sp) ::
+  inputs: sp=&area_mid
+  output: fa0=0xbd4f1ec2a7cdc5d1
+  no memory changes
+c.fldsp fa5, 0(sp) ::
+  inputs: sp=&area_mid
+  output: fa5=0x6a642668a9bd2cd0
+  no memory changes
 c.lwsp a0, 0(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x0000000058ef0cbb
+  output: a0=0xffffffffa2c51890
   no memory changes
 c.lwsp a0, 4(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x0000000011ec0746
+  output: a0=0x0000000003588d55
   no memory changes
 c.lwsp a0, 8(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x000000002cc58863
+  output: a0=0xffffffffbd9fc2c3
   no memory changes
 c.lwsp a0, 16(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xffffffffd5854b9e
+  output: a0=0xffffffff8dc294e9
   no memory changes
 c.lwsp a0, 32(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x00000000722e2164
+  output: a0=0x00000000185128a6
   no memory changes
 c.lwsp a0, 64(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xffffffff9eb271fc
+  output: a0=0xffffffffa02175a9
   no memory changes
 c.lwsp a0, 128(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x00000000704da97b
+  output: a0=0x000000002a54a500
   no memory changes
 c.lwsp a0, 252(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x00000000477a37c5
+  output: a0=0x0000000042735f59
   no memory changes
 c.lwsp a5, 0(sp) ::
   inputs: sp=&area_mid
-  output: a5=0x000000001e336cc2
+  output: a5=0x00000000670a7797
   no memory changes
 c.ldsp a0, 0(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x73bda2f9163c5883
+  output: a0=0x6429290760136358
   no memory changes
 c.ldsp a0, 8(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x165d70dbe9e22082
+  output: a0=0xbefd16247abc5ae2
   no memory changes
 c.ldsp a0, 16(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xc56f29278b7a1bd5
+  output: a0=0x05a2ce0c43b76420
   no memory changes
 c.ldsp a0, 32(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x1577a86918d360cb
+  output: a0=0x22efeba3bef6670c
   no memory changes
 c.ldsp a0, 64(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x59299b8e24b791c2
+  output: a0=0x82ad9af526269470
   no memory changes
 c.ldsp a0, 128(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x46d64b49b5128902
+  output: a0=0xa872c2086f198487
   no memory changes
 c.ldsp a0, 256(sp) ::
   inputs: sp=&area_mid
-  output: a0=0x38e40901c9cbb6a7
+  output: a0=0x0ab07070f302a1dc
   no memory changes
 c.ldsp a0, 504(sp) ::
   inputs: sp=&area_mid
-  output: a0=0xf1c6964b130ea280
+  output: a0=0xcb1f9e3eb6021eea
   no memory changes
 c.ldsp a5, 0(sp) ::
   inputs: sp=&area_mid
-  output: a5=0xd58e3eacdc81b88a
+  output: a5=0xc6fac5ba2658c35f
   no memory changes
 c.jr t0 ::
   inputs: t0=1f+4
@@ -742,6 +834,33 @@ c.add a0, a1 ::
 c.add a4, a5 ::
   inputs: a4=0x0000000000001000, a5=0x0000000000002000
   output: a4=0x0000000000003000
+c.fsdsp fa0, 0(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 8(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsdsp fa0, 16(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 32(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 64(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 128(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 256(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+256]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+c.fsdsp fa0, 504(sp) ::
+  inputs: fa0=0xabcdef0123456789, sp=&area_mid
+  [+496]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+c.fsdsp fa5, 0(sp) ::
+  inputs: fa5=0xabcdef0123456789, sp=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 c.swsp a0, 0(sp) ::
   inputs: a0=0xabcdef0123456789, sp=&area_mid
   [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..

@@ -143,7 +143,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
    }
 
-#define TESTINST_1_1_LOAD(length, instruction, rd, rs1)                        \
+#define TYPED_LOAD(length, instruction, rd, rs1, ipref)                        \
    {                                                                           \
       const size_t   N     = 4096;                                             \
       unsigned char* area  = memalign16(N);                                    \
@@ -154,12 +154,12 @@ static void show_block_diff(unsigned char* block1,
          0, (unsigned long)(area2 + N / 2), 0, 0};                             \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rd ", 16(%[w]);"       /* Spill rd. */                         \
+         ipref "sd " #rd ", 16(%[w]);" /* Spill rd. */                         \
          "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
          "ld " #rs1 ", 8(%[w]);"       /* Load the first input. */             \
          ASMINST_##length(instruction) ";"                                     \
-         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
-         "ld " #rd ", 16(%[w]);"       /* Reload rd. */                        \
+         ipref "sd " #rd ", 0(%[w]);"  /* Save result of the operation. */     \
+         ipref "ld " #rd ", 16(%[w]);" /* Reload rd. */                        \
          "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
          : [w] "r"(t1)                                                         \
@@ -171,7 +171,13 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define TESTINST_0_2_STORE(length, instruction, rs2_val, rs2, rs1)             \
+#define TESTINST_1_1_LOAD(length, instruction, rd, rs1)                        \
+   TYPED_LOAD(length, instruction, rd, rs1, "")
+
+#define TESTINST_1_1_FLOAD(length, instruction, rd, rs1)                       \
+   TYPED_LOAD(length, instruction, rd, rs1, "f")
+
+#define TYPED_STORE(length, instruction, rs2_val, rs2, rs1, ipref)             \
    {                                                                           \
       const size_t   N     = 4096;                                             \
       unsigned char* area  = memalign16(N);                                    \
@@ -182,12 +188,12 @@ static void show_block_diff(unsigned char* block1,
          (unsigned long)rs2_val, (unsigned long)(area2 + N / 2), 0, 0};        \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "sd " #rs2 ", 16(%[w]);"      /* Spill rs2. */                        \
+         ipref "sd " #rs2 ", 16(%[w]);" /* Spill rs2. */                       \
          "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
-         "ld " #rs2 ", 0(%[w]);"       /* Load the first input. */             \
+         ipref "ld " #rs2 ", 0(%[w]);" /* Load the first input. */             \
          "ld " #rs1 ", 8(%[w]);"       /* Load the second input. */            \
          ASMINST_##length(instruction) ";"                                     \
-         "ld " #rs2 ", 16(%[w]);"      /* Reload rs2. */                       \
+         ipref "ld " #rs2 ", 16(%[w]);" /* Reload rs2. */                      \
          "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
          : [w] "r"(t1)                                                         \
@@ -198,6 +204,12 @@ static void show_block_diff(unsigned char* block1,
       show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
    }
+
+#define TESTINST_0_2_STORE(length, instruction, rs2_val, rs2, rs1)             \
+   TYPED_STORE(length, instruction, rs2_val, rs2, rs1, "")
+
+#define TESTINST_0_2_FSTORE(length, instruction, rs2_val, rs2, rs1)            \
+   TYPED_STORE(length, instruction, rs2_val, rs2, rs1, "f")
 
 #define TESTINST_2_1_LRSC(length, lr_instruction, sc_instruction, lr_rd,       \
                           sc_rd, rs1)                                          \

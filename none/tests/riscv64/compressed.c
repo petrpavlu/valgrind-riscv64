@@ -23,7 +23,15 @@ static void test_compressed_00(void)
    TESTINST_1_1(2, "c.addi4spn a5, sp, 4", 0x0000000000001000, a0, sp);
 
    /* -------------- c.fld rd, uimm[7:3](rs1) --------------- */
-   /* TODO */
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 0(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 8(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 16(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 32(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 64(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 128(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(2, "c.fld fa0, 248(a1)", fa0, a1);
+
+   TESTINST_1_1_FLOAD(2, "c.fld fa4, 0(a5)", fa4, a5);
 
    /* --------------- c.lw rd, uimm[6:2](rs1) --------------- */
    TESTINST_1_1_LOAD(2, "c.lw a0, 0(a1)", a0, a1);
@@ -48,7 +56,15 @@ static void test_compressed_00(void)
    TESTINST_1_1_LOAD(2, "c.ld a4, 0(a5)", a4, a5);
 
    /* -------------- c.fsd rs2, uimm[7:3](rs1) -------------- */
-   /* TODO */
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 0(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 8(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 16(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 32(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 64(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 128(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(2, "c.fsd fa0, 248(a1)", 0xabcdef0123456789, fa0, a1);
+
+   TESTINST_0_2_FSTORE(2, "c.fsd fa4, 0(a5)", 0xabcdef0123456789, fa4, a5);
 
    /* -------------- c.sw rs2, uimm[6:2](rs1) --------------- */
    TESTINST_0_2_STORE(2, "c.sw a0, 0(a1)", 0xabcdef0123456789, a0, a1);
@@ -315,7 +331,16 @@ static void test_compressed_10(void)
    TESTINST_1_1(2, "c.slli a5, 1", 0xabcdef0123456789, a5, a5);
 
    /* -------------- c.fldsp rd, uimm[8:3](x2) -------------- */
-   /* TODO */
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 0(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 8(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 16(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 32(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 64(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 128(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 256(sp)", fa0, sp);
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa0, 504(sp)", fa0, sp);
+
+   TESTINST_1_1_FLOAD(2, "c.fldsp fa5, 0(sp)", fa5, sp);
 
    /* -------------- c.lwsp rd, uimm[7:2](x2) --------------- */
    TESTINST_1_1_LOAD(2, "c.lwsp a0, 0(sp)", a0, sp);
@@ -386,7 +411,16 @@ static void test_compressed_10(void)
                 a4, a5);
 
    /* ------------- c.fsdsp rs2, uimm[8:3](x2) -------------- */
-   /* TODO */
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 0(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 8(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 16(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 32(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 64(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 128(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 256(sp)", 0xabcdef0123456789, fa0, sp);
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa0, 504(sp)", 0xabcdef0123456789, fa0, sp);
+
+   TESTINST_0_2_FSTORE(2, "c.fsdsp fa5, 0(sp)", 0xabcdef0123456789, fa5, sp);
 
    /* -------------- c.swsp rs2, uimm[7:2](x2) -------------- */
    TESTINST_0_2_STORE(2, "c.swsp a0, 0(sp)", 0xabcdef0123456789, a0, sp);
