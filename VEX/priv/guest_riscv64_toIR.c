@@ -234,6 +234,40 @@ static IRExpr* narrowFrom64(IRType dstTy, IRExpr* e)
 #define OFFB_X31 offsetof(VexGuestRISCV64State, guest_x31)
 #define OFFB_PC  offsetof(VexGuestRISCV64State, guest_pc)
 
+#define OFFB_F0   offsetof(VexGuestRISCV64State, guest_f0)
+#define OFFB_F1   offsetof(VexGuestRISCV64State, guest_f1)
+#define OFFB_F2   offsetof(VexGuestRISCV64State, guest_f2)
+#define OFFB_F3   offsetof(VexGuestRISCV64State, guest_f3)
+#define OFFB_F4   offsetof(VexGuestRISCV64State, guest_f4)
+#define OFFB_F5   offsetof(VexGuestRISCV64State, guest_f5)
+#define OFFB_F6   offsetof(VexGuestRISCV64State, guest_f6)
+#define OFFB_F7   offsetof(VexGuestRISCV64State, guest_f7)
+#define OFFB_F8   offsetof(VexGuestRISCV64State, guest_f8)
+#define OFFB_F9   offsetof(VexGuestRISCV64State, guest_f9)
+#define OFFB_F10  offsetof(VexGuestRISCV64State, guest_f10)
+#define OFFB_F11  offsetof(VexGuestRISCV64State, guest_f11)
+#define OFFB_F12  offsetof(VexGuestRISCV64State, guest_f12)
+#define OFFB_F13  offsetof(VexGuestRISCV64State, guest_f13)
+#define OFFB_F14  offsetof(VexGuestRISCV64State, guest_f14)
+#define OFFB_F15  offsetof(VexGuestRISCV64State, guest_f15)
+#define OFFB_F16  offsetof(VexGuestRISCV64State, guest_f16)
+#define OFFB_F17  offsetof(VexGuestRISCV64State, guest_f17)
+#define OFFB_F18  offsetof(VexGuestRISCV64State, guest_f18)
+#define OFFB_F19  offsetof(VexGuestRISCV64State, guest_f19)
+#define OFFB_F20  offsetof(VexGuestRISCV64State, guest_f20)
+#define OFFB_F21  offsetof(VexGuestRISCV64State, guest_f21)
+#define OFFB_F22  offsetof(VexGuestRISCV64State, guest_f22)
+#define OFFB_F23  offsetof(VexGuestRISCV64State, guest_f23)
+#define OFFB_F24  offsetof(VexGuestRISCV64State, guest_f24)
+#define OFFB_F25  offsetof(VexGuestRISCV64State, guest_f25)
+#define OFFB_F26  offsetof(VexGuestRISCV64State, guest_f26)
+#define OFFB_F27  offsetof(VexGuestRISCV64State, guest_f27)
+#define OFFB_F28  offsetof(VexGuestRISCV64State, guest_f28)
+#define OFFB_F29  offsetof(VexGuestRISCV64State, guest_f29)
+#define OFFB_F30  offsetof(VexGuestRISCV64State, guest_f30)
+#define OFFB_F31  offsetof(VexGuestRISCV64State, guest_f31)
+#define OFFB_FCSR offsetof(VexGuestRISCV64State, guest_fcsr)
+
 #define OFFB_EMNOTE        offsetof(VexGuestRISCV64State, guest_EMNOTE)
 #define OFFB_CMSTART       offsetof(VexGuestRISCV64State, guest_CMSTART)
 #define OFFB_CMLEN         offsetof(VexGuestRISCV64State, guest_CMLEN)
@@ -365,6 +399,116 @@ static void putPC(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
 {
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I64);
    stmt(irsb, IRStmt_Put(OFFB_PC, e));
+}
+
+/*------------------------------------------------------------*/
+/*--- Floating-point registers                             ---*/
+/*------------------------------------------------------------*/
+
+static Int offsetFReg(UInt fregNo)
+{
+   switch (fregNo) {
+   case 0:
+      return OFFB_F0;
+   case 1:
+      return OFFB_F1;
+   case 2:
+      return OFFB_F2;
+   case 3:
+      return OFFB_F3;
+   case 4:
+      return OFFB_F4;
+   case 5:
+      return OFFB_F5;
+   case 6:
+      return OFFB_F6;
+   case 7:
+      return OFFB_F7;
+   case 8:
+      return OFFB_F8;
+   case 9:
+      return OFFB_F9;
+   case 10:
+      return OFFB_F10;
+   case 11:
+      return OFFB_F11;
+   case 12:
+      return OFFB_F12;
+   case 13:
+      return OFFB_F13;
+   case 14:
+      return OFFB_F14;
+   case 15:
+      return OFFB_F15;
+   case 16:
+      return OFFB_F16;
+   case 17:
+      return OFFB_F17;
+   case 18:
+      return OFFB_F18;
+   case 19:
+      return OFFB_F19;
+   case 20:
+      return OFFB_F20;
+   case 21:
+      return OFFB_F21;
+   case 22:
+      return OFFB_F22;
+   case 23:
+      return OFFB_F23;
+   case 24:
+      return OFFB_F24;
+   case 25:
+      return OFFB_F25;
+   case 26:
+      return OFFB_F26;
+   case 27:
+      return OFFB_F27;
+   case 28:
+      return OFFB_F28;
+   case 29:
+      return OFFB_F29;
+   case 30:
+      return OFFB_F30;
+   case 31:
+      return OFFB_F31;
+   default:
+      vassert(0);
+   }
+}
+
+/* Obtain ABI name of a register. */
+static const HChar* nameFReg(UInt fregNo)
+{
+   vassert(fregNo < 32);
+   static const HChar* names[32] = {
+      "ft0", "ft1", "ft2",  "ft3",  "ft4", "ft5", "ft6",  "ft7",
+      "fs0", "fs1", "fa0",  "fa1",  "fa2", "fa3", "fa4",  "fa5",
+      "fa6", "fa7", "fs2",  "fs3",  "fs4", "fs5", "fs6",  "fs7",
+      "fs8", "fs9", "fs10", "fs11", "ft8", "ft9", "ft10", "ft11"};
+   return names[fregNo];
+}
+
+/* Read a 64-bit value from a guest floating-point register. */
+static IRExpr* getFReg64(UInt fregNo)
+{
+   vassert(fregNo < 32);
+   return IRExpr_Get(offsetFReg(fregNo), Ity_F64);
+}
+
+/* Write a 64-bit value into a guest floating-point register. */
+static void putFReg64(/*OUT*/ IRSB* irsb, UInt fregNo, /*IN*/ IRExpr* e)
+{
+   vassert(fregNo < 32);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F64);
+   stmt(irsb, IRStmt_Put(offsetFReg(fregNo), e));
+}
+
+/* Write a 32-bit value into the fcsr. */
+static void putFCSR(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
+   stmt(irsb, IRStmt_Put(OFFB_FCSR, e));
 }
 
 /*------------------------------------------------------------*/
