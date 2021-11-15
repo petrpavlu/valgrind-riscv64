@@ -137,6 +137,7 @@ static HReg newVRegF(ISelEnv* env)
 
 static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
 static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
+static HReg iselFltExpr(ISelEnv* env, IRExpr* e);
 
 /*------------------------------------------------------------*/
 /*--- ISEL: Function call helpers                          ---*/
@@ -1055,6 +1056,75 @@ static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
 }
 
 /*------------------------------------------------------------*/
+/*--- ISEL: Floating point expressions                     ---*/
+/*------------------------------------------------------------*/
+
+/* DO NOT CALL THIS DIRECTLY ! */
+static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
+{
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(ty == Ity_F32 || ty == Ity_F64);
+
+   switch (e->tag) {
+   /* ------------------------ TEMP ------------------------- */
+   case Iex_RdTmp: {
+      return lookupIRTemp(env, e->Iex.RdTmp.tmp);
+   }
+
+   /* ------------------------ LOAD ------------------------- */
+   case Iex_Load: {
+      if (e->Iex.Load.end != Iend_LE)
+         goto irreducible;
+
+      HReg dst = newVRegF(env);
+      /* TODO Optimize the cases with small imm Add64/Sub64. */
+      HReg addr = iselIntExpr_R(env, e->Iex.Load.addr);
+
+      if (ty == Ity_F64)
+         addInstr(env, RISCV64Instr_FLD(dst, addr, 0));
+      else
+         goto irreducible;
+      return dst;
+   }
+
+   /* ------------------------- GET ------------------------- */
+   case Iex_Get: {
+      HReg dst  = newVRegF(env);
+      HReg base = get_baseblock_register();
+      Int  off  = e->Iex.Get.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
+      vassert(off >= -2048 && off < 2048);
+
+      if (ty == Ity_F64)
+         addInstr(env, RISCV64Instr_FLD(dst, base, off));
+      else
+         goto irreducible;
+      return dst;
+   }
+
+   default:
+      break;
+   }
+
+irreducible:
+   ppIRExpr(e);
+   vpanic("iselFltExpr(riscv64)");
+}
+
+/* Compute a floating-point value into a register, the identity of which is
+   returned. As with iselIntExpr_R, the register will be virtual and must not be
+   changed by subsequent code emitted by the caller. */
+static HReg iselFltExpr(ISelEnv* env, IRExpr* e)
+{
+   HReg r = iselFltExpr_wrk(env, e);
+
+   /* Sanity checks ... */
+   vassert(hregClass(r) == HRcFlt64);
+   vassert(hregIsVirtual(r));
+
+   return r;
+}
+
+/*------------------------------------------------------------*/
 /*--- ISEL: Statements                                     ---*/
 /*------------------------------------------------------------*/
 
@@ -1088,6 +1158,12 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             vassert(0);
          return;
       }
+      if (tyd == Ity_F64) {
+         HReg src  = iselFltExpr(env, stmt->Ist.Store.data);
+         HReg addr = iselIntExpr_R(env, stmt->Ist.Store.addr);
+         addInstr(env, RISCV64Instr_FSD(src, addr, 0));
+         return;
+      }
       break;
    }
 
@@ -1113,6 +1189,14 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             vassert(0);
          return;
       }
+      if (tyd == Ity_F64) {
+         HReg src  = iselFltExpr(env, stmt->Ist.Put.data);
+         HReg base = get_baseblock_register();
+         Int  off  = stmt->Ist.Put.offset - BASEBLOCK_OFFSET_ADJUSTMENT;
+         vassert(off >= -2048 && off < 2048);
+         addInstr(env, RISCV64Instr_FSD(src, base, off));
+         return;
+      }
       break;
    }
 
@@ -1125,6 +1209,12 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          HReg dst = lookupIRTemp(env, stmt->Ist.WrTmp.tmp);
          HReg src = iselIntExpr_R(env, stmt->Ist.WrTmp.data);
          addInstr(env, RISCV64Instr_MV(dst, src));
+         return;
+      }
+      if (ty == Ity_F64) {
+         HReg dst = lookupIRTemp(env, stmt->Ist.WrTmp.tmp);
+         HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
+         addInstr(env, RISCV64Instr_FMV_D(dst, src));
          return;
       }
       break;
