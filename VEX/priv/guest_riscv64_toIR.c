@@ -354,7 +354,7 @@ static Int offsetIReg64(UInt iregNo)
 }
 
 /* Obtain ABI name of a register. */
-static const HChar* nameIReg64(UInt iregNo)
+static const HChar* nameIReg(UInt iregNo)
 {
    vassert(iregNo < 32);
    static const HChar* names[32] = {
@@ -558,7 +558,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          ULong uimm = nzuimm9_2 << 2;
          putIReg64(irsb, rd,
                    binop(Iop_Add64, getIReg64(2 /*x2/sp*/), mkU64(uimm)));
-         DIP("c.addi4spn %s, %llu\n", nameIReg64(rd), uimm);
+         DIP("c.addi4spn %s, %llu\n", nameIReg(rd), uimm);
          return True;
       }
    }
@@ -571,7 +571,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm7_3 << 3;
       putFReg64(irsb, rd,
                 loadLE(Ity_F64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
-      DIP("c.fld %s, %llu(%s)\n", nameFReg(rd), uimm, nameIReg64(rs1));
+      DIP("c.fld %s, %llu(%s)\n", nameFReg(rd), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -585,7 +585,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          irsb, rd,
          unop(Iop_32Sto64,
               loadLE(Ity_I32, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)))));
-      DIP("c.lw %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+      DIP("c.lw %s, %llu(%s)\n", nameIReg(rd), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -597,7 +597,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm7_3 << 3;
       putIReg64(irsb, rd,
                 loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
-      DIP("c.ld %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+      DIP("c.ld %s, %llu(%s)\n", nameIReg(rd), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -609,7 +609,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm7_3 << 3;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               getFReg64(rs2));
-      DIP("c.fsd %s, %llu(%s)\n", nameFReg(rs2), uimm, nameIReg64(rs1));
+      DIP("c.fsd %s, %llu(%s)\n", nameFReg(rs2), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -621,7 +621,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm6_2 << 2;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               unop(Iop_64to32, getIReg64(rs2)));
-      DIP("c.sw %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+      DIP("c.sw %s, %llu(%s)\n", nameIReg(rs2), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -633,7 +633,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm7_3 << 3;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               getIReg64(rs2));
-      DIP("c.sd %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+      DIP("c.sd %s, %llu(%s)\n", nameIReg(rs2), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -655,7 +655,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          ULong simm = vex_sx_to_64(nzimm5_0, 6);
          putIReg64(irsb, rd_rs1,
                    binop(Iop_Add64, getIReg64(rd_rs1), mkU64(simm)));
-         DIP("c.addi %s, %lld\n", nameIReg64(rd_rs1), (Long)simm);
+         DIP("c.addi %s, %lld\n", nameIReg(rd_rs1), (Long)simm);
          return True;
       }
    }
@@ -670,7 +670,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          UInt simm = (UInt)vex_sx_to_64(imm5_0, 6);
          putIReg32(irsb, rd_rs1,
                    binop(Iop_Add32, getIReg32(rd_rs1), mkU32(simm)));
-         DIP("c.addiw %s, %d\n", nameIReg64(rd_rs1), (Int)simm);
+         DIP("c.addiw %s, %d\n", nameIReg(rd_rs1), (Int)simm);
          return True;
       }
    }
@@ -684,7 +684,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          ULong simm = vex_sx_to_64(imm5_0, 6);
          putIReg64(irsb, rd, mkU64(simm));
-         DIP("c.li %s, %lld\n", nameIReg64(rd), (Long)simm);
+         DIP("c.li %s, %lld\n", nameIReg(rd), (Long)simm);
          return True;
       }
    }
@@ -713,7 +713,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          /* Invalid C.LUI, fall through. */
       } else {
          putIReg64(irsb, rd, mkU64(vex_sx_to_64(nzimm17_12 << 12, 18)));
-         DIP("c.lui %s, 0x%x\n", nameIReg64(rd), nzimm17_12);
+         DIP("c.lui %s, 0x%x\n", nameIReg(rd), nzimm17_12);
          return True;
       }
    }
@@ -729,7 +729,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd_rs1,
                    binop(is_log ? Iop_Shr64 : Iop_Sar64, getIReg64(rd_rs1),
                          mkU8(nzuimm5_0)));
-         DIP("c.%s %s, %u\n", is_log ? "srli" : "srai", nameIReg64(rd_rs1),
+         DIP("c.%s %s, %u\n", is_log ? "srli" : "srai", nameIReg(rd_rs1),
              nzuimm5_0);
          return True;
       }
@@ -745,7 +745,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          ULong simm = vex_sx_to_64(imm5_0, 6);
          putIReg64(irsb, rd_rs1,
                    binop(Iop_And64, getIReg64(rd_rs1), mkU64(simm)));
-         DIP("c.andi %s, 0x%llx\n", nameIReg64(rd_rs1), simm);
+         DIP("c.andi %s, 0x%llx\n", nameIReg(rd_rs1), simm);
          return True;
       }
    }
@@ -778,7 +778,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          vassert(0);
       }
       putIReg64(irsb, rd_rs1, binop(op, getIReg64(rd_rs1), getIReg64(rs2)));
-      DIP("c.%s %s, %s\n", name, nameIReg64(rd_rs1), nameIReg64(rs2));
+      DIP("c.%s %s, %s\n", name, nameIReg(rd_rs1), nameIReg(rs2));
       return True;
    }
 
@@ -790,8 +790,8 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       putIReg32(irsb, rd_rs1,
                 binop(is_sub ? Iop_Sub32 : Iop_Add32, getIReg32(rd_rs1),
                       getIReg32(rs2)));
-      DIP("c.%s %s, %s\n", is_sub ? "subw" : "addw", nameIReg64(rd_rs1),
-          nameIReg64(rs2));
+      DIP("c.%s %s, %s\n", is_sub ? "subw" : "addw", nameIReg(rd_rs1),
+          nameIReg(rs2));
       return True;
    }
 
@@ -823,8 +823,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       putPC(irsb, mkU64(guest_pc_curr_instr + 2));
       dres->whatNext    = Dis_StopHere;
       dres->jk_StopHere = Ijk_Boring;
-      DIP("c.%s %s, 0x%llx\n", is_eq ? "beqz" : "bnez", nameIReg64(rs1),
-          dst_pc);
+      DIP("c.%s %s, 0x%llx\n", is_eq ? "beqz" : "bnez", nameIReg(rs1), dst_pc);
       return True;
    }
 
@@ -839,7 +838,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg64(irsb, rd_rs1,
                    binop(Iop_Shl64, getIReg64(rd_rs1), mkU8(nzuimm5_0)));
-         DIP("c.slli %s, %u\n", nameIReg64(rd_rs1), nzuimm5_0);
+         DIP("c.slli %s, %u\n", nameIReg(rd_rs1), nzuimm5_0);
          return True;
       }
    }
@@ -852,7 +851,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm8_3 << 3;
       putFReg64(irsb, rd,
                 loadLE(Ity_F64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
-      DIP("c.fldsp %s, %llu(%s)\n", nameFReg(rd), uimm, nameIReg64(rs1));
+      DIP("c.fldsp %s, %llu(%s)\n", nameFReg(rd), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -869,7 +868,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
                    unop(Iop_32Sto64,
                         loadLE(Ity_I32,
                                binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)))));
-         DIP("c.lwsp %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+         DIP("c.lwsp %s, %llu(%s)\n", nameIReg(rd), uimm, nameIReg(rs1));
          return True;
       }
    }
@@ -886,7 +885,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          putIReg64(
             irsb, rd,
             loadLE(Ity_I64, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm))));
-         DIP("c.ldsp %s, %llu(%s)\n", nameIReg64(rd), uimm, nameIReg64(rs1));
+         DIP("c.ldsp %s, %llu(%s)\n", nameIReg(rd), uimm, nameIReg(rs1));
          return True;
       }
    }
@@ -905,7 +904,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
             DIP("c.ret\n");
          } else {
             dres->jk_StopHere = Ijk_Boring;
-            DIP("c.jr %s\n", nameIReg64(rs1));
+            DIP("c.jr %s\n", nameIReg(rs1));
          }
          return True;
       }
@@ -919,7 +918,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          /* Invalid C.MV, fall through. */
       } else {
          putIReg64(irsb, rd, getIReg64(rs2));
-         DIP("c.mv %s, %s\n", nameIReg64(rd), nameIReg64(rs2));
+         DIP("c.mv %s, %s\n", nameIReg(rd), nameIReg(rs2));
          return True;
       }
    }
@@ -935,7 +934,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
          putPC(irsb, getIReg64(rs1));
          dres->whatNext    = Dis_StopHere;
          dres->jk_StopHere = Ijk_Call;
-         DIP("c.jalr %s\n", nameIReg64(rs1));
+         DIP("c.jalr %s\n", nameIReg(rs1));
          return True;
       }
    }
@@ -949,7 +948,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       } else {
          putIReg64(irsb, rd_rs1,
                    binop(Iop_Add64, getIReg64(rd_rs1), getIReg64(rs2)));
-         DIP("c.add %s, %s\n", nameIReg64(rd_rs1), nameIReg64(rs2));
+         DIP("c.add %s, %s\n", nameIReg(rd_rs1), nameIReg(rs2));
          return True;
       }
    }
@@ -962,7 +961,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm8_3 << 3;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               getFReg64(rs2));
-      DIP("c.fsdsp %s, %llu(%s)\n", nameFReg(rs2), uimm, nameIReg64(rs1));
+      DIP("c.fsdsp %s, %llu(%s)\n", nameFReg(rs2), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -974,7 +973,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm7_2 << 2;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               unop(Iop_64to32, getIReg64(rs2)));
-      DIP("c.swsp %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+      DIP("c.swsp %s, %llu(%s)\n", nameIReg(rs2), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -986,7 +985,7 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
       ULong uimm    = uimm8_3 << 3;
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(uimm)),
               getIReg64(rs2));
-      DIP("c.sdsp %s, %llu(%s)\n", nameIReg64(rs2), uimm, nameIReg64(rs1));
+      DIP("c.sdsp %s, %llu(%s)\n", nameIReg(rs2), uimm, nameIReg(rs1));
       return True;
    }
 
@@ -1016,7 +1015,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          /* Invalid LUI, fall through. */
       } else {
          putIReg64(irsb, rd, mkU64(vex_sx_to_64(imm31_12 << 12, 32)));
-         DIP("lui %s, 0x%x\n", nameIReg64(rd), imm31_12);
+         DIP("lui %s, 0x%x\n", nameIReg(rd), imm31_12);
          return True;
       }
    }
@@ -1031,7 +1030,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg64(
             irsb, rd,
             mkU64(guest_pc_curr_instr + vex_sx_to_64(imm31_12 << 12, 32)));
-         DIP("auipc %s, 0x%x\n", nameIReg64(rd), imm31_12);
+         DIP("auipc %s, 0x%x\n", nameIReg(rd), imm31_12);
          return True;
       }
    }
@@ -1049,7 +1048,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       dres->whatNext = Dis_StopHere;
       if (rd != 0) {
          dres->jk_StopHere = Ijk_Call;
-         DIP("jal %s, 0x%llx\n", nameIReg64(rd), dst_pc);
+         DIP("jal %s, 0x%llx\n", nameIReg(rd), dst_pc);
       } else {
          dres->jk_StopHere = Ijk_Boring;
          DIP("j 0x%llx\n", dst_pc);
@@ -1075,12 +1074,11 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             DIP("ret\n");
          } else {
             dres->jk_StopHere = Ijk_Boring;
-            DIP("jr %lld(%s)\n", (Long)simm, nameIReg64(rs1));
+            DIP("jr %lld(%s)\n", (Long)simm, nameIReg(rs1));
          }
       } else {
          dres->jk_StopHere = Ijk_Call;
-         DIP("jalr %s, %lld(%s)\n", nameIReg64(rd), (Long)simm,
-             nameIReg64(rs1));
+         DIP("jalr %s, %lld(%s)\n", nameIReg(rd), (Long)simm, nameIReg(rs1));
       }
       return True;
    }
@@ -1134,8 +1132,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putPC(irsb, mkU64(guest_pc_curr_instr + 4));
          dres->whatNext    = Dis_StopHere;
          dres->jk_StopHere = Ijk_Boring;
-         DIP("%s %s, %s, 0x%llx\n", name, nameIReg64(rs1), nameIReg64(rs2),
-             dst_pc);
+         DIP("%s %s, %s, 0x%llx\n", name, nameIReg(rs1), nameIReg(rs2), dst_pc);
          return True;
       }
    }
@@ -1187,8 +1184,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             vassert(0);
          }
          putIReg64(irsb, rd, expr);
-         DIP("%s %s, %lld(%s)\n", name, nameIReg64(rd), (Long)simm,
-             nameIReg64(rs1));
+         DIP("%s %s, %lld(%s)\n", name, nameIReg(rd), (Long)simm,
+             nameIReg(rs1));
          return True;
       }
    }
@@ -1228,8 +1225,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             vassert(0);
          }
          storeLE(irsb, ea, expr);
-         DIP("%s %s, %lld(%s)\n", name, nameIReg64(rs2), (Long)simm,
-             nameIReg64(rs1));
+         DIP("%s %s, %lld(%s)\n", name, nameIReg(rs2), (Long)simm,
+             nameIReg(rs1));
          return True;
       }
    }
@@ -1280,7 +1277,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             vassert(0);
          }
          putIReg64(irsb, rd, expr);
-         DIP("%s %s, %s, %lld\n", name, nameIReg64(rd), nameIReg64(rs1),
+         DIP("%s %s, %s, %lld\n", name, nameIReg(rd), nameIReg(rs1),
              (Long)simm);
          return True;
       }
@@ -1296,7 +1293,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          /* Invalid SLLI, fall through. */
       } else {
          putIReg64(irsb, rd, binop(Iop_Shl64, getIReg64(rs1), mkU8(uimm5_0)));
-         DIP("slli %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm5_0);
+         DIP("slli %s, %s, %u\n", nameIReg(rd), nameIReg(rs1), uimm5_0);
          return True;
       }
    }
@@ -1314,8 +1311,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd,
                    binop(is_log ? Iop_Shr64 : Iop_Sar64, getIReg64(rs1),
                          mkU8(uimm5_0)));
-         DIP("%s %s, %s, %u\n", is_log ? "srli" : "srai", nameIReg64(rd),
-             nameIReg64(rs1), uimm5_0);
+         DIP("%s %s, %s, %u\n", is_log ? "srli" : "srai", nameIReg(rd),
+             nameIReg(rs1), uimm5_0);
          return True;
       }
    }
@@ -1378,8 +1375,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             vassert(0);
          }
          putIReg64(irsb, rd, expr);
-         DIP("%s %s, %s, %s\n", name, nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
+         DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
          return True;
       }
    }
@@ -1419,7 +1416,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       } else {
          UInt simm = (UInt)vex_sx_to_64(imm11_0, 12);
          putIReg32(irsb, rd, binop(Iop_Add32, getIReg32(rs1), mkU32(simm)));
-         DIP("addiw %s, %s, %d\n", nameIReg64(rd), nameIReg64(rs1), (Int)simm);
+         DIP("addiw %s, %s, %d\n", nameIReg(rd), nameIReg(rs1), (Int)simm);
          return True;
       }
    }
@@ -1434,7 +1431,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          /* Invalid SLLIW, fall through. */
       } else {
          putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(uimm4_0)));
-         DIP("slliw %s, %s, %u\n", nameIReg64(rd), nameIReg64(rs1), uimm4_0);
+         DIP("slliw %s, %s, %u\n", nameIReg(rd), nameIReg(rs1), uimm4_0);
          return True;
       }
    }
@@ -1452,8 +1449,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg32(irsb, rd,
                    binop(is_log ? Iop_Shr32 : Iop_Sar32, getIReg32(rs1),
                          mkU8(uimm4_0)));
-         DIP("%s %s, %s, %u\n", is_log ? "srliw" : "sraiw", nameIReg64(rd),
-             nameIReg64(rs1), uimm4_0);
+         DIP("%s %s, %s, %u\n", is_log ? "srliw" : "sraiw", nameIReg(rd),
+             nameIReg(rs1), uimm4_0);
          return True;
       }
    }
@@ -1471,8 +1468,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg32(irsb, rd,
                    binop(is_add ? Iop_Add32 : Iop_Sub32, getIReg32(rs1),
                          getIReg32(rs2)));
-         DIP("%s %s, %s, %s\n", is_add ? "addw" : "subw", nameIReg64(rd),
-             nameIReg64(rs1), nameIReg64(rs2));
+         DIP("%s %s, %s, %s\n", is_add ? "addw" : "subw", nameIReg(rd),
+             nameIReg(rs1), nameIReg(rs2));
          return True;
       }
    }
@@ -1489,8 +1486,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg32(
             irsb, rd,
             binop(Iop_Shl32, getIReg32(rs1), unop(Iop_64to8, getIReg64(rs2))));
-         DIP("sllw %s, %s, %s\n", nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
+         DIP("sllw %s, %s, %s\n", nameIReg(rd), nameIReg(rs1), nameIReg(rs2));
          return True;
       }
    }
@@ -1508,8 +1504,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          putIReg32(irsb, rd,
                    binop(is_log ? Iop_Shr32 : Iop_Sar32, getIReg32(rs1),
                          unop(Iop_64to8, getIReg64(rs2))));
-         DIP("%s %s, %s, %s\n", is_log ? "srlw" : "sraw", nameIReg64(rd),
-             nameIReg64(rs1), nameIReg64(rs2));
+         DIP("%s %s, %s, %s\n", is_log ? "srlw" : "sraw", nameIReg(rd),
+             nameIReg(rs1), nameIReg(rs2));
          return True;
       }
    }
@@ -1572,8 +1568,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             vassert(0);
          }
          putIReg64(irsb, rd, expr);
-         DIP("%s %s, %s, %s\n", name, nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
+         DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
          return True;
       }
    }
@@ -1618,8 +1614,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             vassert(0);
          }
          putIReg32(irsb, rd, expr);
-         DIP("%s %s, %s, %s\n", name, nameIReg64(rd), nameIReg64(rs1),
-             nameIReg64(rs2));
+         DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
          return True;
       }
    }
@@ -1646,7 +1642,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       ULong simm    = vex_sx_to_64(imm11_0, 12);
       putFReg64(irsb, rd,
                 loadLE(Ity_F64, binop(Iop_Add64, getIReg64(rs1), mkU64(simm))));
-      DIP("fld %s, %lld(%s)\n", nameFReg(rd), (Long)simm, nameIReg64(rs1));
+      DIP("fld %s, %lld(%s)\n", nameFReg(rd), (Long)simm, nameIReg(rs1));
       return True;
    }
 
@@ -1658,7 +1654,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       ULong simm    = vex_sx_to_64(imm11_0, 12);
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
               getFReg64(rs2));
-      DIP("fsd %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg64(rs1));
+      DIP("fsd %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
       return True;
    }
 
@@ -1707,7 +1703,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
          DIP("lr.%s%s %s, (%s)%s\n", is_32 ? "w" : "d", nameAqRlSuffix(aqrl),
-             nameIReg64(rd), nameIReg64(rs1),
+             nameIReg(rd), nameIReg(rs1),
              abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
                                                : "");
          return True;
@@ -1794,8 +1790,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             stmt(irsb, IRStmt_MBE(Imbe_Fence));
 
          DIP("sc.%s%s %s, %s, (%s)%s\n", is_32 ? "w" : "d",
-             nameAqRlSuffix(aqrl), nameIReg64(rd), nameIReg64(rs2),
-             nameIReg64(rs1),
+             nameAqRlSuffix(aqrl), nameIReg(rd), nameIReg(rs2), nameIReg(rs1),
              abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
                                                : "");
          return True;
@@ -1899,8 +1894,7 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
             putIReg64(irsb, rd, widenSto64(ty, mkexpr(old)));
 
          DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d",
-             nameAqRlSuffix(aqrl), nameIReg64(rd), nameIReg64(rs2),
-             nameIReg64(rs1));
+             nameAqRlSuffix(aqrl), nameIReg(rd), nameIReg(rs2), nameIReg(rs1));
          return True;
       }
    }
