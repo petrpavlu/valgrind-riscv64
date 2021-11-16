@@ -1041,9 +1041,8 @@ static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
 }
 
 /* Compute a 128-bit value into a register pair, which is returned as the first
-   two parameters. As with iselIntExpr_R, these may be either real or virtual
-   regs; in any case they must not be changed by subsequent code emitted by the
-   caller. */
+   two parameters. As with iselIntExpr_R, these will be virtual registers and
+   they must not be changed by subsequent code emitted by the caller. */
 static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
 {
    iselInt128Expr_wrk(rHi, rLo, env, e);
