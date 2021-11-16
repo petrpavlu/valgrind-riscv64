@@ -1887,15 +1887,18 @@ void genSpill_RISCV64(/*OUT*/ HInstr** i1,
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == True);
 
+   HReg base   = get_baseblock_register();
+   Int  soff12 = offsetB - BASEBLOCK_OFFSET_ADJUSTMENT;
+   vassert(soff12 >= -2048 && soff12 < 2048);
+
    HRegClass rclass = hregClass(rreg);
    switch (rclass) {
-   case HRcInt64: {
-      HReg base   = get_baseblock_register();
-      Int  soff12 = offsetB - BASEBLOCK_OFFSET_ADJUSTMENT;
-      vassert(soff12 >= -2048 && soff12 < 2048);
+   case HRcInt64:
       *i1 = RISCV64Instr_SD(rreg, base, soff12);
       return;
-   }
+   case HRcFlt64:
+      *i1 = RISCV64Instr_FSD(rreg, base, soff12);
+      return;
    default:
       ppHRegClass(rclass);
       vpanic("genSpill_RISCV64: unimplemented regclass");
@@ -1912,15 +1915,18 @@ void genReload_RISCV64(/*OUT*/ HInstr** i1,
    vassert(!hregIsVirtual(rreg));
    vassert(mode64 == True);
 
+   HReg base   = get_baseblock_register();
+   Int  soff12 = offsetB - BASEBLOCK_OFFSET_ADJUSTMENT;
+   vassert(soff12 >= -2048 && soff12 < 2048);
+
    HRegClass rclass = hregClass(rreg);
    switch (rclass) {
-   case HRcInt64: {
-      HReg base   = get_baseblock_register();
-      Int  soff12 = offsetB - BASEBLOCK_OFFSET_ADJUSTMENT;
-      vassert(soff12 >= -2048 && soff12 < 2048);
+   case HRcInt64:
       *i1 = RISCV64Instr_LD(rreg, base, soff12);
       return;
-   }
+   case HRcFlt64:
+      *i1 = RISCV64Instr_FLD(rreg, base, soff12);
+      return;
    default:
       ppHRegClass(rclass);
       vpanic("genReload_RISCV64: unimplemented regclass");
@@ -1931,11 +1937,14 @@ RISCV64Instr* genMove_RISCV64(HReg from, HReg to, Bool mode64)
 {
    vassert(mode64 == True);
 
-   switch (hregClass(from)) {
+   HRegClass rclass = hregClass(from);
+   switch (rclass) {
    case HRcInt64:
       return RISCV64Instr_MV(to, from);
+   case HRcFlt64:
+      return RISCV64Instr_FMV_D(to, from);
    default:
-      ppHRegClass(hregClass(from));
+      ppHRegClass(rclass);
       vpanic("genMove_RISCV64: unimplemented regclass");
    }
 }
