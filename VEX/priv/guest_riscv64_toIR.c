@@ -268,10 +268,10 @@ static IRExpr* narrowFrom64(IRType dstTy, IRExpr* e)
 #define OFFB_F31  offsetof(VexGuestRISCV64State, guest_f31)
 #define OFFB_FCSR offsetof(VexGuestRISCV64State, guest_fcsr)
 
-#define OFFB_EMNOTE        offsetof(VexGuestRISCV64State, guest_EMNOTE)
-#define OFFB_CMSTART       offsetof(VexGuestRISCV64State, guest_CMSTART)
-#define OFFB_CMLEN         offsetof(VexGuestRISCV64State, guest_CMLEN)
-#define OFFB_NRADDR        offsetof(VexGuestRISCV64State, guest_NRADDR)
+#define OFFB_EMNOTE  offsetof(VexGuestRISCV64State, guest_EMNOTE)
+#define OFFB_CMSTART offsetof(VexGuestRISCV64State, guest_CMSTART)
+#define OFFB_CMLEN   offsetof(VexGuestRISCV64State, guest_CMLEN)
+#define OFFB_NRADDR  offsetof(VexGuestRISCV64State, guest_NRADDR)
 
 #define OFFB_LLSC_SIZE offsetof(VexGuestRISCV64State, guest_LLSC_SIZE)
 #define OFFB_LLSC_ADDR offsetof(VexGuestRISCV64State, guest_LLSC_ADDR)
@@ -1857,22 +1857,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          case 0b10000:
             name = "amomin";
             res  = IRExpr_ITE(
-               binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), lhs, rhs);
+                binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), lhs, rhs);
             break;
          case 0b10100:
             name = "amomax";
             res  = IRExpr_ITE(
-               binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), rhs, lhs);
+                binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), rhs, lhs);
             break;
          case 0b11000:
             name = "amominu";
             res  = IRExpr_ITE(
-               binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), lhs, rhs);
+                binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), lhs, rhs);
             break;
          case 0b11100:
             name = "amomaxu";
             res  = IRExpr_ITE(
-               binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), rhs, lhs);
+                binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), rhs, lhs);
             break;
          default:
             vassert(0);
@@ -1959,7 +1959,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
           getUIntLittleEndianly(code + 8) == word3 &&
           getUIntLittleEndianly(code + 12) == word4) {
          /* Got a "Special" instruction preamble. Which one is it? */
-         dres->len = 20;
+         dres->len  = 20;
          UInt which = getUIntLittleEndianly(code + 16);
          if (which == 0x00a56533 /* or a0, a0, a0 */) {
             /* a3 = client_request ( a4 ) */
