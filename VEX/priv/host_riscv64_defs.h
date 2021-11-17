@@ -163,7 +163,9 @@ typedef enum {
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_FMV_D,           /* Copy one 64-bit floating-point register to
                                  another. */
+   RISCV64in_FLW,             /* 32-bit floating-point load. */
    RISCV64in_FLD,             /* 64-bit floating-point load. */
+   RISCV64in_FSW,             /* 32-bit floating-point store. */
    RISCV64in_FSD,             /* 64-bit floating-point store. */
    RISCV64in_CAS_W,           /* 32-bit compare-and-swap pseudoinstruction. */
    RISCV64in_CAS_D,           /* 64-bit compare-and-swap pseudoinstruction. */
@@ -464,12 +466,24 @@ typedef struct {
          HReg base;
          Int  soff12; /* -2048 .. +2047 */
       } FLD;
+      /* 32-bit floating-point load. */
+      struct {
+         HReg dst;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
+      } FLW;
       /* 64-bit floating-point store. */
       struct {
          HReg src;
          HReg base;
          Int  soff12; /* -2048 .. +2047 */
       } FSD;
+      /* 32-bit floating-point store. */
+      struct {
+         HReg src;
+         HReg base;
+         Int  soff12; /* -2048 .. +2047 */
+      } FSW;
       /* 32-bit compare-and-swap pseudoinstruction. */
       struct {
          HReg old;
@@ -589,7 +603,9 @@ RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FLD(HReg dst, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_FLW(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_FSD(HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_FSW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SC_W(HReg res, HReg src, HReg addr);
 RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);

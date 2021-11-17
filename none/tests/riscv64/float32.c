@@ -8,10 +8,38 @@ static void test_float32_shared(void)
    printf("RV64F single-precision FP instruction set, shared operations\n");
 
    /* --------------- flw rd, imm[11:0](rs1) ---------------- */
-   /* TODO Implement. */
+   TESTINST_1_1_FLOAD(4, "flw fa0, 0(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 4(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 8(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 16(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 32(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 64(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 128(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 256(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 512(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 1024(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, 2040(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, -4(a1)", fa0, a1);
+   TESTINST_1_1_FLOAD(4, "flw fa0, -2048(a1)", fa0, a1);
+
+   TESTINST_1_1_FLOAD(4, "flw fa4, 0(a5)", fa4, a5);
 
    /* --------------- fsw rs2, imm[11:0](rs1) --------------- */
-   /* TODO Implement. */
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 0(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 4(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 8(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 16(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 32(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 64(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 128(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 256(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 512(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 1024(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, 2040(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, -4(a1)", 0xabcdef0123456789, fa0, a1);
+   TESTINST_0_2_FSTORE(4, "fsw fa0, -2048(a1)", 0xabcdef0123456789, fa0, a1);
+
+   TESTINST_0_2_FSTORE(4, "fsw fa4, 0(a5)", 0xabcdef0123456789, fa4, a5);
 
    /* ------------ fmadd.s rd, rs1, rs2, rs3, rm ------------ */
    /* TODO Implement. */

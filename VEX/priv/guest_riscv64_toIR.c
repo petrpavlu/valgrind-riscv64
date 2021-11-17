@@ -504,6 +504,30 @@ static void putFReg64(/*OUT*/ IRSB* irsb, UInt fregNo, /*IN*/ IRExpr* e)
    stmt(irsb, IRStmt_Put(offsetFReg(fregNo), e));
 }
 
+/* Read a 32-bit value from a guest floating-point register. */
+static IRExpr* getFReg32(UInt fregNo)
+{
+   vassert(fregNo < 32);
+   /* Note that the following access depends on the host being little-endian
+      which is checked in disInstr_RISCV64(). */
+   return IRExpr_Get(offsetFReg(fregNo), Ity_F32);
+}
+
+/* Write a 32-bit value into a guest floating-point register. */
+static void putFReg32(/*OUT*/ IRSB* irsb, UInt fregNo, /*IN*/ IRExpr* e)
+{
+   vassert(fregNo < 32);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_F32);
+   /* Note that the following access depends on the host being little-endian
+      which is checked in disInstr_RISCV64(). */
+   Int offset = offsetFReg(fregNo);
+   stmt(irsb, IRStmt_Put(offset, e));
+   /* Write 1's in the upper bits of the target 64-bit register to create
+      a NaN-boxed value, as mandated by the RISC-V ISA. */
+   stmt(irsb, IRStmt_Put(offset + 4, mkU32(0xffffffff)));
+   /* TODO Check that this works with Memcheck. */
+}
+
 /* Write a 32-bit value into the fcsr. */
 static void putFCSR(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
 {
@@ -1620,19 +1644,33 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* -------------- RV64D standard extension --------------- */
+   /* -------------- RV64F standard extension --------------- */
 
    /* --------------- flw rd, imm[11:0](rs1) ---------------- */
    if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b010) {
-      /* TODO Implement. */
+      UInt  rd      = INSN(11, 7);
+      UInt  rs1     = INSN(19, 15);
+      UInt  imm11_0 = INSN(31, 20);
+      ULong simm    = vex_sx_to_64(imm11_0, 12);
+      putFReg32(irsb, rd,
+                loadLE(Ity_F32, binop(Iop_Add64, getIReg64(rs1), mkU64(simm))));
+      DIP("flw %s, %lld(%s)\n", nameFReg(rd), (Long)simm, nameIReg(rs1));
       return True;
    }
 
    /* --------------- fsw rs2, imm[11:0](rs1) --------------- */
    if (INSN(6, 0) == 0b0100111 && INSN(14, 12) == 0b010) {
-      /* TODO Implement. */
+      UInt  rs1     = INSN(19, 15);
+      UInt  rs2     = INSN(24, 20);
+      UInt  imm11_0 = INSN(31, 25) << 5 | INSN(11, 7);
+      ULong simm    = vex_sx_to_64(imm11_0, 12);
+      storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
+              getFReg32(rs2));
+      DIP("fsw %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
       return True;
    }
+
+   /* -------------- RV64D standard extension --------------- */
 
    /* --------------- fld rd, imm[11:0](rs1) ---------------- */
    if (INSN(6, 0) == 0b0000111 && INSN(14, 12) == 0b011) {
@@ -2052,6 +2090,9 @@ DisResult disInstr_RISCV64(IRSB*              irsb,
    vex_bzero(&dres, sizeof(dres));
 
    vassert(guest_arch == VexArchRISCV64);
+   /* Check that the host is little-endian as getFReg32() and putFReg32() depend
+      on this fact. */
+   vassert(host_endness == VexEndnessLE);
 
    /* Try to decode. */
    Bool ok = disInstr_RISCV64_WRK(&dres, irsb, &guest_code[delta], guest_IP,

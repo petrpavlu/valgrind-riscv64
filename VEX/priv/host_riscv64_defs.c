@@ -569,6 +569,16 @@ RISCV64Instr* RISCV64Instr_FLD(HReg dst, HReg base, Int soff12)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_FLW(HReg dst, HReg base, Int soff12)
+{
+   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                  = RISCV64in_FLW;
+   i->RISCV64in.FLW.dst    = dst;
+   i->RISCV64in.FLW.base   = base;
+   i->RISCV64in.FLW.soff12 = soff12;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_FSD(HReg src, HReg base, Int soff12)
 {
    RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -576,6 +586,16 @@ RISCV64Instr* RISCV64Instr_FSD(HReg src, HReg base, Int soff12)
    i->RISCV64in.FSD.src    = src;
    i->RISCV64in.FSD.base   = base;
    i->RISCV64in.FSD.soff12 = soff12;
+   return i;
+}
+
+RISCV64Instr* RISCV64Instr_FSW(HReg src, HReg base, Int soff12)
+{
+   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                  = RISCV64in_FSW;
+   i->RISCV64in.FSW.src    = src;
+   i->RISCV64in.FSW.base   = base;
+   i->RISCV64in.FSW.soff12 = soff12;
    return i;
 }
 
@@ -1048,11 +1068,25 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.FLD.base);
       vex_printf(")");
       return;
+   case RISCV64in_FLW:
+      vex_printf("flw     ");
+      ppHRegRISCV64(i->RISCV64in.FLW.dst);
+      vex_printf(", %d(", i->RISCV64in.FLW.soff12);
+      ppHRegRISCV64(i->RISCV64in.FLW.base);
+      vex_printf(")");
+      return;
    case RISCV64in_FSD:
       vex_printf("fsd     ");
       ppHRegRISCV64(i->RISCV64in.FSD.src);
       vex_printf(", %d(", i->RISCV64in.FSD.soff12);
       ppHRegRISCV64(i->RISCV64in.FSD.base);
+      vex_printf(")");
+      return;
+   case RISCV64in_FSW:
+      vex_printf("fsw     ");
+      ppHRegRISCV64(i->RISCV64in.FSW.src);
+      vex_printf(", %d(", i->RISCV64in.FSW.soff12);
+      ppHRegRISCV64(i->RISCV64in.FSW.base);
       vex_printf(")");
       return;
    case RISCV64in_CAS_W:
@@ -1475,9 +1509,17 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmWrite, i->RISCV64in.FLD.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.FLD.base);
       return;
+   case RISCV64in_FLW:
+      addHRegUse(u, HRmWrite, i->RISCV64in.FLW.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.FLW.base);
+      return;
    case RISCV64in_FSD:
       addHRegUse(u, HRmRead, i->RISCV64in.FSD.src);
       addHRegUse(u, HRmRead, i->RISCV64in.FSD.base);
+      return;
+   case RISCV64in_FSW:
+      addHRegUse(u, HRmRead, i->RISCV64in.FSW.src);
+      addHRegUse(u, HRmRead, i->RISCV64in.FSW.base);
       return;
    case RISCV64in_CAS_W:
       addHRegUse(u, HRmWrite, i->RISCV64in.CAS_W.old);
@@ -1819,9 +1861,17 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.FLD.dst);
       mapReg(m, &i->RISCV64in.FLD.base);
       return;
+   case RISCV64in_FLW:
+      mapReg(m, &i->RISCV64in.FLW.dst);
+      mapReg(m, &i->RISCV64in.FLW.base);
+      return;
    case RISCV64in_FSD:
       mapReg(m, &i->RISCV64in.FSD.src);
       mapReg(m, &i->RISCV64in.FSD.base);
+      return;
+   case RISCV64in_FSW:
+      mapReg(m, &i->RISCV64in.FSW.src);
+      mapReg(m, &i->RISCV64in.FSW.base);
       return;
    case RISCV64in_CAS_W:
       mapReg(m, &i->RISCV64in.CAS_W.old);
@@ -2770,6 +2820,17 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = emit_I(p, 0b0000111, dst, 0b011, base, imm11_0);
       goto done;
    }
+   case RISCV64in_FLW: {
+      /* flw dst, soff12(base) */
+      UInt dst    = fregEnc(i->RISCV64in.FLW.dst);
+      UInt base   = iregEnc(i->RISCV64in.FLW.base);
+      Int  soff12 = i->RISCV64in.FLW.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_I(p, 0b0000111, dst, 0b010, base, imm11_0);
+      goto done;
+   }
    case RISCV64in_FSD: {
       /* fsd src, soff12(base) */
       UInt src    = fregEnc(i->RISCV64in.FSD.src);
@@ -2779,6 +2840,17 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt imm11_0 = soff12 & 0xfff;
 
       p = emit_S(p, 0b0100111, imm11_0, 0b011, base, src);
+      goto done;
+   }
+   case RISCV64in_FSW: {
+      /* fsw src, soff12(base) */
+      UInt src    = fregEnc(i->RISCV64in.FSW.src);
+      UInt base   = iregEnc(i->RISCV64in.FSW.base);
+      Int  soff12 = i->RISCV64in.FSW.soff12;
+      vassert(soff12 >= -2048 && soff12 < 2048);
+      UInt imm11_0 = soff12 & 0xfff;
+
+      p = emit_S(p, 0b0100111, imm11_0, 0b010, base, src);
       goto done;
    }
    case RISCV64in_CAS_W: {

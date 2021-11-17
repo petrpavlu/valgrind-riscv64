@@ -1,3 +1,101 @@
 RV64F single-precision FP instruction set, shared operations
+flw fa0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff41dc8da0
+  no memory changes
+flw fa0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff8aa9987b
+  no memory changes
+flw fa0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff355229e8
+  no memory changes
+flw fa0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xfffffffffeb20cc3
+  no memory changes
+flw fa0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffffdb9b22c9
+  no memory changes
+flw fa0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff879ff2e1
+  no memory changes
+flw fa0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff593a2a60
+  no memory changes
+flw fa0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffffec73d785
+  no memory changes
+flw fa0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff622d87cb
+  no memory changes
+flw fa0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffffad1b44c8
+  no memory changes
+flw fa0, 2040(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xfffffffff39743f9
+  no memory changes
+flw fa0, -4(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff70a54ae6
+  no memory changes
+flw fa0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xffffffff2d7e670a
+  no memory changes
+flw fa4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: fa4=0xffffffffe24b896b
+  no memory changes
+fsw fa0, 0(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 4(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 .. .. .. .. .. .. .. ..
+fsw fa0, 8(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 .. .. .. ..
+fsw fa0, 16(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 32(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 64(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 128(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 256(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+256]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 512(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+512]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 1024(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+1024]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa0, 2040(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+2032]  .. .. .. .. .. .. .. .. 89 67 45 23 .. .. .. ..
+fsw fa0, -4(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [-016]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+fsw fa0, -2048(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [-2048]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
+fsw fa4, 0(a5) ::
+  inputs: fa4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 .. .. .. .. .. .. .. .. .. .. .. ..
 
 RV64F single-precision FP instruction set, additions
