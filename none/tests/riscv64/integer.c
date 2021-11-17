@@ -199,7 +199,6 @@ static void test_integer_shared(void)
    TESTINST_0_2_Bxx_COND(4, "bgeu a0, a1, 1f", -1, -1, a0, a1);
 
    /* ---------------- lb rd, imm[11:0](rs1) ---------------- */
-#if 0 /* TODO Enable. */
    TESTINST_1_1_LOAD(4, "lb a0, 0(a1)", a0, a1);
    TESTINST_1_1_LOAD(4, "lb a0, 1(a1)", a0, a1);
    TESTINST_1_1_LOAD(4, "lb a0, 2(a1)", a0, a1);
@@ -217,10 +216,8 @@ static void test_integer_shared(void)
    TESTINST_1_1_LOAD(4, "lb a0, -2048(a1)", a0, a1);
 
    TESTINST_1_1_LOAD(4, "lb a4, 0(a5)", a4, a5);
-#endif
 
    /* ---------------- lh rd, imm[11:0](rs1) ---------------- */
-#if 0 /* TODO Enable. */
    TESTINST_1_1_LOAD(4, "lh a0, 0(a1)", a0, a1);
    TESTINST_1_1_LOAD(4, "lh a0, 2(a1)", a0, a1);
    TESTINST_1_1_LOAD(4, "lh a0, 4(a1)", a0, a1);
@@ -237,7 +234,6 @@ static void test_integer_shared(void)
    TESTINST_1_1_LOAD(4, "lh a0, -2048(a1)", a0, a1);
 
    TESTINST_1_1_LOAD(4, "lh a4, 0(a5)", a4, a5);
-#endif
 
    /* ---------------- lw rd, imm[11:0](rs1) ---------------- */
    TESTINST_1_1_LOAD(4, "lw a0, 0(a1)", a0, a1);
