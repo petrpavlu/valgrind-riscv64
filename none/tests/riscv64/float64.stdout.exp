@@ -1,3 +1,102 @@
 RV64D double-precision FP instruction set, shared operations
+fld fa0, 0(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xbeafe48541dc8da0
+  no memory changes
+fld fa0, 4(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xddcfb6e48aa9987b
+  no memory changes
+fld fa0, 8(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xd592cd65355229e8
+  no memory changes
+fld fa0, 16(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x2debefbafeb20cc3
+  no memory changes
+fld fa0, 32(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xcc833e0bdb9b22c9
+  no memory changes
+fld fa0, 64(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xb055d150879ff2e1
+  no memory changes
+fld fa0, 128(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xde42c04b593a2a60
+  no memory changes
+fld fa0, 256(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x4fd0ff83ec73d785
+  no memory changes
+fld fa0, 512(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x95cbb202622d87cb
+  no memory changes
+fld fa0, 1024(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x4f68505bad1b44c8
+  no memory changes
+fld fa0, 2040(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x02cebbb5f39743f9
+  no memory changes
+fld fa0, -4(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0xf13ab1ea70a54ae6
+  no memory changes
+fld fa0, -2048(a1) ::
+  inputs: a1=&area_mid
+  output: fa0=0x2babb4d62d7e670a
+  no memory changes
+fld fa4, 0(a5) ::
+  inputs: a5=&area_mid
+  output: fa4=0x1d620107e24b896b
+  no memory changes
+fsd fa0, 0(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 4(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. 89 67 45 23 01 ef cd ab .. .. .. ..
+fsd fa0, 8(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+000]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+fsd fa0, 16(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+016]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 32(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+032]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 64(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+064]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 128(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+128]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 256(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+256]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 512(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+512]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 1024(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+1024]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa0, 2040(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [+2032]  .. .. .. .. .. .. .. .. 89 67 45 23 01 ef cd ab
+fsd fa0, -4(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [-016]  .. .. .. .. .. .. .. .. .. .. .. .. 89 67 45 23
+  [+000]  01 ef cd ab .. .. .. .. .. .. .. .. .. .. .. ..
+fsd fa0, -2048(a1) ::
+  inputs: fa0=0xabcdef0123456789, a1=&area_mid
+  [-2048]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
+fsd fa4, 0(a5) ::
+  inputs: fa4=0xabcdef0123456789, a5=&area_mid
+  [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 
 RV64D double-precision FP instruction set, additions
