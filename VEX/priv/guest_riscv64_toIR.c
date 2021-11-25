@@ -556,6 +556,31 @@ static const HChar* nameAqRlSuffix(UInt aqrl)
    }
 }
 
+/* Obtain a floating-point rounding-mode operand string. */
+static const HChar* nameRMOperand(UInt rm)
+{
+   switch (rm) {
+   case 0b000:
+      return ", rne";
+   case 0b001:
+      return ", rtz";
+   case 0b010:
+      return ", rdn";
+   case 0b011:
+      return ", rup";
+   case 0b100:
+      return ", rmm";
+   case 0b101:
+      return ", <invalid>";
+   case 0b110:
+      return ", <invalid>";
+   case 0b111:
+      return ""; /* dyn */
+   default:
+      vpanic("nameRMOperand(riscv64)");
+   }
+}
+
 /*------------------------------------------------------------*/
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
@@ -1693,6 +1718,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
               getFReg64(rs2));
       DIP("fsd %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
+      return True;
+   }
+
+   /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00000 &&
+       INSN(31, 25) == 0b1101001) {
+      UInt rd  = INSN(11, 7);
+      UInt rm  = INSN(14, 12); /* Ignored as the result is always exact. */
+      UInt rs1 = INSN(19, 15);
+      putFReg64(irsb, rd, unop(Iop_I32StoF64, getIReg32(rs1)));
+      DIP("fcvt.d.w %s, %s%s\n", nameFReg(rd), nameIReg(rs1),
+          nameRMOperand(rm));
       return True;
    }
 

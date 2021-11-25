@@ -1088,6 +1088,22 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       return dst;
    }
 
+   /* ---------------------- UNARY OP ----------------------- */
+   case Iex_Unop: {
+      switch (e->Iex.Unop.op) {
+      case Iop_I32StoF64: {
+         HReg dst = newVRegF(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FCVT_D_W(dst, src));
+         return dst;
+      }
+      default:
+         break;
+      }
+
+      break;
+   }
+
    /* ------------------------- GET ------------------------- */
    case Iex_Get: {
       HReg dst  = newVRegF(env);
