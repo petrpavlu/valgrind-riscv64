@@ -71,7 +71,7 @@
      IRRoundingMode-encoded value) to which the FPU's rounding mode was most
      recently set. Setting to NULL is always safe. Used to avoid redundant
      settings of the FPU's rounding mode, as described in
-     set_FPCR_rounding_mode() below.
+     set_fcsr_rounding_mode() below.
 
    Note, this is all (well, mostly) host-independent.
 */
@@ -138,6 +138,75 @@ static HReg newVRegF(ISelEnv* env)
 static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e);
 static void iselInt128Expr(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e);
 static HReg iselFltExpr(ISelEnv* env, IRExpr* e);
+
+/*------------------------------------------------------------*/
+/*--- ISEL: FP rounding mode helpers                       ---*/
+/*------------------------------------------------------------*/
+
+/* Set the FP rounding mode: 'mode' is an I32-typed expression denoting a value
+   of IRRoundingMode. Set the fcsr RISC-V register to have the same rounding.
+
+   All attempts to set the rounding mode have to be routed through this
+   function for things to work properly. Refer to the comment in the AArch64
+   backend for set_FPCR_rounding_mode() how the mechanism relies on the SSA
+   property of IR and CSE.
+*/
+static void set_fcsr_rounding_mode(ISelEnv* env, IRExpr* mode)
+{
+   vassert(typeOfIRExpr(env->type_env, mode) == Ity_I32);
+
+   /* Do we need to do anything? */
+   if (env->previous_rm && env->previous_rm->tag == Iex_RdTmp &&
+       mode->tag == Iex_RdTmp &&
+       env->previous_rm->Iex.RdTmp.tmp == mode->Iex.RdTmp.tmp) {
+      /* No - setting it to what it was before.  */
+      vassert(typeOfIRExpr(env->type_env, env->previous_rm) == Ity_I32);
+      return;
+   }
+
+   /* No luck - we better set it, and remember what we set it to. */
+   env->previous_rm = mode;
+
+   /*
+      rounding mode                 |  IR  | RISC-V
+      ---------------------------------------------
+      to nearest, ties to even      | 0000 |   000
+      to -infinity                  | 0001 |   011
+      to +infinity                  | 0010 |   010
+      to zero                       | 0011 |   001
+      to nearest, ties away from 0  | 0100 |   100
+      prepare for shorter precision | 0101 |   111
+      to away from 0                | 0110 |   111
+      to nearest, ties towards 0    | 0111 |   111
+      invalid                       | 1000 |   111
+
+      All rounding modes not supported on RISC-V are mapped to 111 which is the
+      dynamic mode that is always invalid in fcsr and raises an illegal
+      instruction exception.
+
+      The mapping can be implemented using the following transformation:
+         t0 = 30 >> rm_IR
+         t1 = t0 & 19
+         t2 = t0 + 7
+         t3 = t1 + t2
+         fcsr_rm_RISCV = t3 >> t1
+   */
+   HReg rm_IR  = iselIntExpr_R(env, mode);
+   HReg imm_30 = newVRegI(env);
+   addInstr(env, RISCV64Instr_LI(imm_30, 30));
+   HReg t0 = newVRegI(env);
+   addInstr(env, RISCV64Instr_SRL(t0, imm_30, rm_IR));
+   HReg t1 = newVRegI(env);
+   addInstr(env, RISCV64Instr_ANDI(t1, t0, 19));
+   HReg t2 = newVRegI(env);
+   addInstr(env, RISCV64Instr_ADDI(t2, t0, 7));
+   HReg t3 = newVRegI(env);
+   addInstr(env, RISCV64Instr_ADD(t3, t1, t2));
+   HReg fcsr_rm_RISCV = newVRegI(env);
+   addInstr(env, RISCV64Instr_SRL(fcsr_rm_RISCV, t3, t1));
+   addInstr(env,
+            RISCV64Instr_CSRRW(hregRISCV64_x0(), fcsr_rm_RISCV, 0x002 /*frm*/));
+}
 
 /*------------------------------------------------------------*/
 /*--- ISEL: Function call helpers                          ---*/
@@ -838,6 +907,8 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_32Sto64:
          /* These are no-ops. */
          return iselIntExpr_R(env, e->Iex.Unop.arg);
+      case Iop_32to8:
+      case Iop_32to16:
       case Iop_64to8:
       case Iop_64to16:
       case Iop_64to32: {
@@ -1086,6 +1157,24 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       else
          vassert(0);
       return dst;
+   }
+
+   /* --------------------- TERNARY OP ---------------------- */
+   case Iex_Triop: {
+      switch (e->Iex.Triop.details->op) {
+      case Iop_DivF64: {
+         HReg dst  = newVRegF(env);
+         HReg argL = iselFltExpr(env, e->Iex.Triop.details->arg2);
+         HReg argR = iselFltExpr(env, e->Iex.Triop.details->arg3);
+         set_fcsr_rounding_mode(env, e->Iex.Triop.details->arg1);
+         addInstr(env, RISCV64Instr_FDIV_D(dst, argL, argR));
+         return dst;
+      }
+      default:
+         break;
+      }
+
+      break;
    }
 
    /* ---------------------- UNARY OP ----------------------- */

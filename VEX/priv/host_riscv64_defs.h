@@ -112,6 +112,8 @@ typedef enum {
                                  immediate */
    RISCV64in_OR,              /* Bitwise OR of two registers. */
    RISCV64in_AND,             /* Bitwise AND of two registers. */
+   RISCV64in_ANDI,            /* Bitwise AND of a register and a sx-12-bit
+                                 immediate. */
    RISCV64in_SLL,             /* Logical left shift on a register. */
    RISCV64in_SRL,             /* Logical right shift on a register. */
    RISCV64in_SRA,             /* Arithmetic right shift on a register. */
@@ -128,6 +130,8 @@ typedef enum {
    RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
    RISCV64in_SLTIU,           /* Unsigned comparison of a register and
                                  a sx-12-bit immediate. */
+   RISCV64in_CSRRW,           /* Atomic swap of values in a CSR an integer
+                                 register. */
    RISCV64in_MUL,             /* Multiplication of two registers, producing the
                                  lower 64 bits. */
    RISCV64in_MULH,            /* Signed multiplication of two registers,
@@ -162,6 +166,8 @@ typedef enum {
    RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_FMV_D,           /* Copy one 64-bit floating-point register to
+                                 another. */
+   RISCV64in_FDIV_D,          /* Division of a 64-bit floating-point register by
                                  another. */
    RISCV64in_FCVT_D_W,        /* Convert a 32-bit signed integer to a 64-bit
                                  floating-point number. */
@@ -253,6 +259,12 @@ typedef struct {
          HReg src1;
          HReg src2;
       } AND;
+      /* Bitwise AND of a register and a sx-12-bit immediate. */
+      struct {
+         HReg dst;
+         HReg src;
+         Int  simm12;
+      } ANDI;
       /* Logical left shift on a register. */
       struct {
          HReg dst;
@@ -325,6 +337,12 @@ typedef struct {
          HReg src;
          Int  simm12;
       } SLTIU;
+      /* Atomic swap of values in a CSR an integer register. */
+      struct {
+         HReg dst;
+         HReg src;
+         UInt csr;
+      } CSRRW;
       /* Multiplication of two registers, producing the lower 64 bits. */
       struct {
          HReg dst;
@@ -462,6 +480,12 @@ typedef struct {
          HReg dst;
          HReg src;
       } FMV_D;
+      /* Division of a 64-bit floating-point register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FDIV_D;
       /* Convert a 32-bit signed integer to a 64-bit floating-point number. */
       struct {
          HReg dst;
@@ -575,6 +599,7 @@ RISCV64Instr* RISCV64Instr_XOR(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_XORI(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_OR(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_AND(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_ANDI(HReg dst, HReg src, Int simm12);
 RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SRA(HReg dst, HReg src1, HReg src2);
@@ -587,6 +612,7 @@ RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLT(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
+RISCV64Instr* RISCV64Instr_CSRRW(HReg dst, HReg src, UInt csr);
 RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_MULH(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_MULHU(HReg dst, HReg src1, HReg src2);
@@ -609,6 +635,7 @@ RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
+RISCV64Instr* RISCV64Instr_FDIV_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FCVT_D_W(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FLD(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_FLW(HReg dst, HReg base, Int soff12);

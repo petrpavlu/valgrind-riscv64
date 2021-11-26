@@ -140,6 +140,12 @@ static IRExpr* binop(IROp op, IRExpr* a1, IRExpr* a2)
    return IRExpr_Binop(op, a1, a2);
 }
 
+/* Create a ternary-operation expression. */
+static IRExpr* triop(IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3)
+{
+   return IRExpr_Triop(op, a1, a2, a3);
+}
+
 /* Create an expression to load a value from memory (in the little-endian
    order). */
 static IRExpr* loadLE(IRType ty, IRExpr* addr)
@@ -533,6 +539,86 @@ static void putFCSR(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
 {
    vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
    stmt(irsb, IRStmt_Put(OFFB_FCSR, e));
+}
+
+/* Generate IR to get hold of the rounding mode bits and convert them to the IR
+   format. A floating-point operation can use either a static rounding mode
+   encoded in the instruction, or a dynamic rounding mode held in fcsr. Bind the
+   final result to the returned temporary. */
+static IRTemp mk_get_IR_rounding_mode(/*MOD*/ IRSB* irsb, UInt inst_rm_RISCV)
+{
+   /*
+      rounding mode                | RISC-V |  IR
+      --------------------------------------------
+      to nearest, ties to even     |   000  | 0000
+      to zero                      |   001  | 0011
+      to +infinity                 |   010  | 0010
+      to -infinity                 |   011  | 0001
+      to nearest, ties away from 0 |   100  | 0100
+      invalid                      |   101  | 1000
+      invalid                      |   110  | 1000
+      dynamic                      |   111  | 1000
+
+      The 'dynamic' value selects the mode from fcsr. Its value is valid when
+      encoded in the instruction but naturally invalid when found in fcsr.
+
+      A static mode is known at the decode time and can be directly expressed by
+      a respective rounding mode IR constant.
+
+      A dynamic mode requires a runtime mapping from the RISC-V to the IR mode.
+      It can be implemented using the following transformation:
+         t0 = 25 >> fcsr_rm_RISCV
+         t1 = t0 - 21
+         t2 = 3 >> t0
+         t3 = 3 << t2
+         rm_IR = t1 & t3
+   */
+   IRTemp rm_IR = newTemp(irsb, Ity_I32);
+   switch (inst_rm_RISCV) {
+   case 0b000:
+      assign(irsb, rm_IR, mkU32(Irrm_NEAREST));
+      break;
+   case 0b001:
+      assign(irsb, rm_IR, mkU32(Irrm_ZERO));
+      break;
+   case 0b010:
+      assign(irsb, rm_IR, mkU32(Irrm_PosINF));
+      break;
+   case 0b011:
+      assign(irsb, rm_IR, mkU32(Irrm_NegINF));
+      break;
+   case 0b100:
+      assign(irsb, rm_IR, mkU32(Irrm_NEAREST_TIE_AWAY_0));
+      break;
+   case 0b101:
+      assign(irsb, rm_IR, mkU32(Irrm_INVALID));
+      break;
+   case 0b110:
+      assign(irsb, rm_IR, mkU32(Irrm_INVALID));
+      break;
+   case 0b111: {
+      IRTemp fcsr_rm_RISCV = newTemp(irsb, Ity_I32);
+      assign(irsb, fcsr_rm_RISCV,
+             binop(Iop_And32,
+                   binop(Iop_Shr32, IRExpr_Get(OFFB_FCSR, Ity_I32), mkU8(5)),
+                   mkU32(7)));
+      IRTemp t0 = newTemp(irsb, Ity_I32);
+      assign(
+         irsb, t0,
+         binop(Iop_Shr32, mkU32(25), unop(Iop_32to8, mkexpr(fcsr_rm_RISCV))));
+      IRTemp t1 = newTemp(irsb, Ity_I32);
+      assign(irsb, t1, binop(Iop_Sub32, mkexpr(t0), mkU32(21)));
+      IRTemp t2 = newTemp(irsb, Ity_I32);
+      assign(irsb, t2, binop(Iop_Shr32, mkU32(3), unop(Iop_32to8, mkexpr(t0))));
+      IRTemp t3 = newTemp(irsb, Ity_I32);
+      assign(irsb, t3, binop(Iop_Shl32, mkU32(3), unop(Iop_32to8, mkexpr(t2))));
+      assign(irsb, rm_IR, binop(Iop_And32, mkexpr(t1), mkexpr(t3)));
+      break;
+   }
+   default:
+      vassert(0);
+   }
+   return rm_IR;
 }
 
 /*------------------------------------------------------------*/
@@ -1718,6 +1804,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
               getFReg64(rs2));
       DIP("fsd %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
+      return True;
+   }
+
+   /* --------------- fdiv.d rd, rs1, rs2, rm --------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b0001101) {
+      UInt   rd    = INSN(11, 7);
+      UInt   rm    = INSN(14, 12);
+      UInt   rs1   = INSN(19, 15);
+      UInt   rs2   = INSN(24, 20);
+      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
+      putFReg64(
+         irsb, rd,
+         triop(Iop_DivF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2)));
+      /* TODO Implement setting of fflags. */
+      DIP("fdiv.d %s, %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameFReg(rs2),
+          nameRMOperand(rm));
       return True;
    }
 
