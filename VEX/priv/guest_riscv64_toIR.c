@@ -1835,6 +1835,26 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------- fmv.x.d rd, rs1 ------------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
+       INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      putIReg64(irsb, rd, unop(Iop_ReinterpF64asI64, getFReg64(rs1)));
+      DIP("fmv.x.d %s, %s\n", nameIReg(rd), nameFReg(rs1));
+      return True;
+   }
+
+   /* ------------------- fmv.d.x rd, rs1 ------------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
+       INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1111001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      putFReg64(irsb, rd, unop(Iop_ReinterpI64asF64, getIReg64(rs1)));
+      DIP("fmv.d.x %s, %s\n", nameFReg(rd), nameIReg(rs1));
+      return True;
+   }
+
    /* -------------- RV64A standard extension --------------- */
 
    /* ----------------- lr.{w,d} rd, (rs1) ------------------ */

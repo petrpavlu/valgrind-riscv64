@@ -931,6 +931,12 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SRAI(dst, src, 32));
          return dst;
       }
+      case Iop_ReinterpF64asI64: {
+         HReg dst = newVRegI(env);
+         HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FMV_X_D(dst, src));
+         return dst;
+      }
       case Iop_CmpNEZ8:
       case Iop_CmpNEZ32:
       case Iop_CmpNEZ64: {
@@ -1184,6 +1190,12 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, RISCV64Instr_FCVT_D_W(dst, src));
+         return dst;
+      }
+      case Iop_ReinterpI64asF64: {
+         HReg dst = newVRegF(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FMV_D_X(dst, src));
          return dst;
       }
       default:
