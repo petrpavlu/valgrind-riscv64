@@ -169,6 +169,10 @@ typedef enum {
                                  another. */
    RISCV64in_FDIV_D,          /* Division of a 64-bit floating-point register by
                                  another. */
+   RISCV64in_FEQ_D,           /* Equality comparison of two 64-bit
+                                 floating-point registers. */
+   RISCV64in_FLT_D,           /* Less-than comparison of two 64-bit
+                                 floating-point registers. */
    RISCV64in_FCVT_D_W,        /* Convert a 32-bit signed integer to a 64-bit
                                  floating-point number. */
    RISCV64in_FMV_X_D,         /* Move as-is a 64-bit value from a floating-point
@@ -490,6 +494,18 @@ typedef struct {
          HReg src1;
          HReg src2;
       } FDIV_D;
+      /* Equality comparison of two 64-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FEQ_D;
+      /* Less-than comparison of two 64-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FLT_D;
       /* Convert a 32-bit signed integer to a 64-bit floating-point number. */
       struct {
          HReg dst;
@@ -652,6 +668,8 @@ RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FDIV_D(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FEQ_D(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FCVT_D_W(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_X_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_D_X(HReg dst, HReg src);

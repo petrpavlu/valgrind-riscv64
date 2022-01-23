@@ -1823,6 +1823,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ----------------- feq.d rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b010 &&
+       INSN(31, 25) == 0b1010001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      putIReg64(irsb, rd,
+                unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32,
+                           binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2)),
+                           mkU32(Ircr_EQ))));
+      /* TODO Implement setting of fflags (for a signaling NaN). */
+      DIP("feq.d %s, %s, %s\n", nameIReg(rd), nameFReg(rs1), nameFReg(rs2));
+      return True;
+   }
+
    /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00000 &&
        INSN(31, 25) == 0b1101001) {

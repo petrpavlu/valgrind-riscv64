@@ -856,6 +856,42 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_OR(dst, remuw_hi, divuw_lo));
          return dst;
       }
+      case Iop_CmpF64: {
+         HReg argL = iselFltExpr(env, e->Iex.Binop.arg1);
+         HReg argR = iselFltExpr(env, e->Iex.Binop.arg2);
+
+         HReg lt = newVRegI(env);
+         addInstr(env, RISCV64Instr_FLT_D(lt, argL, argR));
+         HReg gt = newVRegI(env);
+         addInstr(env, RISCV64Instr_FLT_D(gt, argR, argL));
+         HReg eq = newVRegI(env);
+         addInstr(env, RISCV64Instr_FEQ_D(eq, argL, argR));
+
+         /*
+            t0 = Ircr_UN
+            t1 = Ircr_LT
+            t2 = csel t1, t0, lt
+            t3 = Ircr_GT
+            t4 = csel t3, t2, gt
+            t5 = Ircr_EQ
+            dst = csel t5, t4, eq
+         */
+         HReg t0 = newVRegI(env);
+         addInstr(env, RISCV64Instr_LI(t0, Ircr_UN));
+         HReg t1 = newVRegI(env);
+         addInstr(env, RISCV64Instr_LI(t1, Ircr_LT));
+         HReg t2 = newVRegI(env);
+         addInstr(env, RISCV64Instr_CSEL(t2, t1, t0, lt));
+         HReg t3 = newVRegI(env);
+         addInstr(env, RISCV64Instr_LI(t3, Ircr_GT));
+         HReg t4 = newVRegI(env);
+         addInstr(env, RISCV64Instr_CSEL(t4, t3, t2, gt));
+         HReg t5 = newVRegI(env);
+         addInstr(env, RISCV64Instr_LI(t5, Ircr_EQ));
+         HReg dst = newVRegI(env);
+         addInstr(env, RISCV64Instr_CSEL(dst, t5, t4, gt));
+         return dst;
+      }
       default:
          break;
       }
