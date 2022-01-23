@@ -1652,7 +1652,18 @@ void VG_(redir_initialise) ( void )
    }
 
 #  elif defined(VGP_riscv64_linux)
-   /* No early intercepts are needed at this time. */
+   if (0==VG_(strcmp)("Memcheck", VG_(details).name)) {
+      add_hardwired_spec(
+         "ld-linux-riscv64-lp64d.so.1", "strlen",
+         (Addr)&VG_(riscv64_linux_REDIR_FOR_strlen),
+         complain_about_stripped_glibc_ldso
+      );
+      add_hardwired_spec(
+         "ld-linux-riscv64-lp64d.so.1", "index",
+         (Addr)&VG_(riscv64_linux_REDIR_FOR_index),
+         complain_about_stripped_glibc_ldso
+      );
+   }
 
 #  elif defined(VGP_x86_solaris)
    /* If we're using memcheck, use these intercepts right from
