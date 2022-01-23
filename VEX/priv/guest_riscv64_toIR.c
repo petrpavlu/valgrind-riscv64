@@ -1807,6 +1807,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* --------------- fmul.d rd, rs1, rs2, rm --------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b0001001) {
+      UInt   rd    = INSN(11, 7);
+      UInt   rm    = INSN(14, 12);
+      UInt   rs1   = INSN(19, 15);
+      UInt   rs2   = INSN(24, 20);
+      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
+      putFReg64(
+         irsb, rd,
+         triop(Iop_MulF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2)));
+      /* TODO Implement setting of fflags. */
+      DIP("fmul.d %s, %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameFReg(rs2),
+          nameRMOperand(rm));
+      return True;
+   }
+
    /* --------------- fdiv.d rd, rs1, rs2, rm --------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b0001101) {
       UInt   rd    = INSN(11, 7);

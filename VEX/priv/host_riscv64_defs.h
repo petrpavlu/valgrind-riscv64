@@ -167,6 +167,8 @@ typedef enum {
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_FMV_D,           /* Copy one 64-bit floating-point register to
                                  another. */
+   RISCV64in_FMUL_D,          /* Multiplication of two 64-bit floating-point
+                                 registers. */
    RISCV64in_FDIV_D,          /* Division of a 64-bit floating-point register by
                                  another. */
    RISCV64in_FEQ_D,           /* Equality comparison of two 64-bit
@@ -488,6 +490,12 @@ typedef struct {
          HReg dst;
          HReg src;
       } FMV_D;
+      /* Multiplication of two 64-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FMUL_D;
       /* Division of a 64-bit floating-point register by another. */
       struct {
          HReg dst;
@@ -667,6 +675,7 @@ RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
+RISCV64Instr* RISCV64Instr_FMUL_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FDIV_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FEQ_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2);
