@@ -1204,6 +1204,22 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
    /* --------------------- TERNARY OP ---------------------- */
    case Iex_Triop: {
       switch (e->Iex.Triop.details->op) {
+      case Iop_AddF64: {
+         HReg dst  = newVRegF(env);
+         HReg argL = iselFltExpr(env, e->Iex.Triop.details->arg2);
+         HReg argR = iselFltExpr(env, e->Iex.Triop.details->arg3);
+         set_fcsr_rounding_mode(env, e->Iex.Triop.details->arg1);
+         addInstr(env, RISCV64Instr_FADD_D(dst, argL, argR));
+         return dst;
+      }
+      case Iop_SubF64: {
+         HReg dst  = newVRegF(env);
+         HReg argL = iselFltExpr(env, e->Iex.Triop.details->arg2);
+         HReg argR = iselFltExpr(env, e->Iex.Triop.details->arg3);
+         set_fcsr_rounding_mode(env, e->Iex.Triop.details->arg1);
+         addInstr(env, RISCV64Instr_FSUB_D(dst, argL, argR));
+         return dst;
+      }
       case Iop_MulF64: {
          HReg dst  = newVRegF(env);
          HReg argL = iselFltExpr(env, e->Iex.Triop.details->arg2);

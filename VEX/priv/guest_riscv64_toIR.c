@@ -1807,35 +1807,43 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* --------------- fmul.d rd, rs1, rs2, rm --------------- */
-   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b0001001) {
-      UInt   rd    = INSN(11, 7);
-      UInt   rm    = INSN(14, 12);
-      UInt   rs1   = INSN(19, 15);
-      UInt   rs2   = INSN(24, 20);
-      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
-      putFReg64(
-         irsb, rd,
-         triop(Iop_MulF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2)));
+   /* ------------ f{add,sub}.d rd, rs1, rs2, rm ------------ */
+   /* ------------ f{mul,div}.d rd, rs1, rs2, rm ------------ */
+   if (INSN(6, 0) == 0b1010011 && INSN(31, 29) == 0b000 &&
+       INSN(26, 25) == 0b01) {
+      UInt         rd     = INSN(11, 7);
+      UInt         rm     = INSN(14, 12);
+      UInt         rs1    = INSN(19, 15);
+      UInt         rs2    = INSN(24, 20);
+      UInt         funct7 = INSN(31, 25);
+      IRTemp       rm_IR  = mk_get_IR_rounding_mode(irsb, rm);
+      const HChar* name;
+      IROp         op;
+      switch (funct7) {
+      case 0b0000001:
+         name = "fadd";
+         op   = Iop_AddF64;
+         break;
+      case 0b0000101:
+         name = "fsub";
+         op   = Iop_SubF64;
+         break;
+      case 0b0001001:
+         name = "fmul";
+         op   = Iop_MulF64;
+         break;
+      case 0b0001101:
+         name = "fdiv";
+         op   = Iop_DivF64;
+         break;
+      default:
+         vassert(0);
+      }
+      putFReg64(irsb, rd,
+                triop(op, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2)));
       /* TODO Implement setting of fflags. */
-      DIP("fmul.d %s, %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameFReg(rs2),
-          nameRMOperand(rm));
-      return True;
-   }
-
-   /* --------------- fdiv.d rd, rs1, rs2, rm --------------- */
-   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b0001101) {
-      UInt   rd    = INSN(11, 7);
-      UInt   rm    = INSN(14, 12);
-      UInt   rs1   = INSN(19, 15);
-      UInt   rs2   = INSN(24, 20);
-      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
-      putFReg64(
-         irsb, rd,
-         triop(Iop_DivF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2)));
-      /* TODO Implement setting of fflags. */
-      DIP("fdiv.d %s, %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameFReg(rs2),
-          nameRMOperand(rm));
+      DIP("%s.d %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
+          nameFReg(rs2), nameRMOperand(rm));
       return True;
    }
 
