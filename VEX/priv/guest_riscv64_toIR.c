@@ -1839,20 +1839,44 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* ----------------- feq.d rd, rs1, rs2 ------------------ */
-   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b010 &&
-       INSN(31, 25) == 0b1010001) {
+   /* ----------------- f{eq,lt,le}.d rd, rs1, rs2 ------------------ */
+   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b1010001) {
       UInt rd  = INSN(11, 7);
+      UInt rm  = INSN(14, 12);
       UInt rs1 = INSN(19, 15);
       UInt rs2 = INSN(24, 20);
-      putIReg64(irsb, rd,
-                unop(Iop_1Uto64,
-                     binop(Iop_CmpEQ32,
-                           binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2)),
-                           mkU32(Ircr_EQ))));
-      /* TODO Implement setting of fflags (for a signaling NaN). */
-      DIP("feq.d %s, %s, %s\n", nameIReg(rd), nameFReg(rs1), nameFReg(rs2));
-      return True;
+      if (rm != 0b010 && rm != 0b001 && rm != 0b000) {
+         /* Invalid F{EQ,LT,LE}.D, fall through. */
+      } else {
+         const HChar* name;
+         IRExpr*      cond;
+         IRCmpFResult res;
+         switch (rm) {
+         case 0b010:
+            name = "feq";
+            cond = binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2));
+            res = Ircr_EQ;
+            break;
+         case 0b001:
+            name = "flt";
+            cond = binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2));
+            res = Ircr_LT;
+            break;
+         case 0b000:
+            name = "fle";
+            cond = binop(Iop_CmpF64, getFReg64(rs2), getFReg64(rs1));
+            res = Ircr_GT;
+            break;
+         default:
+            vassert(0);
+         }
+         putIReg64(irsb, rd,
+                   unop(Iop_1Uto64, binop(Iop_CmpEQ32, cond, mkU32(res))));
+         /* TODO Implement setting of fflags (for a signaling NaN). */
+         DIP("%s.d %s, %s, %s\n", name, nameIReg(rd), nameFReg(rs1),
+             nameFReg(rs2));
+         return True;
+      }
    }
 
    /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
