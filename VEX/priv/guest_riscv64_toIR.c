@@ -1898,6 +1898,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ---------------- fsgnj.d rd, rs1, rs2 ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
+       INSN(31, 25) == 0b0010001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rs1 == rs2) {
+         putFReg64(irsb, rd, getFReg64(rs1));
+         DIP("fmv.d %s, %s\n", nameFReg(rd), nameIReg(rs1));
+         return True;
+      } else {
+         /* TODO Implement full support for fsgnj.d. */
+      }
+   }
+
    /* ----------------- f{eq,lt,le}.d rd, rs1, rs2 ------------------ */
    if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b1010001) {
       UInt rd  = INSN(11, 7);
