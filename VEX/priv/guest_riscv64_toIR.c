@@ -1965,6 +1965,20 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ---------------- fcvt.l.d rd, rs1, rm ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00010 &&
+       INSN(31, 25) == 0b1100001) {
+      UInt   rd    = INSN(11, 7);
+      UInt   rm    = INSN(14, 12);
+      UInt   rs1   = INSN(19, 15);
+      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
+      putIReg64(irsb, rd, binop(Iop_F64toI64S, mkexpr(rm_IR), getFReg64(rs1)));
+      /* TODO Implement setting of fflags. */
+      DIP("fcvt.l.d %s, %s%s\n", nameIReg(rd), nameFReg(rs1),
+          nameRMOperand(rm));
+      return True;
+   }
+
    /* ------------------- fmv.x.d rd, rs1 ------------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
        INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110001) {
