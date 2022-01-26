@@ -146,6 +146,12 @@ static IRExpr* triop(IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3)
    return IRExpr_Triop(op, a1, a2, a3);
 }
 
+/* Create a quaternary-operation expression. */
+static IRExpr* qop(IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3, IRExpr *a4)
+{
+   return IRExpr_Qop(op, a1, a2, a3, a4);
+}
+
 /* Create an expression to load a value from memory (in the little-endian
    order). */
 static IRExpr* loadLE(IRType ty, IRExpr* addr)
@@ -1804,6 +1810,51 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       storeLE(irsb, binop(Iop_Add64, getIReg64(rs1), mkU64(simm)),
               getFReg64(rs2));
       DIP("fsd %s, %lld(%s)\n", nameFReg(rs2), (Long)simm, nameIReg(rs1));
+      return True;
+   }
+
+   /* -------- f{madd,msub}.d rd, rs1, rs2, rs3, rm --------- */
+   /* ------- f{nmsub,nmadd}.d rd, rs1, rs2, rs3, rm -------- */
+   if (INSN(1, 0) == 0b11 && INSN(6, 4) == 0b100 && INSN(26, 25) == 0b01) {
+      UInt         opcode = INSN(6, 0);
+      UInt         rd     = INSN(11, 7);
+      UInt         rm     = INSN(14, 12);
+      UInt         rs1    = INSN(19, 15);
+      UInt         rs2    = INSN(24, 20);
+      UInt         rs3    = INSN(31, 27);
+      IRTemp       rm_IR  = mk_get_IR_rounding_mode(irsb, rm);
+      const HChar* name;
+      IRExpr*      expr;
+      switch (opcode) {
+      case 0b1000011:
+         name = "fmadd";
+         expr = qop(Iop_MAddF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2),
+                    getFReg64(rs3));
+         break;
+      case 0b1000111:
+         name = "fmsub";
+         expr = qop(Iop_MAddF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2),
+                    unop(Iop_NegF64, getFReg64(rs3)));
+         break;
+      case 0b1001011:
+         name = "fnmsub";
+         expr =
+            qop(Iop_MAddF64, mkexpr(rm_IR), unop(Iop_NegF64, getFReg64(rs1)),
+                getFReg64(rs2), getFReg64(rs3));
+         break;
+      case 0b1001111:
+         name = "fnmadd";
+         expr =
+            qop(Iop_MAddF64, mkexpr(rm_IR), unop(Iop_NegF64, getFReg64(rs1)),
+                getFReg64(rs2), unop(Iop_NegF64, getFReg64(rs3)));
+         break;
+      default:
+         vassert(0);
+      }
+      putFReg64(irsb, rd, expr);
+      /* TODO Implement setting of fflags. */
+      DIP("%s.d %s, %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
+          nameFReg(rs2), nameFReg(rs3), nameRMOperand(rm));
       return True;
    }
 

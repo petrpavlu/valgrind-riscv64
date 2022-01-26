@@ -1201,6 +1201,25 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       return dst;
    }
 
+   /* -------------------- QUATERNARY OP -------------------- */
+   case Iex_Qop: {
+      switch (e->Iex.Qop.details->op) {
+      case Iop_MAddF64: {
+         HReg dst  = newVRegF(env);
+         HReg argN = iselFltExpr(env, e->Iex.Qop.details->arg2);
+         HReg argM = iselFltExpr(env, e->Iex.Qop.details->arg3);
+         HReg argA = iselFltExpr(env, e->Iex.Qop.details->arg4);
+         set_fcsr_rounding_mode(env, e->Iex.Qop.details->arg1);
+         addInstr(env, RISCV64Instr_FMADD_D(dst, argN, argM, argA));
+         return dst;
+      }
+      default:
+         break;
+      }
+
+      break;
+   }
+
    /* --------------------- TERNARY OP ---------------------- */
    case Iex_Triop: {
       switch (e->Iex.Triop.details->op) {
