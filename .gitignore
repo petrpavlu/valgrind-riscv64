@@ -2019,6 +2019,7 @@
 /none/tests/riscv64/allexec
 /none/tests/riscv64/atomic
 /none/tests/riscv64/compressed
+/none/tests/riscv64/csr
 /none/tests/riscv64/float32
 /none/tests/riscv64/float64
 /none/tests/riscv64/integer

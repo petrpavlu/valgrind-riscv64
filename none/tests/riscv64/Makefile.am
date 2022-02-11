@@ -6,6 +6,7 @@ dist_noinst_SCRIPTS = filter_stderr
 EXTRA_DIST = \
 	atomic.stdout.exp atomic.stderr.exp atomic.vgtest \
 	compressed.stdout.exp compressed.stderr.exp compressed.vgtest \
+	csr.stdout.exp csr.stderr.exp csr.vgtest \
 	float32.stdout.exp float32.stderr.exp float32.vgtest \
 	float64.stdout.exp float64.stderr.exp float64.vgtest \
 	integer.stdout.exp integer.stderr.exp integer.vgtest \
@@ -15,6 +16,7 @@ check_PROGRAMS = \
 	allexec \
 	atomic \
 	compressed \
+	csr \
 	float32 \
 	float64 \
 	integer \
