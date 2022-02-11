@@ -471,7 +471,7 @@ static void show_block_diff(unsigned char* block1,
 
 #define JMP_COND(length, instruction, rs1_val, rs2_val, rs1, rs2)              \
    {                                                                           \
-      unsigned long w[2 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0};                 \
+      unsigned long w[3 /*out*/ + 2 /*spill*/] = {0, 0, 0, 0, 0};              \
       /* w[0] = flag that the branch was taken                                 \
          w[1] = flag that rs1 is valid                                         \
          w[2] = flag that rs2 is valid                                         \
