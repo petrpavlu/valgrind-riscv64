@@ -83,7 +83,10 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_1_0(length, instruction, rd)                                  \
    {                                                                           \
-      unsigned long w[1 /*out*/ + 1 /*spill*/] = {0};                          \
+      unsigned long w[1 /*out*/ + 1 /*spill*/] = {0, 0};                       \
+      /* w[0] = output rd value                                                \
+         w[1] = spill slot for rd                                              \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          "sd " #rd ", 8(%[w]);"        /* Spill rd. */                         \
@@ -101,6 +104,11 @@ static void show_block_diff(unsigned char* block1,
    {                                                                           \
       unsigned long w[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {                  \
          0, (unsigned long)rs1_val, 0, 0};                                     \
+      /* w[0] = output rd value                                                \
+         w[1] = input rs1 value                                                \
+         w[2] = spill slot for rd                                              \
+         w[3] = spill slot for rs1                                             \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          "sd " #rd ", 16(%[w]);"       /* Spill rd. */                         \
@@ -121,7 +129,14 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_1_2(length, instruction, rs1_val, rs2_val, rd, rs1, rs2)      \
    {                                                                           \
       unsigned long w[1 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {                  \
-         0, (unsigned long)rs1_val, (unsigned long)rs2_val, 0, 0};             \
+         0, (unsigned long)rs1_val, (unsigned long)rs2_val, 0, 0, 0};          \
+      /* w[0] = output rd value                                                \
+         w[1] = input rs1 value                                                \
+         w[2] = input rs2 value                                                \
+         w[3] = spill slot for rd                                              \
+         w[4] = spill slot for rs1                                             \
+         w[5] = spill slot for rs2                                             \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          "sd " #rd ", 24(%[w]);"       /* Spill rd. */                         \
@@ -152,6 +167,11 @@ static void show_block_diff(unsigned char* block1,
          area[i] = area2[i] = rand_uchar();                                    \
       unsigned long w[1 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {                  \
          0, (unsigned long)(area2 + N / 2), 0, 0};                             \
+      /* w[0] = output rd value                                                \
+         w[1] = input rs1 value                                                \
+         w[2] = spill slot for rd                                              \
+         w[3] = spill slot for rs1                                             \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          ipref "sd " #rd ", 16(%[w]);" /* Spill rd. */                         \
@@ -186,6 +206,11 @@ static void show_block_diff(unsigned char* block1,
          area[i] = area2[i] = rand_uchar();                                    \
       unsigned long w[2 /*in*/ + 2 /*spill*/] = {                              \
          (unsigned long)rs2_val, (unsigned long)(area2 + N / 2), 0, 0};        \
+      /* w[0] = input rs2 value                                                \
+         w[1] = input rs1 value                                                \
+         w[2] = spill slot for rs2                                             \
+         w[3] = spill slot for rs1                                             \
+       */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
          ipref "sd " #rs2 ", 16(%[w]);" /* Spill rs2. */                       \
@@ -316,7 +341,7 @@ static void show_block_diff(unsigned char* block1,
 
 #define TESTINST_1_0_AUIPC(length, instruction, rd)                            \
    {                                                                           \
-      unsigned long w[2 /*out*/ + 1 /*spill*/] = {0};                          \
+      unsigned long w[2 /*out*/ + 1 /*spill*/] = {0, 0, 0};                    \
       /* w[0] = output rd value                                                \
          w[1] = address of the test instruction                                \
          w[2] = spill slot for rd                                              \
