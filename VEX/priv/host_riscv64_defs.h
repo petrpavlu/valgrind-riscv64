@@ -77,10 +77,10 @@ ST_IN HReg hregRISCV64_f15(void) { return mkHReg(False, HRcFlt64, 15, 31); }
 ST_IN HReg hregRISCV64_f16(void) { return mkHReg(False, HRcFlt64, 16, 32); }
 ST_IN HReg hregRISCV64_f17(void) { return mkHReg(False, HRcFlt64, 17, 33); }
 
-ST_IN HReg hregRISCV64_f28(void) { return mkHReg(False, HRcFlt64, 0, 34); }
-ST_IN HReg hregRISCV64_f29(void) { return mkHReg(False, HRcFlt64, 0, 35); }
-ST_IN HReg hregRISCV64_f30(void) { return mkHReg(False, HRcFlt64, 0, 36); }
-ST_IN HReg hregRISCV64_f31(void) { return mkHReg(False, HRcFlt64, 0, 37); }
+ST_IN HReg hregRISCV64_f28(void) { return mkHReg(False, HRcFlt64, 28, 34); }
+ST_IN HReg hregRISCV64_f29(void) { return mkHReg(False, HRcFlt64, 29, 35); }
+ST_IN HReg hregRISCV64_f30(void) { return mkHReg(False, HRcFlt64, 30, 36); }
+ST_IN HReg hregRISCV64_f31(void) { return mkHReg(False, HRcFlt64, 31, 37); }
 
 ST_IN HReg hregRISCV64_x0(void) { return mkHReg(False, HRcInt64, 0, 38); }
 ST_IN HReg hregRISCV64_x2(void) { return mkHReg(False, HRcInt64, 2, 39); }
