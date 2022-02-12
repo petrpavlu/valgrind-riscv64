@@ -527,4 +527,54 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_0_2_Bxx_COND(length, instruction, rs1_val, rs2_val, rs1, rs2) \
    JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
 
+#define TESTINST_1_1_CSR(length, instruction, csr_val, rs1_val, rd, csr, rs1)  \
+   {                                                                           \
+      unsigned long w[2 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {                  \
+         0, 0, (unsigned long)csr_val, (unsigned long)rs1_val, 0, 0, 0};       \
+      /* w[0] = output rd value                                                \
+         w[1] = output csr value                                               \
+         w[2] = input csr value                                                \
+         w[3] = input rs1 value                                                \
+         w[4] = spill slot for rd                                              \
+         w[5] = spill slot for csr                                             \
+         w[6] = spill slot for rs1                                             \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = w;                                \
+      __asm__ __volatile__(                                                    \
+         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         "sd " #rd ", 32(%[w]);"       /* Spill rd. */                         \
+         ".endif;"                                                             \
+         "csrr t2, " #csr ";"                                                  \
+         "sd t2, 40(%[w]);"            /* Spill csr. */                        \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "sd " #rs1 ", 48(%[w]);"      /* Spill rs1. */                        \
+         ".endif;"                                                             \
+         "ld t2, 16(%[w]);"                                                    \
+         "csrw " #csr ", t2;"          /* Load csr. */                         \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "ld " #rs1 ", 24(%[w]);"      /* Load the first input. */             \
+         ".endif;"                                                             \
+         ASMINST_##length(instruction) ";"                                     \
+         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         ".endif;"                                                             \
+         "csrr t2, " #csr ";"                                                  \
+         "sd t2, 8(%[w]);"             /* Save csr. */                         \
+         "ld t2, 40(%[w]);"                                                    \
+         "csrw " #csr ", t2;"          /* Reload csr. */                       \
+         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         "ld " #rd ", 32(%[w]);"       /* Reload rd. */                        \
+         ".endif;"                                                             \
+         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         "ld " #rs1 ", 48(%[w]);"      /* Reload rs1. */                       \
+         ".endif;"                                                             \
+         :                                                                     \
+         : [w] "r"(t1)                                                         \
+         : "t2", "memory");                                                    \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx, %s=0x%016lx\n", #rs1,                     \
+             (unsigned long)rs1_val, #csr, (unsigned long)csr_val);            \
+      printf("  output: %s=0x%016lx, %s=0x%016lx\n", #rd, w[0], #csr, w[1]);   \
+   }
+
 /* clang-format on */
