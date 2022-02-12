@@ -576,10 +576,10 @@ static IRTemp mk_get_IR_rounding_mode(/*MOD*/ IRSB* irsb, UInt inst_rm_RISCV)
 
       A dynamic mode requires a runtime mapping from the RISC-V to the IR mode.
       It can be implemented using the following transformation:
-         t0 = 25 >> fcsr_rm_RISCV
-         t1 = t0 - 21
-         t2 = 3 >> t0
-         t3 = 3 << t2
+         t0 = fcsr_rm_RISCV - 20
+         t1 = t0 >> 2
+         t2 = fcsr_rm_RISCV + 3
+         t3 = t2 ^ 3
          rm_IR = t1 & t3
    */
    IRTemp rm_IR = newTemp(irsb, Ity_I32);
@@ -608,19 +608,15 @@ static IRTemp mk_get_IR_rounding_mode(/*MOD*/ IRSB* irsb, UInt inst_rm_RISCV)
    case 0b111: {
       IRTemp fcsr_rm_RISCV = newTemp(irsb, Ity_I32);
       assign(irsb, fcsr_rm_RISCV,
-             binop(Iop_And32,
-                   binop(Iop_Shr32, IRExpr_Get(OFFB_FCSR, Ity_I32), mkU8(5)),
-                   mkU32(7)));
+             binop(Iop_And32, binop(Iop_Shr32, getFCSR(), mkU8(5)), mkU32(7)));
       IRTemp t0 = newTemp(irsb, Ity_I32);
-      assign(
-         irsb, t0,
-         binop(Iop_Shr32, mkU32(25), unop(Iop_32to8, mkexpr(fcsr_rm_RISCV))));
+      assign(irsb, t0, binop(Iop_Sub32, mkexpr(fcsr_rm_RISCV), mkU32(20)));
       IRTemp t1 = newTemp(irsb, Ity_I32);
-      assign(irsb, t1, binop(Iop_Sub32, mkexpr(t0), mkU32(21)));
+      assign(irsb, t1, binop(Iop_Shr32, mkexpr(t0), mkU8(2)));
       IRTemp t2 = newTemp(irsb, Ity_I32);
-      assign(irsb, t2, binop(Iop_Shr32, mkU32(3), unop(Iop_32to8, mkexpr(t0))));
+      assign(irsb, t2, binop(Iop_Add32, mkexpr(fcsr_rm_RISCV), mkU32(3)));
       IRTemp t3 = newTemp(irsb, Ity_I32);
-      assign(irsb, t3, binop(Iop_Shl32, mkU32(3), unop(Iop_32to8, mkexpr(t2))));
+      assign(irsb, t3, binop(Iop_Xor32, mkexpr(t2), mkU32(3)));
       assign(irsb, rm_IR, binop(Iop_And32, mkexpr(t1), mkexpr(t3)));
       break;
    }
