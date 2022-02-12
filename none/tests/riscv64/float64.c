@@ -54,7 +54,89 @@ static void test_float64_shared(void)
    /* TODO Implement. */
 
    /* --------------- fadd.d rd, rs1, rs2, rm --------------- */
-   /* TODO Implement. */
+   /* 1.0 + 2.0 -> 3.0 */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x4000000000000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + -1.0 -> 0.0 */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x00, fa0, fa1, fa2);
+   /* DBL_TRUE_MIN + DBL_TRUE_MIN -> 2*DBL_TRUE_MIN */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x0000000000000001,
+                  0x0000000000000001, 0x00, fa0, fa1, fa2);
+   /* DBL_MAX + DBL_MAX -> Inf (OF, NX)*/
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x7fefffffffffffff,
+                  0x7fefffffffffffff, 0x00, fa0, fa1, fa2);
+   /* -DBL_MAX + -DBL_MAX -> -Inf (OF, NX)*/
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0xffefffffffffffff,
+                  0xffefffffffffffff, 0x00, fa0, fa1, fa2);
+   /* nextafter(DBL_MIN) + -DBL_MIN -> DBL_TRUE_MIN (no UF because exact)*/
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x0010000000000001,
+                  0x8010000000000000, 0x00, fa0, fa1, fa2);
+   /* Inf + -Inf -> qNaN (NV) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x7ff0000000000000,
+                  0xfff0000000000000, 0x00, fa0, fa1, fa2);
+
+   /* 1.0 + DBL_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rne", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* nextafter(1.0) + DBL_EPSILON/2 (RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rne", 0x3ff0000000000001,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rtz", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rtz", 0xbff0000000000000,
+                  0xbca0000000000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rdn", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rdn", 0xbff0000000000000,
+                  0xbca0000000000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rup", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rup", 0xbff0000000000000,
+                  0xbca0000000000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rmm", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2, rmm", 0xbff0000000000000,
+                  0xbca0000000000000, 0x00, fa0, fa1, fa2);
+
+   /* 1.0 + DBL_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* nextafter(1.0) + DBL_EPSILON/2 (DYN-RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000001,
+                  0x3ca0000000000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x20, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0xbca0000000000000, 0x20, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x40, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (DYN-RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0xbca0000000000000, 0x40, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (DYN-RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x60, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0xbca0000000000000, 0x60, fa0, fa1, fa2);
+   /* 1.0 + DBL_EPSILON/2 (DYN-RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x3ca0000000000000, 0x80, fa0, fa1, fa2);
+   /* -1.0 + -DBL_EPSILON/2 (DYN-RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0xbca0000000000000, 0x80, fa0, fa1, fa2);
 
    /* --------------- fsub.d rd, rs1, rs2, rm --------------- */
    /* TODO Implement. */

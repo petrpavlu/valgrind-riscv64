@@ -527,6 +527,52 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_0_2_Bxx_COND(length, instruction, rs1_val, rs2_val, rs1, rs2) \
    JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
 
+#define TESTINST_1_2_F(length, instruction, rs1_val, rs2_val, fcsr_val, rd,    \
+                       rs1, rs2)                                               \
+   {                                                                           \
+      unsigned long w[2 /*out*/ + 3 /*in*/ + 4 /*spill*/] = {                  \
+         0, 0, (unsigned long)rs1_val, (unsigned long)rs2_val,                 \
+        (unsigned long)fcsr_val, 0, 0, 0, 0};                                  \
+      /* w[0] = output rd value                                                \
+         w[1] = output fcsr value                                              \
+         w[2] = input rs1 value                                                \
+         w[3] = input rs2 value                                                \
+         w[4] = input fcsr value                                               \
+         w[5] = spill slot for rd                                              \
+         w[6] = spill slot for fcsr                                            \
+         w[7] = spill slot for rs1                                             \
+         w[8] = spill slot for rs2                                             \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = w;                                \
+      __asm__ __volatile__(                                                    \
+         "fsd " #rd ", 40(%[w]);"      /* Spill rd. */                         \
+         "frcsr t2;"                                                           \
+         "sd t2, 48(%[w]);"            /* Spill fcsr. */                       \
+         "fsd " #rs1 ", 56(%[w]);"     /* Spill rs1. */                        \
+         "fsd " #rs2 ", 64(%[w]);"     /* Spill rs2. */                        \
+         "ld t2, 32(%[w]);"                                                    \
+         "fscsr t2;"                   /* Load fcsr. */                        \
+         "fld " #rs1 ", 16(%[w]);"     /* Load the first input. */             \
+         "fld " #rs2 ", 24(%[w]);"     /* Load the second input. */            \
+         ASMINST_##length(instruction) ";"                                     \
+         "fsd " #rd ", 0(%[w]);"       /* Save result of the operation. */     \
+         "frcsr t2;"                                                           \
+         "sd t2, 8(%[w]);"             /* Save fcsr. */                        \
+         "ld t2, 48(%[w]);"                                                    \
+         "fscsr t2;"                   /* Reload fcsr. */                      \
+         "fld " #rd ", 40(%[w]);"      /* Reload rd. */                        \
+         "fld " #rs1 ", 56(%[w]);"     /* Reload rs1. */                       \
+         "fld " #rs2 ", 64(%[w]);"     /* Reload rs2. */                       \
+         :                                                                     \
+         : [w] "r"(t1)                                                         \
+         : "t2", "memory");                                                    \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx, %s=0x%016lx, fcsr=0x%08lx\n", #rs1,       \
+             (unsigned long)rs1_val, #rs2, (unsigned long)rs2_val,             \
+             (unsigned long)fcsr_val);                                         \
+      printf("  output: %s=0x%016lx, fcsr=0x%08lx\n", #rd, w[0], w[1]);        \
+   }
+
 #define TESTINST_1_1_CSR(length, instruction, csr_val, rs1_val, rd, csr, rs1)  \
    {                                                                           \
       unsigned long w[2 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {                  \
