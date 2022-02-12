@@ -300,7 +300,7 @@ static void show_block_diff(unsigned char* block1,
       free(area);                                                              \
    }
 
-#define TESTINST_1_2_AMOX(length, instruction, rd, rs2_val, rs2, rs1)          \
+#define TESTINST_1_2_AMOX(length, instruction, rs2_val, rd, rs2, rs1)          \
    {                                                                           \
       const size_t   N     = 32;                                               \
       unsigned char* area  = memalign16(N);                                    \
