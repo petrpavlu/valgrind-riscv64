@@ -550,11 +550,15 @@ static void putFCSR(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
    stmt(irsb, IRStmt_Put(OFFB_FCSR, e));
 }
 
-/* Generate IR to get hold of the rounding mode bits and convert them to the IR
-   format. A floating-point operation can use either a static rounding mode
+/* Generate IR to get hold of the rounding mode in both RISC-V and IR
+   formats. A floating-point operation can use either a static rounding mode
    encoded in the instruction, or a dynamic rounding mode held in fcsr. Bind the
-   final result to the returned temporary. */
-static IRTemp mk_get_IR_rounding_mode(/*MOD*/ IRSB* irsb, UInt inst_rm_RISCV)
+   final result to the passed temporaries (which are allocated by the function).
+ */
+static void mk_get_rounding_mode(/*MOD*/ IRSB*   irsb,
+                                 /*OUT*/ IRTemp* rm_RISCV,
+                                 /*OUT*/ IRTemp* rm_IR,
+                                 UInt            inst_rm_RISCV)
 {
    /*
       rounding mode                | RISC-V |  IR
@@ -571,10 +575,10 @@ static IRTemp mk_get_IR_rounding_mode(/*MOD*/ IRSB* irsb, UInt inst_rm_RISCV)
       The 'dynamic' value selects the mode from fcsr. Its value is valid when
       encoded in the instruction but naturally invalid when found in fcsr.
 
-      A static mode is known at the decode time and can be directly expressed by
+      Static mode is known at the decode time and can be directly expressed by
       a respective rounding mode IR constant.
 
-      A dynamic mode requires a runtime mapping from the RISC-V to the IR mode.
+      Dynamic mode requires a runtime mapping from the RISC-V to the IR mode.
       It can be implemented using the following transformation:
          t0 = fcsr_rm_RISCV - 20
          t1 = t0 >> 2
@@ -582,48 +586,54 @@ static IRTemp mk_get_IR_rounding_mode(/*MOD*/ IRSB* irsb, UInt inst_rm_RISCV)
          t3 = t2 ^ 3
          rm_IR = t1 & t3
    */
-   IRTemp rm_IR = newTemp(irsb, Ity_I32);
+   *rm_RISCV = newTemp(irsb, Ity_I32);
+   *rm_IR = newTemp(irsb, Ity_I32);
    switch (inst_rm_RISCV) {
    case 0b000:
-      assign(irsb, rm_IR, mkU32(Irrm_NEAREST));
+      assign(irsb, *rm_RISCV, mkU32(0));
+      assign(irsb, *rm_IR, mkU32(Irrm_NEAREST));
       break;
    case 0b001:
-      assign(irsb, rm_IR, mkU32(Irrm_ZERO));
+      assign(irsb, *rm_RISCV, mkU32(1));
+      assign(irsb, *rm_IR, mkU32(Irrm_ZERO));
       break;
    case 0b010:
-      assign(irsb, rm_IR, mkU32(Irrm_PosINF));
+      assign(irsb, *rm_RISCV, mkU32(2));
+      assign(irsb, *rm_IR, mkU32(Irrm_PosINF));
       break;
    case 0b011:
-      assign(irsb, rm_IR, mkU32(Irrm_NegINF));
+      assign(irsb, *rm_RISCV, mkU32(3));
+      assign(irsb, *rm_IR, mkU32(Irrm_NegINF));
       break;
    case 0b100:
-      assign(irsb, rm_IR, mkU32(Irrm_NEAREST_TIE_AWAY_0));
+      assign(irsb, *rm_RISCV, mkU32(4));
+      assign(irsb, *rm_IR, mkU32(Irrm_NEAREST_TIE_AWAY_0));
       break;
    case 0b101:
-      assign(irsb, rm_IR, mkU32(Irrm_INVALID));
+      assign(irsb, *rm_RISCV, mkU32(5));
+      assign(irsb, *rm_IR, mkU32(Irrm_INVALID));
       break;
    case 0b110:
-      assign(irsb, rm_IR, mkU32(Irrm_INVALID));
+      assign(irsb, *rm_RISCV, mkU32(6));
+      assign(irsb, *rm_IR, mkU32(Irrm_INVALID));
       break;
    case 0b111: {
-      IRTemp fcsr_rm_RISCV = newTemp(irsb, Ity_I32);
-      assign(irsb, fcsr_rm_RISCV,
+      assign(irsb, *rm_RISCV,
              binop(Iop_And32, binop(Iop_Shr32, getFCSR(), mkU8(5)), mkU32(7)));
       IRTemp t0 = newTemp(irsb, Ity_I32);
-      assign(irsb, t0, binop(Iop_Sub32, mkexpr(fcsr_rm_RISCV), mkU32(20)));
+      assign(irsb, t0, binop(Iop_Sub32, mkexpr(*rm_RISCV), mkU32(20)));
       IRTemp t1 = newTemp(irsb, Ity_I32);
       assign(irsb, t1, binop(Iop_Shr32, mkexpr(t0), mkU8(2)));
       IRTemp t2 = newTemp(irsb, Ity_I32);
-      assign(irsb, t2, binop(Iop_Add32, mkexpr(fcsr_rm_RISCV), mkU32(3)));
+      assign(irsb, t2, binop(Iop_Add32, mkexpr(*rm_RISCV), mkU32(3)));
       IRTemp t3 = newTemp(irsb, Ity_I32);
       assign(irsb, t3, binop(Iop_Xor32, mkexpr(t2), mkU32(3)));
-      assign(irsb, rm_IR, binop(Iop_And32, mkexpr(t1), mkexpr(t3)));
+      assign(irsb, *rm_IR, binop(Iop_And32, mkexpr(t1), mkexpr(t3)));
       break;
    }
    default:
       vassert(0);
    }
-   return rm_IR;
 }
 
 /*------------------------------------------------------------*/
@@ -1946,13 +1956,14 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    /* -------- f{madd,msub}.d rd, rs1, rs2, rs3, rm --------- */
    /* ------- f{nmsub,nmadd}.d rd, rs1, rs2, rs3, rm -------- */
    if (INSN(1, 0) == 0b11 && INSN(6, 4) == 0b100 && INSN(26, 25) == 0b01) {
-      UInt         opcode = INSN(6, 0);
-      UInt         rd     = INSN(11, 7);
-      UInt         rm     = INSN(14, 12);
-      UInt         rs1    = INSN(19, 15);
-      UInt         rs2    = INSN(24, 20);
-      UInt         rs3    = INSN(31, 27);
-      IRTemp       rm_IR  = mk_get_IR_rounding_mode(irsb, rm);
+      UInt   opcode = INSN(6, 0);
+      UInt   rd     = INSN(11, 7);
+      UInt   rm     = INSN(14, 12);
+      UInt   rs1    = INSN(19, 15);
+      UInt   rs2    = INSN(24, 20);
+      UInt   rs3    = INSN(31, 27);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       const HChar* name;
       IRExpr*      expr;
       switch (opcode) {
@@ -1992,37 +2003,55 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    /* ------------ f{mul,div}.d rd, rs1, rs2, rm ------------ */
    if (INSN(6, 0) == 0b1010011 && INSN(31, 29) == 0b000 &&
        INSN(26, 25) == 0b01) {
-      UInt         rd     = INSN(11, 7);
-      UInt         rm     = INSN(14, 12);
-      UInt         rs1    = INSN(19, 15);
-      UInt         rs2    = INSN(24, 20);
-      UInt         funct7 = INSN(31, 25);
-      IRTemp       rm_IR  = mk_get_IR_rounding_mode(irsb, rm);
+      UInt   rd     = INSN(11, 7);
+      UInt   rm     = INSN(14, 12);
+      UInt   rs1    = INSN(19, 15);
+      UInt   rs2    = INSN(24, 20);
+      UInt   funct7 = INSN(31, 25);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       const HChar* name;
       IROp         op;
+      const HChar* helper_name;
+      void*        helper_addr;
       switch (funct7) {
       case 0b0000001:
-         name = "fadd";
-         op   = Iop_AddF64;
+         name        = "fadd";
+         op          = Iop_AddF64;
+         helper_name = "riscv64g_calculate_fflags_fadd_d";
+         helper_addr = riscv64g_calculate_fflags_fadd_d;
          break;
       case 0b0000101:
-         name = "fsub";
-         op   = Iop_SubF64;
+         name        = "fsub";
+         op          = Iop_SubF64;
+         helper_name = "riscv64g_calculate_fflags_fsub_d";
+         helper_addr = riscv64g_calculate_fflags_fsub_d;
          break;
       case 0b0001001:
-         name = "fmul";
-         op   = Iop_MulF64;
+         name        = "fmul";
+         op          = Iop_MulF64;
+         helper_name = "riscv64g_calculate_fflags_fmul_d";
+         helper_addr = riscv64g_calculate_fflags_fmul_d;
          break;
       case 0b0001101:
-         name = "fdiv";
-         op   = Iop_DivF64;
+         name         = "fdiv";
+         op           = Iop_DivF64;
+         helper_name  = "riscv64g_calculate_fflags_fdiv_d";
+         helper_addr = riscv64g_calculate_fflags_fdiv_d;
          break;
       default:
          vassert(0);
       }
-      putFReg64(irsb, rd,
-                triop(op, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2)));
-      /* TODO Implement setting of fflags. */
+      IRTemp a1 = newTemp(irsb, Ity_F64);
+      IRTemp a2 = newTemp(irsb, Ity_F64);
+      assign(irsb, a1, getFReg64(rs1));
+      assign(irsb, a2, getFReg64(rs2));
+      putFReg64(irsb, rd, triop(op, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                        helper_addr,
+                                        mkIRExprVec_3(mkexpr(a1), mkexpr(a2),
+                                                      mkexpr(rm_RISCV)))));
       DIP("%s.d %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
           nameFReg(rs2), nameRMOperand(rm));
       return True;
@@ -2086,10 +2115,11 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    /* ---------------- fcvt.w.d rd, rs1, rm ----------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00000 &&
        INSN(31, 25) == 0b1100001) {
-      UInt   rd    = INSN(11, 7);
-      UInt   rm    = INSN(14, 12);
-      UInt   rs1   = INSN(19, 15);
-      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
+      UInt   rd  = INSN(11, 7);
+      UInt   rm  = INSN(14, 12);
+      UInt   rs1 = INSN(19, 15);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       putIReg32(irsb, rd, binop(Iop_F64toI32S, mkexpr(rm_IR), getFReg64(rs1)));
       /* TODO Implement setting of fflags. */
       DIP("fcvt.w.d %s, %s%s\n", nameIReg(rd), nameFReg(rs1),
@@ -2112,10 +2142,11 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    /* ---------------- fcvt.l.d rd, rs1, rm ----------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00010 &&
        INSN(31, 25) == 0b1100001) {
-      UInt   rd    = INSN(11, 7);
-      UInt   rm    = INSN(14, 12);
-      UInt   rs1   = INSN(19, 15);
-      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
+      UInt   rd  = INSN(11, 7);
+      UInt   rm  = INSN(14, 12);
+      UInt   rs1 = INSN(19, 15);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       putIReg64(irsb, rd, binop(Iop_F64toI64S, mkexpr(rm_IR), getFReg64(rs1)));
       /* TODO Implement setting of fflags. */
       DIP("fcvt.l.d %s, %s%s\n", nameIReg(rd), nameFReg(rs1),
@@ -2136,10 +2167,11 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    /* ---------------- fcvt.d.l rd, rs1, rm ----------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00010 &&
        INSN(31, 25) == 0b1101001) {
-      UInt   rd    = INSN(11, 7);
-      UInt   rm    = INSN(14, 12);
-      UInt   rs1   = INSN(19, 15);
-      IRTemp rm_IR = mk_get_IR_rounding_mode(irsb, rm);
+      UInt   rd  = INSN(11, 7);
+      UInt   rm  = INSN(14, 12);
+      UInt   rs1 = INSN(19, 15);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       putFReg64(irsb, rd, binop(Iop_I64StoF64, mkexpr(rm_IR), getIReg64(rs1)));
       /* TODO Implement setting of fflags. */
       DIP("fcvt.d.l %s, %s%s\n", nameFReg(rd), nameIReg(rs1),

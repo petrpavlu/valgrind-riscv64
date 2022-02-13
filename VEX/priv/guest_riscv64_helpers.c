@@ -47,7 +47,48 @@
    VEX-generated code.
 */
 
-/* TODO helpers */
+#if defined(__riscv) && (__riscv_xlen == 64)
+/* clang-format off */
+#define CALCULATE_FFLAGS_BINARY64(inst)                                        \
+   do {                                                                        \
+      UInt res;                                                                \
+      __asm__ __volatile__("csrr t0, fcsr\n\t"                                 \
+                           "csrw frm, %[rm]\n\t"                               \
+                           "csrw fflags, zero\n\t"                             \
+                           inst " %[a1], %[a1], %[a2]\n\t"                     \
+                           "csrr %[res], fflags\n\t"                           \
+                           "csrw fcsr, t0\n\t"                                 \
+                           : [res] "=r"(res)                                   \
+                           : [a1] "f"(a1), [a2] "f"(a2), [rm] "r"(rm_RISCV)    \
+                           : "t0");                                            \
+      return res;                                                              \
+   } while (0)
+/* clang-format on */
+#else
+/* No simulated version is currently implemented. */
+#define CALCULATE_FFLAGS_BINARY64(inst)                                        \
+   do {                                                                        \
+      return 0;                                                                \
+   } while (0)
+#endif
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPERS */
+UInt riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fadd.d");
+}
+UInt riscv64g_calculate_fflags_fsub_d(Double a1, Double a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fsub.d");
+}
+UInt riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fmul.d");
+}
+UInt riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fdiv.d");
+}
 
 /*------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers. ---*/

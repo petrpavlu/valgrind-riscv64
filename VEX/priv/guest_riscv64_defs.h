@@ -73,6 +73,20 @@ extern VexGuestLayout riscv64guest_layout;
 /*--- riscv64 guest helpers                                ---*/
 /*------------------------------------------------------------*/
 
+/* --- CLEAN HELPERS --- */
+
+/* Calculate resulting flags of a specified floating-point operation. Returns
+   a 32-bit value where bits 4:0 contain the fflags in the RISC-V native
+   format (NV DZ OF UF NX) and remaining upper bits are zero. */
+extern UInt
+riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV);
+extern UInt
+riscv64g_calculate_fflags_fsub_d(Double a1, Double a2, UInt rm_RISCV);
+extern UInt
+riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV);
+extern UInt
+riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV);
+
 #endif /* ndef __VEX_GUEST_RISCV64_DEFS_H */
 
 /*--------------------------------------------------------------------*/
