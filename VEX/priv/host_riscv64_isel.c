@@ -1072,6 +1072,43 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       return dst;
    }
 
+   /* ------------------------ CCALL ------------------------ */
+   case Iex_CCall: {
+      vassert(ty == e->Iex.CCall.retty);
+
+      /* Be very restrictive for now. Only 32 and 64-bit ints are allowed for
+         the return type. */
+      if (e->Iex.CCall.retty != Ity_I32 && e->Iex.CCall.retty != Ity_I64)
+         goto irreducible;
+
+      /* Marshal args and do the call. */
+      UInt   addToSp = 0;
+      RetLoc rloc    = mk_RetLoc_INVALID();
+      Bool   ok =
+         doHelperCall(&addToSp, &rloc, env, NULL /*guard*/, e->Iex.CCall.cee,
+                      e->Iex.CCall.retty, e->Iex.CCall.args);
+      if (!ok)
+         goto irreducible;
+      vassert(is_sane_RetLoc(rloc));
+      vassert(rloc.pri == RLPri_Int);
+      vassert(addToSp == 0);
+
+      HReg dst = newVRegI(env);
+      switch (e->Iex.CCall.retty) {
+      case Ity_I32:
+         /* Sign-extend the value returned from the helper as is expected by the
+            rest of the backend. */
+         addInstr(env, RISCV64Instr_ADDIW(dst, hregRISCV64_x10(), 0));
+         break;
+      case Ity_I64:
+         addInstr(env, RISCV64Instr_MV(dst, hregRISCV64_x10()));
+         break;
+      default:
+         vassert(0);
+      }
+      return dst;
+   }
+
    /* ----------------------- LITERAL ----------------------- */
    /* 64/32/16/8-bit literals. */
    case Iex_Const: {
