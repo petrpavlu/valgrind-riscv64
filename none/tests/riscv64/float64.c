@@ -60,19 +60,19 @@ static void test_float64_shared(void)
    /* 1.0 + -1.0 -> 0.0 */
    TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x3ff0000000000000,
                   0xbff0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN + DBL_TRUE_MIN -> 2*DBL_TRUE_MIN */
+   /* DBL_TRUE_MIN + DBL_TRUE_MIN -> 2*DBL_TRUE_MIN (no UF because exact) */
    TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x0000000000000001,
                   0x0000000000000001, 0x00, fa0, fa1, fa2);
-   /* DBL_MAX + DBL_MAX -> Inf (OF, NX)*/
+   /* DBL_MAX + DBL_MAX -> INFINITY (OF, NX) */
    TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x7fefffffffffffff,
                   0x7fefffffffffffff, 0x00, fa0, fa1, fa2);
-   /* -DBL_MAX + -DBL_MAX -> -Inf (OF, NX)*/
+   /* -DBL_MAX + -DBL_MAX -> -INFINITY (OF, NX) */
    TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0xffefffffffffffff,
                   0xffefffffffffffff, 0x00, fa0, fa1, fa2);
-   /* nextafter(DBL_MIN) + -DBL_MIN -> DBL_TRUE_MIN (no UF because exact)*/
+   /* nextafter(DBL_MIN) + -DBL_MIN -> DBL_TRUE_MIN (no UF because exact) */
    TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x0010000000000001,
                   0x8010000000000000, 0x00, fa0, fa1, fa2);
-   /* Inf + -Inf -> qNaN (NV) */
+   /* INFINITY + -INFINITY -> qNAN (NV) */
    TESTINST_1_2_F(4, "fadd.d fa0, fa1, fa2", 0x7ff0000000000000,
                   0xfff0000000000000, 0x00, fa0, fa1, fa2);
 
@@ -145,19 +145,19 @@ static void test_float64_shared(void)
    /* 1.0 - 1.0 -> 0.0 */
    TESTINST_1_2_F(4, "fsub.d fa0, fa1, fa2", 0x3ff0000000000000,
                   0x3ff0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN - -DBL_TRUE_MIN -> 2*DBL_TRUE_MIN */
+   /* DBL_TRUE_MIN - -DBL_TRUE_MIN -> 2*DBL_TRUE_MIN (no UF because exact) */
    TESTINST_1_2_F(4, "fsub.d fa0, fa1, fa2", 0x0000000000000001,
                   0x8000000000000001, 0x00, fa0, fa1, fa2);
-   /* DBL_MAX - -DBL_MAX -> Inf (OF, NX) */
+   /* DBL_MAX - -DBL_MAX -> INFINITY (OF, NX) */
    TESTINST_1_2_F(4, "fsub.d fa0, fa1, fa2", 0x7fefffffffffffff,
                   0xffefffffffffffff, 0x00, fa0, fa1, fa2);
-   /* -DBL_MAX - DBL_MAX -> -Inf (OF, NX) */
+   /* -DBL_MAX - DBL_MAX -> -INFINITY (OF, NX) */
    TESTINST_1_2_F(4, "fsub.d fa0, fa1, fa2", 0xffefffffffffffff,
                   0x7fefffffffffffff, 0x00, fa0, fa1, fa2);
    /* nextafter(DBL_MIN) - DBL_MIN -> DBL_TRUE_MIN (no UF because exact) */
    TESTINST_1_2_F(4, "fsub.d fa0, fa1, fa2", 0x0010000000000001,
                   0x0010000000000000, 0x00, fa0, fa1, fa2);
-   /* Inf - Inf -> qNaN (NV) */
+   /* INFINITY - INFINITY -> qNAN (NV) */
    TESTINST_1_2_F(4, "fsub.d fa0, fa1, fa2", 0x7ff0000000000000,
                   0x7ff0000000000000, 0x00, fa0, fa1, fa2);
 

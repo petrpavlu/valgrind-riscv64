@@ -110,7 +110,7 @@ typedef enum {
                                  another. */
    RISCV64in_XOR,             /* Bitwise XOR of two registers. */
    RISCV64in_XORI,            /* Bitwise XOR of a register and a sx-12-bit
-                                 immediate */
+                                 immediate. */
    RISCV64in_OR,              /* Bitwise OR of two registers. */
    RISCV64in_AND,             /* Bitwise AND of two registers. */
    RISCV64in_ANDI,            /* Bitwise AND of a register and a sx-12-bit
@@ -189,7 +189,7 @@ typedef enum {
                                  a 32-bit signed integer. */
    RISCV64in_FCVT_D_W,        /* Convert a 32-bit signed integer to a 64-bit
                                  floating-point number. */
-   RISCV64in_FCVT_L_D,        /* Convert a 64-bit floating-point value to
+   RISCV64in_FCVT_L_D,        /* Convert a 64-bit floating-point number to
                                  a 64-bit integer. */
    RISCV64in_FCVT_D_L,        /* Convert a 64-bit signed integer to a 64-bit
                                  floating-point number. */
