@@ -219,9 +219,13 @@ static void set_fcsr_rounding_mode(ISelEnv* env, IRExpr* mode)
 */
 static Bool mightRequireFixedRegs(IRExpr* e)
 {
+   if (UNLIKELY(is_IRExpr_VECRET_or_GSPTR(e))) {
+      /* These are always "safe" -- either a copy of x2/sp in some arbitrary
+         vreg, or a copy of x8/s0, respectively. */
+      return False;
+   }
+   /* Else it's a "normal" expression. */
    switch (e->tag) {
-   // TODO case Iex_VECRET:
-   case Iex_GSPTR:
    case Iex_RdTmp:
    case Iex_Const:
    case Iex_Get:
@@ -237,7 +241,6 @@ static Bool mightRequireFixedRegs(IRExpr* e)
    caller (of this fn) must generate code to add |stackAdjustAfterCall| to the
    stack pointer after the call is done. Returns True iff it managed to handle
    this combination of arg/return types, else returns False. */
-// TODO Review return value handling and asserts.
 static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
                          /*OUT*/ RetLoc* retloc,
                          ISelEnv*        env,
@@ -246,34 +249,23 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
                          IRType          retTy,
                          IRExpr**        args)
 {
-   HReg   cond;
-   HReg   argregs[RISCV64_N_ARGREGS];
-   HReg   tmpregs[RISCV64_N_ARGREGS];
-   Bool   go_fast;
-   Int    n_args, i, nextArgReg;
-
-   vassert(RISCV64_N_ARGREGS == 8);
-
-   /* Set default returns.  We'll update them later if needed. */
+   /* Set default returns. We'll update them later if needed. */
    *stackAdjustAfterCall = 0;
    *retloc               = mk_RetLoc_INVALID();
 
-   /* These are used for cross-checking that IR-level constraints on the use of
-      IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
-   UInt nVECRETs = 0;
-   UInt nGSPTRs  = 0;
-
    /* Marshal args for a call and do the call.
 
-      This function only deals with a tiny set of possibilities, which cover all
-      helpers in practice. The restrictions are that only arguments in registers
-      are supported, hence only RISCV64_N_REGPARMS x 64 integer bits in total
-      can be passed. In fact the only supported arg type is I64.
+      This function only deals with a limited set of possibilities, which cover
+      all helpers in practice. The restrictions are that only the following
+      arguments are supported:
+      * RISCV64_N_REGPARMS x Ity_I32/Ity_I64 values, passed in x10/a0 .. x17/a7,
+      * RISCV64_N_FREGPARMS x Ity_F32/Ity_F64 values, passed in f10/fa0 ..
+        f17/fa7.
 
       Note that the cee->regparms field is meaningless on riscv64 hosts (since
       we only implement one calling convention) and so we always ignore it.
 
-      The return type can be I{64,32,16,8} or V128. In the V128 case, it is
+      The return type can be I{8,16,32,64} or V128. In the V128 case, it is
       expected that |args| will contain the special node IRExpr_VECRET(), in
       which case this routine generates code to allocate space on the stack for
       the vector return value.  Since we are not passing any scalars on the
@@ -310,12 +302,17 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       Note this requires being able to examine an expression and determine
       whether or not evaluation of it might use a fixed register. That requires
       knowledge of how the rest of this insn selector works. Currently just the
-      following 4 are regarded as safe -- hopefully they cover the majority of
-      arguments in practice: IRExpr_GSPTR, IRExpr_Tmp, IRExpr_Const, IRExpr_Get.
+      following 3 are regarded as safe -- hopefully they cover the majority of
+      arguments in practice: IRExpr_RdTmp, IRExpr_Const, IRExpr_Get.
    */
 
-   n_args = 0;
-   for (i = 0; args[i]; i++) {
+   /* These are used for cross-checking that IR-level constraints on the use of
+      IRExpr_VECRET() and IRExpr_GSPTR() are observed. */
+   UInt nVECRETs = 0;
+   UInt nGSPTRs  = 0;
+
+   UInt n_args = 0;
+   for (UInt i = 0; args[i] != NULL; i++) {
       IRExpr* arg = args[i];
       if (UNLIKELY(arg->tag == Iex_VECRET))
          nVECRETs++;
@@ -331,10 +328,10 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       record the stack pointer after that. */
    HReg r_vecRetAddr = INVALID_HREG;
    if (nVECRETs == 1) {
-      vassert(retTy == Ity_V128);
+      vassert(retTy == Ity_V128 || retTy == Ity_V256);
       r_vecRetAddr = newVRegI(env);
-      addInstr(env,
-               RISCV64Instr_ADDI(hregRISCV64_x2(), hregRISCV64_x2(), -16));
+      addInstr(env, RISCV64Instr_ADDI(hregRISCV64_x2(), hregRISCV64_x2(),
+                                      retTy == Ity_V128 ? -16 : -32));
       addInstr(env, RISCV64Instr_MV(r_vecRetAddr, hregRISCV64_x2()));
    } else {
       /* If either of these fail, the IR is ill-formed. */
@@ -342,24 +339,10 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       vassert(nVECRETs == 0);
    }
 
-   argregs[0] = hregRISCV64_x10();
-   argregs[1] = hregRISCV64_x11();
-   argregs[2] = hregRISCV64_x12();
-   argregs[3] = hregRISCV64_x13();
-   argregs[4] = hregRISCV64_x14();
-   argregs[5] = hregRISCV64_x15();
-   argregs[6] = hregRISCV64_x16();
-   argregs[7] = hregRISCV64_x17();
-
-   tmpregs[0] = tmpregs[1] = tmpregs[2] = tmpregs[3] = INVALID_HREG;
-   tmpregs[4] = tmpregs[5] = tmpregs[6] = tmpregs[7] = INVALID_HREG;
-
    /* First decide which scheme (slow or fast) is to be used. First assume the
       fast scheme, and select slow if any contraindications (wow) appear. */
+   Bool go_fast = True;
 
-   go_fast = True;
-
-   // TODO Review if this is really needed.
    /* We'll need space on the stack for the return value. Avoid possible
       complications with nested calls by using the slow scheme. */
    if (retTy == Ity_V128 || retTy == Ity_V256)
@@ -376,7 +359,7 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
    }
 
    if (go_fast)
-      for (i = 0; i < n_args; i++) {
+      for (UInt i = 0; i < n_args; i++) {
          if (mightRequireFixedRegs(args[i])) {
             go_fast = False;
             break;
@@ -387,29 +370,61 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       the arg values into the argument regs. If we run out of arg regs, give up.
     */
 
+   HReg argregs[RISCV64_N_ARGREGS];
+   HReg fargregs[RISCV64_N_FARGREGS];
+
+   vassert(RISCV64_N_ARGREGS == 8);
+   vassert(RISCV64_N_FARGREGS == 8);
+
+   argregs[0] = hregRISCV64_x10();
+   argregs[1] = hregRISCV64_x11();
+   argregs[2] = hregRISCV64_x12();
+   argregs[3] = hregRISCV64_x13();
+   argregs[4] = hregRISCV64_x14();
+   argregs[5] = hregRISCV64_x15();
+   argregs[6] = hregRISCV64_x16();
+   argregs[7] = hregRISCV64_x17();
+
+   fargregs[0] = hregRISCV64_f10();
+   fargregs[1] = hregRISCV64_f11();
+   fargregs[2] = hregRISCV64_f12();
+   fargregs[3] = hregRISCV64_f13();
+   fargregs[4] = hregRISCV64_f14();
+   fargregs[5] = hregRISCV64_f15();
+   fargregs[6] = hregRISCV64_f16();
+   fargregs[7] = hregRISCV64_f17();
+
+   HReg tmpregs[RISCV64_N_ARGREGS];
+   HReg ftmpregs[RISCV64_N_FARGREGS];
+   Int  nextArgReg = 0, nextFArgReg = 0;
+   HReg cond;
+
    if (go_fast) {
-
       /* FAST SCHEME */
-      nextArgReg = 0;
-
-      for (i = 0; i < n_args; i++) {
+      for (UInt i = 0; i < n_args; i++) {
          IRExpr* arg = args[i];
 
          IRType aTy = Ity_INVALID;
          if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, args[i]);
 
-         if (nextArgReg >= RISCV64_N_ARGREGS)
-            return False; /* Out of argregs. */
-
-         if (aTy == Ity_I64) {
+         if (aTy == Ity_I32 || aTy == Ity_I64) {
+            if (nextArgReg >= RISCV64_N_ARGREGS)
+               return False; /* Out of argregs. */
             addInstr(env, RISCV64Instr_MV(argregs[nextArgReg],
                                           iselIntExpr_R(env, args[i])));
             nextArgReg++;
+         } else if (aTy == Ity_F32 || aTy == Ity_F64) {
+            if (nextFArgReg >= RISCV64_N_FARGREGS)
+               return False; /* Out of fargregs. */
+            addInstr(env, RISCV64Instr_FMV_D(fargregs[nextFArgReg],
+                                             iselFltExpr(env, args[i])));
+            nextFArgReg++;
          } else if (arg->tag == Iex_GSPTR) {
-            // TODO Implement?
-            vassert(0); // ATC
-            addInstr(env, RISCV64Instr_MV(argregs[nextArgReg], INVALID_HREG));
+            if (nextArgReg >= RISCV64_N_ARGREGS)
+               return False; /* Out of argregs. */
+            addInstr(env,
+                     RISCV64Instr_MV(argregs[nextArgReg], hregRISCV64_x8()));
             nextArgReg++;
          } else if (arg->tag == Iex_VECRET) {
             /* Because of the go_fast logic above, we can't get here, since
@@ -423,27 +438,28 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       cond = INVALID_HREG;
 
    } else {
-
       /* SLOW SCHEME; move via temporaries. */
-      nextArgReg = 0;
-
-      for (i = 0; i < n_args; i++) {
+      for (UInt i = 0; i < n_args; i++) {
          IRExpr* arg = args[i];
 
          IRType aTy = Ity_INVALID;
          if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg)))
             aTy = typeOfIRExpr(env->type_env, args[i]);
 
-         if (nextArgReg >= RISCV64_N_ARGREGS)
-            return False; /* Out of argregs. */
-
-         if (aTy == Ity_I64) {
+         if (aTy == Ity_I32 || aTy == Ity_I64) {
+            if (nextArgReg >= RISCV64_N_ARGREGS)
+               return False; /* Out of argregs. */
             tmpregs[nextArgReg] = iselIntExpr_R(env, args[i]);
             nextArgReg++;
+         } else if (aTy == Ity_F32 || aTy == Ity_F64) {
+            if (nextFArgReg >= RISCV64_N_FARGREGS)
+               return False; /* Out of fargregs. */
+            ftmpregs[nextFArgReg] = iselFltExpr(env, args[i]);
+            nextFArgReg++;
          } else if (arg->tag == Iex_GSPTR) {
-            // TODO Implement?
-            vassert(0); // ATC
-            tmpregs[nextArgReg] = INVALID_HREG;
+            if (nextArgReg >= RISCV64_N_ARGREGS)
+               return False; /* Out of argregs. */
+            tmpregs[nextArgReg] = hregRISCV64_x8();
             nextArgReg++;
          } else if (arg->tag == Iex_VECRET) {
             vassert(!hregIsInvalid(r_vecRetAddr));
@@ -466,14 +482,19 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       }
 
       /* Move the args to their final destinations. */
-      for (i = 0; i < nextArgReg; i++) {
+      for (UInt i = 0; i < nextArgReg; i++) {
          vassert(!(hregIsInvalid(tmpregs[i])));
          addInstr(env, RISCV64Instr_MV(argregs[i], tmpregs[i]));
+      }
+      for (UInt i = 0; i < nextFArgReg; i++) {
+         vassert(!(hregIsInvalid(ftmpregs[i])));
+         addInstr(env, RISCV64Instr_FMV_D(fargregs[i], ftmpregs[i]));
       }
    }
 
    /* Should be assured by checks above. */
    vassert(nextArgReg <= RISCV64_N_ARGREGS);
+   vassert(nextFArgReg <= RISCV64_N_FARGREGS);
 
    /* Do final checks, set the return values, and generate the call instruction
       proper. */
@@ -486,20 +507,24 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       /* Function doesn't return a value. */
       *retloc = mk_RetLoc_simple(RLPri_None);
       break;
-   case Ity_I64:
-   case Ity_I32:
-   case Ity_I16:
    case Ity_I8:
+   case Ity_I16:
+   case Ity_I32:
+   case Ity_I64:
       *retloc = mk_RetLoc_simple(RLPri_Int);
       break;
    case Ity_V128:
       *retloc               = mk_RetLoc_spRel(RLPri_V128SpRel, 0);
       *stackAdjustAfterCall = 16;
       break;
+   case Ity_V256:
+      *retloc               = mk_RetLoc_spRel(RLPri_V256SpRel, 0);
+      *stackAdjustAfterCall = 32;
+      break;
    default:
       /* IR can denote other possible return types, but we don't handle those
          here. */
-      vassert(0);
+      return False;
    }
 
    /* Finally, generate the call itself. This needs the *retloc value set in the
@@ -510,10 +535,12 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       between 0 and 8 inclusive, is going to be equal to the number of arg regs
       in use for the call. Hence bake that number into the call (we'll need to
       know it when doing register allocation, to know what regs the call reads.)
-    */
 
-   addInstr(env,
-            RISCV64Instr_Call(*retloc, (Addr64)cee->addr, cond, nextArgReg));
+      The same applies to nextFArgReg which records a number of used
+      floating-point registers f10/fa0 .. f17/fa7.
+    */
+   addInstr(env, RISCV64Instr_Call(*retloc, (Addr64)cee->addr, cond, nextArgReg,
+                                   nextFArgReg));
 
    return True;
 }
@@ -1478,29 +1505,19 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       if (d->tmp != IRTemp_INVALID)
          retty = typeOfIRTemp(env->type_env, d->tmp);
 
-      Bool retty_ok;
-      switch (retty) {
-      case Ity_INVALID: /* Function doesn't return anything. */
-      case Ity_I64:
-      case Ity_I32:
-      case Ity_I16:
-      case Ity_I8:
-         retty_ok = True;
-         break;
-      default:
-         retty_ok = False;
-         break;
-      }
-      if (!retty_ok)
-         break;
+      if (retty != Ity_INVALID && retty != Ity_I8 && retty != Ity_I16 &&
+          retty != Ity_I32 && retty != Ity_I64)
+         goto stmt_fail;
 
-      /* Marshal args, do the call, and set the return value to 0x555..555 if
-         this is a conditional call that returns a value and the call is
-         skipped. */
+      /* Marshal args and do the call. */
       UInt   addToSp = 0;
       RetLoc rloc    = mk_RetLoc_INVALID();
-      doHelperCall(&addToSp, &rloc, env, d->guard, d->cee, retty, d->args);
+      Bool   ok =
+         doHelperCall(&addToSp, &rloc, env, d->guard, d->cee, retty, d->args);
+      if (!ok)
+         goto stmt_fail;
       vassert(is_sane_RetLoc(rloc));
+      vassert(addToSp == 0);
 
       /* Now figure out what to do with the returned value, if any. */
       switch (retty) {
@@ -1508,36 +1525,32 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          /* No return value. Nothing to do. */
          vassert(d->tmp == IRTemp_INVALID);
          vassert(rloc.pri == RLPri_None);
-         vassert(addToSp == 0);
          return;
       }
-      case Ity_I64: {
+      /* The returned value is for Ity_I<x> in x10/a0. Park it in the register
+         associated with tmp. */
+      case Ity_I8:
+      case Ity_I16: {
          vassert(rloc.pri == RLPri_Int);
-         vassert(addToSp == 0);
-         /* The returned value is in x10/a0. Park it in the register associated
-            with tmp. */
-         HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, RISCV64Instr_MV(dst, hregRISCV64_x10()));
-         return;
-      }
-      case Ity_I32: {
-         vassert(rloc.pri == RLPri_Int);
-         vassert(addToSp == 0);
          /* Sign-extend the value returned from the helper as is expected by the
             rest of the backend. */
-         HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, RISCV64Instr_ADDIW(dst, hregRISCV64_x10(), 0));
-         return;
-      }
-      case Ity_I16:
-      case Ity_I8: {
-         vassert(rloc.pri == RLPri_Int);
-         vassert(addToSp == 0);
          HReg dst   = lookupIRTemp(env, d->tmp);
          UInt shift = 64 - 8 * sizeofIRType(retty);
          HReg tmp   = newVRegI(env);
          addInstr(env, RISCV64Instr_SLLI(tmp, hregRISCV64_x10(), shift));
          addInstr(env, RISCV64Instr_SRAI(dst, tmp, shift));
+         return;
+      }
+      case Ity_I32: {
+         vassert(rloc.pri == RLPri_Int);
+         HReg dst = lookupIRTemp(env, d->tmp);
+         addInstr(env, RISCV64Instr_ADDIW(dst, hregRISCV64_x10(), 0));
+         return;
+      }
+      case Ity_I64: {
+         vassert(rloc.pri == RLPri_Int);
+         HReg dst = lookupIRTemp(env, d->tmp);
+         addInstr(env, RISCV64Instr_MV(dst, hregRISCV64_x10()));
          return;
       }
       default:

@@ -808,15 +808,16 @@ RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond)
    return i;
 }
 
-RISCV64Instr*
-RISCV64Instr_Call(RetLoc rloc, Addr64 target, HReg cond, Int nArgRegs)
+RISCV64Instr* RISCV64Instr_Call(
+   RetLoc rloc, Addr64 target, HReg cond, UChar nArgRegs, UChar nFArgRegs)
 {
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_Call;
-   i->RISCV64in.Call.rloc     = rloc;
-   i->RISCV64in.Call.target   = target;
-   i->RISCV64in.Call.cond     = cond;
-   i->RISCV64in.Call.nArgRegs = nArgRegs;
+   RISCV64Instr* i             = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                      = RISCV64in_Call;
+   i->RISCV64in.Call.rloc      = rloc;
+   i->RISCV64in.Call.target    = target;
+   i->RISCV64in.Call.cond      = cond;
+   i->RISCV64in.Call.nArgRegs  = nArgRegs;
+   i->RISCV64in.Call.nFArgRegs = nFArgRegs;
    return i;
 }
 
@@ -1426,8 +1427,9 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
          ppHRegRISCV64(i->RISCV64in.Call.cond);
          vex_printf(", zero, 1f; ");
       }
-      vex_printf("li t0, 0x%llx; c.jalr 0(t0) [nArgRegs=%d, ",
-                 i->RISCV64in.Call.target, i->RISCV64in.Call.nArgRegs);
+      vex_printf("li t0, 0x%llx; c.jalr 0(t0) [nArgRegs=%u, nFArgRegs=%u, ",
+                 i->RISCV64in.Call.target, i->RISCV64in.Call.nArgRegs,
+                 i->RISCV64in.Call.nFArgRegs);
       ppRetLoc(i->RISCV64in.Call.rloc);
       vex_printf("]; 1:");
       return;
@@ -1931,7 +1933,7 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmWrite, hregRISCV64_f30());
       addHRegUse(u, HRmWrite, hregRISCV64_f31());
       /* Now we have to state any parameter-carrying registers which might be
-         read. This depends on nArgRegs. */
+         read. This depends on nArgRegs and nFArgRegs. */
       switch (i->RISCV64in.Call.nArgRegs) {
       case 8:
          addHRegUse(u, HRmRead, hregRISCV64_x17()); /*fallthru*/
@@ -1954,6 +1956,29 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
          break;
       default:
          vpanic("getRegUsage_RISCV64Instr:Call:regparms");
+      }
+      switch (i->RISCV64in.Call.nFArgRegs) {
+      case 8:
+         addHRegUse(u, HRmRead, hregRISCV64_f17()); /*fallthru*/
+      case 7:
+         addHRegUse(u, HRmRead, hregRISCV64_f16()); /*fallthru*/
+      case 6:
+         addHRegUse(u, HRmRead, hregRISCV64_f15()); /*fallthru*/
+      case 5:
+         addHRegUse(u, HRmRead, hregRISCV64_f14()); /*fallthru*/
+      case 4:
+         addHRegUse(u, HRmRead, hregRISCV64_f13()); /*fallthru*/
+      case 3:
+         addHRegUse(u, HRmRead, hregRISCV64_f12()); /*fallthru*/
+      case 2:
+         addHRegUse(u, HRmRead, hregRISCV64_f11()); /*fallthru*/
+      case 1:
+         addHRegUse(u, HRmRead, hregRISCV64_f10());
+         break;
+      case 0:
+         break;
+      default:
+         vpanic("getRegUsage_RISCV64Instr:Call:fregparms");
       }
       /* Finally, add the condition register. */
       if (!hregIsInvalid(i->RISCV64in.Call.cond))

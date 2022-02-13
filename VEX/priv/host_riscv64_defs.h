@@ -89,6 +89,7 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 40); }
 
 /* Number of registers used for argument passing in function calls. */
 #define RISCV64_N_ARGREGS 8 /* x10/a0 .. x17/a7 */
+#define RISCV64_N_FARGREGS 8 /* f10/fa0 .. f17/fa7 */
 
 /*------------------------------------------------------------*/
 /*--- Instructions                                         ---*/
@@ -638,10 +639,11 @@ typedef struct {
       /* Call pseudoinstruction. Call a target (an absolute address), on a given
          condition register. */
       struct {
-         RetLoc rloc;     /* Where the return value will be. */
-         Addr64 target;   /* Target address of the call. */
-         HReg   cond;     /* Condition, can be INVALID_HREG for "always". */
-         Int    nArgRegs; /* # regs carrying args: 0 .. 8 */
+         RetLoc rloc;      /* Where the return value will be. */
+         Addr64 target;    /* Target address of the call. */
+         HReg   cond;      /* Condition, can be INVALID_HREG for "always". */
+         UChar  nArgRegs;  /* # regs carrying integer args: 0 .. 8 */
+         UChar  nFArgRegs; /* # regs carrying floating-point args: 0 .. 8 */
       } Call;
       /* Update the guest pc value, then exit requesting to chain to it. May be
          conditional. */
@@ -754,8 +756,8 @@ RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond);
-RISCV64Instr*
-RISCV64Instr_Call(RetLoc rloc, Addr64 target, HReg cond, Int nArgRegs);
+RISCV64Instr* RISCV64Instr_Call(
+   RetLoc rloc, Addr64 target, HReg cond, UChar nArgRegs, UChar nFArgRegs);
 RISCV64Instr* RISCV64Instr_XDirect(
    Addr64 dstGA, HReg base, Int soff12, HReg cond, Bool toFastEP);
 RISCV64Instr* RISCV64Instr_XIndir(HReg dstGA, HReg base, Int soff12, HReg cond);
