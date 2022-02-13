@@ -99,7 +99,7 @@ fsd fa4, 0(a5) ::
   inputs: fa4=0xabcdef0123456789, a5=&area_mid
   [+000]  89 67 45 23 01 ef cd ab .. .. .. .. .. .. .. ..
 fadd.d fa0, fa1, fa2 ::
-  inputs: fa1=0x3ff0000000000000, fa2=0x4000000000000000, fcsr=0x00000000
+  inputs: fa1=0x4000000000000000, fa2=0x3ff0000000000000, fcsr=0x00000000
   output: fa0=0x4008000000000000, fcsr=0x00000000
 fadd.d fa0, fa1, fa2 ::
   inputs: fa1=0x3ff0000000000000, fa2=0xbff0000000000000, fcsr=0x00000000
@@ -178,6 +178,87 @@ fadd.d fa0, fa1, fa2 ::
   output: fa0=0x3ff0000000000001, fcsr=0x00000081
 fadd.d fa0, fa1, fa2 ::
   inputs: fa1=0xbff0000000000000, fa2=0xbca0000000000000, fcsr=0x00000080
+  output: fa0=0xbff0000000000001, fcsr=0x00000081
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x4000000000000000, fa2=0x3ff0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x3ff0000000000000, fcsr=0x00000000
+  output: fa0=0x0000000000000000, fcsr=0x00000000
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x0000000000000001, fa2=0x8000000000000001, fcsr=0x00000000
+  output: fa0=0x0000000000000002, fcsr=0x00000000
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x7fefffffffffffff, fa2=0xffefffffffffffff, fcsr=0x00000000
+  output: fa0=0x7ff0000000000000, fcsr=0x00000005
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0xffefffffffffffff, fa2=0x7fefffffffffffff, fcsr=0x00000000
+  output: fa0=0xfff0000000000000, fcsr=0x00000005
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x0010000000000001, fa2=0x0010000000000000, fcsr=0x00000000
+  output: fa0=0x0000000000000001, fcsr=0x00000000
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x7ff0000000000000, fa2=0x7ff0000000000000, fcsr=0x00000000
+  output: fa0=0x7ff8000000000000, fcsr=0x00000010
+fsub.d fa0, fa1, fa2, rne ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rne ::
+  inputs: fa1=0x3ff0000000000002, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000002, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rtz ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rdn ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000001, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rup ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rup ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rmm ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsub.d fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000001, fcsr=0x00000001
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000002, fa2=0x3ca0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000002, fcsr=0x00000001
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000020
+  output: fa0=0x3ff0000000000000, fcsr=0x00000021
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000020
+  output: fa0=0xbff0000000000000, fcsr=0x00000021
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000040
+  output: fa0=0x3ff0000000000000, fcsr=0x00000041
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000040
+  output: fa0=0xbff0000000000001, fcsr=0x00000041
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000060
+  output: fa0=0x3ff0000000000001, fcsr=0x00000061
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000060
+  output: fa0=0xbff0000000000000, fcsr=0x00000061
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000001, fa2=0x3ca0000000000000, fcsr=0x00000080
+  output: fa0=0x3ff0000000000001, fcsr=0x00000081
+fsub.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x3ca0000000000000, fcsr=0x00000080
   output: fa0=0xbff0000000000001, fcsr=0x00000081
 
 RV64D double-precision FP instruction set, additions
