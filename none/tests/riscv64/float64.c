@@ -42,16 +42,444 @@ static void test_float64_shared(void)
    TESTINST_0_2_FSTORE(4, "fsd fa4, 0(a5)", 0xabcdef0123456789, fa4, a5);
 
    /* ------------ fmadd.d rd, rs1, rs2, rs3, rm ------------ */
-   /* TODO Implement. */
+   /* 3.0 * 2.0 + 1.0 -> 7.0 */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x4008000000000000,
+                  0x4000000000000000, 0x3ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + -1.0 -> 0.0 */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * DBL_TRUE_MIN + -DBL_TRUE_MIN -> DBL_TRUE_MIN (no UF because exact)
+    */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x0000000000000001, 0x8000000000000001, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * DBL_MAX + -DBL_MAX -> DBL_MAX */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0xffefffffffffffff, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * DBL_MAX + 0.0 -> INFINITY (OF, NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0x0000000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * INFINITY + -INFINITY -> qNAN (NV) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7ff0000000000000, 0xfff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rne", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) + DBL_EPSILON/2 (RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rne", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rtz", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rtz", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rdn", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rdn", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rup", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rup", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rmm", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3, rmm", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) + DBL_EPSILON/2 (DYN-RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (DYN-RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (DYN-RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 + DBL_EPSILON/2 (DYN-RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 + -DBL_EPSILON/2 (DYN-RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0xbca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
 
    /* ------------ fmsub.d rd, rs1, rs2, rs3, rm ------------ */
-   /* TODO Implement. */
+   /* 3.0 * 2.0 - 1.0 -> 5.0 */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x4008000000000000,
+                  0x4000000000000000, 0x3ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 1.0 - 1.0 -> 0.0 */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * DBL_TRUE_MIN - DBL_TRUE_MIN -> DBL_TRUE_MIN (no UF because exact)
+    */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x0000000000000001, 0x0000000000000001, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * DBL_MAX - DBL_MAX -> DBL_MAX */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0x7fefffffffffffff, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * DBL_MAX - 0.0 -> INFINITY (OF, NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0x0000000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 2.0 * INFINITY - INFINITY -> qNAN (NV) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7ff0000000000000, 0x7ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rne", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 2nextafter(1.0) - DBL_EPSILON/2 (RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rne", 0x3ff0000000000000,
+                  0x3ff0000000000002, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rtz", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rtz", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rdn", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rdn", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rup", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rup", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rmm", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3, rmm", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * 2nextafter(1.0) - DBL_EPSILON/2 (DYN-RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000002, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (DYN-RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (DYN-RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * nextafter(1.0) - DBL_EPSILON/2 (DYN-RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
+   /* 1.0 * -1.0 - DBL_EPSILON/2 (DYN-RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0xbff0000000000000, 0x3ca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
 
    /* ----------- fnmsub.d rd, rs1, rs2, rs3, rm ------------ */
-   /* TODO Implement. */
+   /* -(3.0 * 2.0) + 1.0 -> -5.0 */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x4008000000000000,
+                  0x4000000000000000, 0x3ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + 1.0 -> 0.0 */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * DBL_TRUE_MIN) + DBL_TRUE_MIN -> -DBL_TRUE_MIN (no UF because
+      exact) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x0000000000000001, 0x0000000000000001, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * DBL_MAX) + DBL_MAX -> -DBL_MAX */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0x7fefffffffffffff, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * DBL_MAX) + 0.0 -> -INFINITY (OF, NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0x0000000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * INFINITY) + INFINITY -> qNAN (NV) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7ff0000000000000, 0x7ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rne", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) + DBL_EPSILON/2 (RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rne", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rtz", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rtz", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rdn", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rdn", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rup", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rup", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rmm", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3, rmm", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) + DBL_EPSILON/2 (DYN-RNE) -> 2nextafter(1.0) (NX)
+    */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (DYN-RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (DYN-RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 1.0) + DBL_EPSILON/2 (DYN-RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) + -DBL_EPSILON/2 (DYN-RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmsub.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
 
    /* ----------- fnmadd.d rd, rs1, rs2, rs3, rm ------------ */
-   /* TODO Implement. */
+   /* -(3.0 * 2.0) - 1.0 -> -7.0 */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x4008000000000000,
+                  0x4000000000000000, 0x3ff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - -1.0 -> 0.0 */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0xbff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * DBL_TRUE_MIN) - -DBL_TRUE_MIN -> -DBL_TRUE_MIN (no UF because
+      exact) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x0000000000000001, 0x8000000000000001, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * DBL_MAX) - -DBL_MAX -> -DBL_MAX */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0xffefffffffffffff, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * DBL_MAX) - 0.0 -> -INFINITY (OF, NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7fefffffffffffff, 0x0000000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(2.0 * INFINITY) - -INFINITY -> qNAN (NV) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x4000000000000000,
+                  0x7ff0000000000000, 0xfff0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rne", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 2nextafter(1.0)) - DBL_EPSILON/2 (RNE) -> 2nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rne", 0xbff0000000000000,
+                  0x3ff0000000000002, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rtz", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rtz", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rdn", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rdn", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rup", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rup", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rmm", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3, rmm", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * 2nextafter(1.0)) - DBL_EPSILON/2 (DYN-RNE) -> 2nextafter(1.0)
+      (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000002, 0x3ca0000000000000, 0x00, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x20, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (DYN-RDN) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x40, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (DYN-RUP) -> nextafter(1.0) (NX)
+    */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x60, fa0, fa1, fa2,
+                  fa3);
+   /* -(-1.0 * nextafter(1.0)) - DBL_EPSILON/2 (DYN-RMM) -> nextafter(1.0) (NX)
+    */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0xbff0000000000000,
+                  0x3ff0000000000001, 0x3ca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
+   /* -(1.0 * 1.0) - DBL_EPSILON/2 (DYN-RMM) -> -nextafter(1.0) (NX) */
+   TESTINST_1_3_F(4, "fnmadd.d fa0, fa1, fa2, fa3", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x3ca0000000000000, 0x80, fa0, fa1, fa2,
+                  fa3);
 
    /* --------------- fadd.d rd, rs1, rs2, rm --------------- */
    /* 2.0 + 1.0 -> 3.0 */
