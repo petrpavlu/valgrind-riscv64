@@ -85,6 +85,11 @@ riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV);
 extern UInt
 riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV);
 
+extern UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
+                                              Double a2,
+                                              Double a3,
+                                              UInt   rm_RISCV);
+
 #endif /* ndef __VEX_GUEST_RISCV64_DEFS_H */
 
 /*--------------------------------------------------------------------*/

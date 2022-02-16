@@ -86,6 +86,41 @@ UInt riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV)
    CALCULATE_FFLAGS_BINARY64("fdiv.d");
 }
 
+#if defined(__riscv) && (__riscv_xlen == 64)
+/* clang-format off */
+#define CALCULATE_FFLAGS_TERNARY64(inst)                                       \
+   do {                                                                        \
+      UInt res;                                                                \
+      __asm__ __volatile__(                                                    \
+         "csrr t0, fcsr\n\t"                                                   \
+         "csrw frm, %[rm]\n\t"                                                 \
+         "csrw fflags, zero\n\t"                                               \
+         inst " %[a1], %[a1], %[a2], %[a3]\n\t"                                \
+         "csrr %[res], fflags\n\t"                                             \
+         "csrw fcsr, t0\n\t"                                                   \
+         : [res] "=r"(res)                                                     \
+         : [a1] "f"(a1), [a2] "f"(a2), [a3] "f"(a3), [rm] "r"(rm_RISCV)        \
+         : "t0");                                                              \
+      return res;                                                              \
+   } while (0)
+/* clang-format on */
+#else
+/* No simulated version is currently implemented. */
+#define CALCULATE_FFLAGS_TERNARY64(inst)                                       \
+   do {                                                                        \
+      return 0;                                                                \
+   } while (0)
+#endif
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
+                                       Double a2,
+                                       Double a3,
+                                       UInt   rm_RISCV)
+{
+   CALCULATE_FFLAGS_TERNARY64("fmadd.d");
+}
+
 /*------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers. ---*/
 /*--- These help iropt specialise calls the above run-time ---*/

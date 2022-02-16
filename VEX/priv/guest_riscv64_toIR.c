@@ -1965,35 +1965,47 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       IRTemp rm_RISCV, rm_IR;
       mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       const HChar* name;
-      IRExpr*      expr;
+      IRTemp       a1 = newTemp(irsb, Ity_F64);
+      IRTemp       a2 = newTemp(irsb, Ity_F64);
+      IRTemp       a3 = newTemp(irsb, Ity_F64);
       switch (opcode) {
       case 0b1000011:
          name = "fmadd";
-         expr = qop(Iop_MAddF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2),
-                    getFReg64(rs3));
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, getFReg64(rs2));
+         assign(irsb, a3, getFReg64(rs3));
          break;
       case 0b1000111:
          name = "fmsub";
-         expr = qop(Iop_MAddF64, mkexpr(rm_IR), getFReg64(rs1), getFReg64(rs2),
-                    unop(Iop_NegF64, getFReg64(rs3)));
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, getFReg64(rs2));
+         assign(irsb, a3, unop(Iop_NegF64, getFReg64(rs3)));
          break;
       case 0b1001011:
          name = "fnmsub";
-         expr =
-            qop(Iop_MAddF64, mkexpr(rm_IR), unop(Iop_NegF64, getFReg64(rs1)),
-                getFReg64(rs2), getFReg64(rs3));
+         assign(irsb, a1, unop(Iop_NegF64, getFReg64(rs1)));
+         assign(irsb, a2, getFReg64(rs2));
+         assign(irsb, a3, getFReg64(rs3));
          break;
       case 0b1001111:
          name = "fnmadd";
-         expr =
-            qop(Iop_MAddF64, mkexpr(rm_IR), unop(Iop_NegF64, getFReg64(rs1)),
-                getFReg64(rs2), unop(Iop_NegF64, getFReg64(rs3)));
+         assign(irsb, a1, unop(Iop_NegF64, getFReg64(rs1)));
+         assign(irsb, a2, getFReg64(rs2));
+         assign(irsb, a3, unop(Iop_NegF64, getFReg64(rs3)));
          break;
       default:
          vassert(0);
       }
-      putFReg64(irsb, rd, expr);
-      /* TODO Implement setting of fflags. */
+      putFReg64(
+         irsb, rd,
+         qop(Iop_MAddF64, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2), mkexpr(a3)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/,
+                                        "riscv64g_calculate_fflags_fmadd_d",
+                                        riscv64g_calculate_fflags_fmadd_d,
+                                        mkIRExprVec_4(mkexpr(a1), mkexpr(a2),
+                                                      mkexpr(a3),
+                                                      mkexpr(rm_RISCV)))));
       DIP("%s.d %s, %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
           nameFReg(rs2), nameFReg(rs3), nameRMOperand(rm));
       return True;
