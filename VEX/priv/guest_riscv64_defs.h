@@ -81,8 +81,6 @@ extern VexGuestLayout riscv64guest_layout;
 extern UInt
 riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV);
 extern UInt
-riscv64g_calculate_fflags_fsub_d(Double a1, Double a2, UInt rm_RISCV);
-extern UInt
 riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV);
 extern UInt
 riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV);

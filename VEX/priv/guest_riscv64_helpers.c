@@ -77,10 +77,6 @@ UInt riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_BINARY64("fadd.d");
 }
-UInt riscv64g_calculate_fflags_fsub_d(Double a1, Double a2, UInt rm_RISCV)
-{
-   CALCULATE_FFLAGS_BINARY64("fsub.d");
-}
 UInt riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_BINARY64("fmul.d");

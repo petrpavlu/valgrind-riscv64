@@ -2012,40 +2012,46 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       const HChar* name;
       IROp         op;
+      IRTemp       a1 = newTemp(irsb, Ity_F64);
+      IRTemp       a2 = newTemp(irsb, Ity_F64);
       const HChar* helper_name;
       void*        helper_addr;
       switch (funct7) {
       case 0b0000001:
-         name        = "fadd";
-         op          = Iop_AddF64;
+         name = "fadd";
+         op   = Iop_AddF64;
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, getFReg64(rs2));
          helper_name = "riscv64g_calculate_fflags_fadd_d";
          helper_addr = riscv64g_calculate_fflags_fadd_d;
          break;
       case 0b0000101:
-         name        = "fsub";
-         op          = Iop_SubF64;
-         helper_name = "riscv64g_calculate_fflags_fsub_d";
-         helper_addr = riscv64g_calculate_fflags_fsub_d;
+         name = "fsub";
+         op   = Iop_AddF64;
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, unop(Iop_NegF64, getFReg64(rs2)));
+         helper_name = "riscv64g_calculate_fflags_fadd_d";
+         helper_addr = riscv64g_calculate_fflags_fadd_d;
          break;
       case 0b0001001:
-         name        = "fmul";
-         op          = Iop_MulF64;
+         name = "fmul";
+         op   = Iop_MulF64;
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, getFReg64(rs2));
          helper_name = "riscv64g_calculate_fflags_fmul_d";
          helper_addr = riscv64g_calculate_fflags_fmul_d;
          break;
       case 0b0001101:
-         name         = "fdiv";
-         op           = Iop_DivF64;
-         helper_name  = "riscv64g_calculate_fflags_fdiv_d";
+         name = "fdiv";
+         op   = Iop_DivF64;
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, getFReg64(rs2));
+         helper_name = "riscv64g_calculate_fflags_fdiv_d";
          helper_addr = riscv64g_calculate_fflags_fdiv_d;
          break;
       default:
          vassert(0);
       }
-      IRTemp a1 = newTemp(irsb, Ity_F64);
-      IRTemp a2 = newTemp(irsb, Ity_F64);
-      assign(irsb, a1, getFReg64(rs1));
-      assign(irsb, a2, getFReg64(rs2));
       putFReg64(irsb, rd, triop(op, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2)));
       putFCSR(irsb, binop(Iop_Or32, getFCSR(),
                           mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
