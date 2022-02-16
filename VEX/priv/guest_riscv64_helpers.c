@@ -52,15 +52,16 @@
 #define CALCULATE_FFLAGS_BINARY64(inst)                                        \
    do {                                                                        \
       UInt res;                                                                \
-      __asm__ __volatile__("csrr t0, fcsr\n\t"                                 \
-                           "csrw frm, %[rm]\n\t"                               \
-                           "csrw fflags, zero\n\t"                             \
-                           inst " %[a1], %[a1], %[a2]\n\t"                     \
-                           "csrr %[res], fflags\n\t"                           \
-                           "csrw fcsr, t0\n\t"                                 \
-                           : [res] "=r"(res)                                   \
-                           : [a1] "f"(a1), [a2] "f"(a2), [rm] "r"(rm_RISCV)    \
-                           : "t0");                                            \
+      __asm__ __volatile__(                                                    \
+         "csrr t0, fcsr\n\t"                                                   \
+         "csrw frm, %[rm]\n\t"                                                 \
+         "csrw fflags, zero\n\t"                                               \
+         inst " %[a1], %[a1], %[a2]\n\t"                                       \
+         "csrr %[res], fflags\n\t"                                             \
+         "csrw fcsr, t0\n\t"                                                   \
+         : [res] "=r"(res)                                                     \
+         : [a1] "f"(a1), [a2] "f"(a2), [rm] "r"(rm_RISCV)                      \
+         : "t0");                                                              \
       return res;                                                              \
    } while (0)
 /* clang-format on */
