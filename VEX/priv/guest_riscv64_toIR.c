@@ -2099,30 +2099,30 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rm != 0b010 && rm != 0b001 && rm != 0b000) {
          /* Invalid F{EQ,LT,LE}.D, fall through. */
       } else {
+         IRTemp cmp = newTemp(irsb, Ity_I32);
+         assign(irsb, cmp, binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2)));
          const HChar* name;
-         IRExpr*      cond;
-         IRCmpFResult res;
+         IRTemp       res = newTemp(irsb, Ity_I1);
          switch (rm) {
          case 0b010:
             name = "feq";
-            cond = binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2));
-            res = Ircr_EQ;
+            assign(irsb, res, binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ)));
             break;
          case 0b001:
             name = "flt";
-            cond = binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2));
-            res = Ircr_LT;
+            assign(irsb, res, binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)));
             break;
          case 0b000:
             name = "fle";
-            cond = binop(Iop_CmpF64, getFReg64(rs2), getFReg64(rs1));
-            res = Ircr_GT;
+            assign(irsb, res,
+                   binop(Iop_Or1,
+                         binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)),
+                         binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ))));
             break;
          default:
             vassert(0);
          }
-         putIReg64(irsb, rd,
-                   unop(Iop_1Uto64, binop(Iop_CmpEQ32, cond, mkU32(res))));
+         putIReg64(irsb, rd, unop(Iop_1Uto64, mkexpr(res)));
          /* TODO Implement setting of fflags (for a signaling NaN). */
          DIP("%s.d %s, %s, %s\n", name, nameIReg(rd), nameFReg(rs1),
              nameFReg(rs2));

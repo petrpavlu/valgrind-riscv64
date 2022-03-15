@@ -916,7 +916,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg t5 = newVRegI(env);
          addInstr(env, RISCV64Instr_LI(t5, Ircr_EQ));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_CSEL(dst, t5, t4, gt));
+         addInstr(env, RISCV64Instr_CSEL(dst, t5, t4, eq));
          return dst;
       }
       case Iop_F64toI32S: {
