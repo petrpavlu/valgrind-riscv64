@@ -828,6 +828,9 @@ static void test_float64_shared(void)
    /* TODO Implement. */
 
    /* ---------------- fsgnj.d rd, rs1, rs2 ----------------- */
+   /* fmv.d fa0, fa1 */
+   TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa1", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x00, fa0, fa1, fa1);
    /* TODO Implement. */
 
    /* ---------------- fsgnjn.d rd, rs1, rs2 ---------------- */
