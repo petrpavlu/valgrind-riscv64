@@ -527,8 +527,8 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_0_2_Bxx_COND(length, instruction, rs1_val, rs2_val, rs1, rs2) \
    JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
 
-#define TESTINST_1_2_F(length, instruction, rs1_val, rs2_val, fcsr_val, rd,    \
-                       rs1, rs2)                                               \
+#define TYPED_X_FF(length, instruction, rs1_val, rs2_val, fcsr_val, rd, rs1,   \
+                   rs2, dpref)                                                 \
    {                                                                           \
       unsigned long w[2 /*out*/ + 3 /*in*/ + 4 /*spill*/] = {                  \
          0, 0, (unsigned long)rs1_val, (unsigned long)rs2_val,                 \
@@ -545,7 +545,7 @@ static void show_block_diff(unsigned char* block1,
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         "fsd " #rd ", 40(%[w]);"      /* Spill rd. */                         \
+         dpref "sd " #rd ", 40(%[w]);" /* Spill rd. */                         \
          "frcsr t2;"                                                           \
          "sd t2, 48(%[w]);"            /* Spill fcsr. */                       \
          "fsd " #rs1 ", 56(%[w]);"     /* Spill rs1. */                        \
@@ -555,12 +555,12 @@ static void show_block_diff(unsigned char* block1,
          "fld " #rs1 ", 16(%[w]);"     /* Load the first input. */             \
          "fld " #rs2 ", 24(%[w]);"     /* Load the second input. */            \
          ASMINST_##length(instruction) ";"                                     \
-         "fsd " #rd ", 0(%[w]);"       /* Save result of the operation. */     \
+         dpref "sd " #rd ", 0(%[w]);"  /* Save result of the operation. */     \
          "frcsr t2;"                                                           \
          "sd t2, 8(%[w]);"             /* Save fcsr. */                        \
          "ld t2, 48(%[w]);"                                                    \
          "fscsr t2;"                   /* Reload fcsr. */                      \
-         "fld " #rd ", 40(%[w]);"      /* Reload rd. */                        \
+         dpref "ld " #rd ", 40(%[w]);" /* Reload rd. */                        \
          "fld " #rs1 ", 56(%[w]);"     /* Reload rs1. */                       \
          "fld " #rs2 ", 64(%[w]);"     /* Reload rs2. */                       \
          :                                                                     \
@@ -572,6 +572,16 @@ static void show_block_diff(unsigned char* block1,
              (unsigned long)fcsr_val);                                         \
       printf("  output: %s=0x%016lx, fcsr=0x%08lx\n", #rd, w[0], w[1]);        \
    }
+
+#define TESTINST_1_2_F(length, instruction, rs1_val, rs2_val, fcsr_val, rd,    \
+                       rs1, rs2)                                               \
+    TYPED_X_FF(length, instruction, rs1_val, rs2_val, fcsr_val, rd, rs1, rs2,  \
+               "f")
+
+#define TESTINST_1_2_FCMP(length, instruction, rs1_val, rs2_val, fcsr_val, rd, \
+                          rs1, rs2)                                            \
+    TYPED_X_FF(length, instruction, rs1_val, rs2_val, fcsr_val, rd, rs1, rs2,  \
+               "")
 
 #define TESTINST_1_3_F(length, instruction, rs1_val, rs2_val, rs3_val,         \
                        fcsr_val, rd, rs1, rs2, rs3)                            \
