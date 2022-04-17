@@ -189,6 +189,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
       show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
+      free(area2);                                                             \
    }
 
 #define TESTINST_1_1_LOAD(length, instruction, rd, rs1)                        \
@@ -228,6 +229,7 @@ static void show_block_diff(unsigned char* block1,
              (unsigned long)rs2_val, #rs1);                                    \
       show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
+      free(area2);                                                             \
    }
 
 #define TESTINST_0_2_STORE(length, instruction, rs2_val, rs2, rs1)             \
@@ -298,6 +300,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  inputs: %s=&area_mid, %s=0x%016lx\n", #rs1, #lr_rd, w[0]);     \
       printf("  output: %s=0x%016lx\n", #sc_rd, w[3]);                         \
       free(area);                                                              \
+      free(area2);                                                             \
    }
 
 #define TESTINST_1_2_AMOX(length, instruction, rs2_val, rd, rs2, rs1)          \
@@ -337,6 +340,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
       show_block_diff(area, area2, N, N / 2);                                  \
       free(area);                                                              \
+      free(area2);                                                             \
    }
 
 #define TESTINST_1_0_AUIPC(length, instruction, rd)                            \
