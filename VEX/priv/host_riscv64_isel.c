@@ -1366,6 +1366,12 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_FSGNJN_D(dst, src, src));
          return dst;
       }
+      case Iop_AbsF64: {
+         HReg dst = newVRegF(env);
+         HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FSGNJX_D(dst, src, src));
+         return dst;
+      }
       case Iop_I32StoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
