@@ -831,12 +831,24 @@ static void test_float64_shared(void)
    /* fmv.d fa0, fa1 */
    TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa1", 0x3ff0000000000000,
                   0x3ff0000000000000, 0x00, fa0, fa1, fa1);
+   TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa1", 0xbff0000000000000,
+                  0xbff0000000000000, 0x00, fa0, fa1, fa1);
    /* TODO Implement. */
 
    /* ---------------- fsgnjn.d rd, rs1, rs2 ---------------- */
+   /* fneg.d fa0, fa1 */
+   TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa1", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x00, fa0, fa1, fa1);
+   TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa1", 0xbff0000000000000,
+                  0xbff0000000000000, 0x00, fa0, fa1, fa1);
    /* TODO Implement. */
 
    /* ---------------- fsgnjx.d rd, rs1, rs2 ---------------- */
+   /* fabs.d fa0, fa1 */
+   TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa1", 0x3ff0000000000000,
+                  0x3ff0000000000000, 0x00, fa0, fa1, fa1);
+   TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa1", 0xbff0000000000000,
+                  0xbff0000000000000, 0x00, fa0, fa1, fa1);
    /* TODO Implement. */
 
    /* ----------------- fmin.d rd, rs1, rs2 ----------------- */
