@@ -1320,10 +1320,15 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
 
    arch->vex.guest_x2 = iifii.initial_client_SP;
    arch->vex.guest_pc = iifii.initial_client_IP;
+   /* Initialize FCSR in the same way as done by the Linux kernel:
+      accrued exception flags cleared; round to nearest, ties to even. */
+   arch->vex.guest_fcsr = 0;
 
    /* Tell the tool about the registers we just wrote. */
    VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_STACK_PTR, 8);
    VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1, VG_O_INSTR_PTR, 8);
+   VG_TRACK(post_reg_write, Vg_CoreStartup, /*tid*/1,
+            offsetof(VexGuestRISCV64State, guest_fcsr), 4);
 
 #define PRECISE_GUEST_REG_DEFINEDNESS_AT_STARTUP 1
 
