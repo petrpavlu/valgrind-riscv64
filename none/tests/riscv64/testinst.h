@@ -531,6 +531,50 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_0_2_Bxx_COND(length, instruction, rs1_val, rs2_val, rs1, rs2) \
    JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
 
+#define TYPED_X_X(length, instruction, rs1_val, fcsr_val, rd, rs1, dpre, spre) \
+   {                                                                           \
+      unsigned long w[2 /*out*/ + 2 /*in*/ + 3 /*spill*/] = {                  \
+         0, 0, (unsigned long)rs1_val, (unsigned long)fcsr_val, 0, 0, 0};      \
+      /* w[0] = output rd value                                                \
+         w[1] = output fcsr value                                              \
+         w[2] = input rs1 value                                                \
+         w[3] = input fcsr value                                               \
+         w[4] = spill slot for rd                                              \
+         w[5] = spill slot for fcsr                                            \
+         w[6] = spill slot for rs1                                             \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = w;                                \
+      __asm__ __volatile__(                                                    \
+         dpre "sd " #rd ", 32(%[w]);"  /* Spill rd. */                         \
+         "frcsr t2;"                                                           \
+         "sd t2, 40(%[w]);"            /* Spill fcsr. */                       \
+         spre "sd " #rs1 ", 48(%[w]);" /* Spill rs1. */                        \
+         "ld t2, 24(%[w]);"                                                    \
+         "fscsr t2;"                   /* Load fcsr. */                        \
+         spre "ld " #rs1 ", 16(%[w]);" /* Load the first input. */             \
+         ASMINST_##length(instruction) ";"                                     \
+         dpre "sd " #rd ", 0(%[w]);"   /* Save result of the operation. */     \
+         "frcsr t2;"                                                           \
+         "sd t2, 8(%[w]);"             /* Save fcsr. */                        \
+         "ld t2, 40(%[w]);"                                                    \
+         "fscsr t2;"                   /* Reload fcsr. */                      \
+         dpre "ld " #rd ", 32(%[w]);"  /* Reload rd. */                        \
+         spre "ld " #rs1 ", 48(%[w]);" /* Reload rs1. */                       \
+         :                                                                     \
+         : [w] "r"(t1)                                                         \
+         : "t2", "memory");                                                    \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx, fcsr=0x%08lx\n", #rs1,                    \
+             (unsigned long)rs1_val, (unsigned long)fcsr_val);                 \
+      printf("  output: %s=0x%016lx, fcsr=0x%08lx\n", #rd, w[0], w[1]);        \
+   }
+
+#define TESTINST_1_1_IF(length, instruction, rs1_val, fcsr_val, rd, rs1)       \
+    TYPED_X_X(length, instruction, rs1_val, fcsr_val, rd, rs1, "", "f")
+
+#define TESTINST_1_1_FI(length, instruction, rs1_val, fcsr_val, rd, rs1)       \
+    TYPED_X_X(length, instruction, rs1_val, fcsr_val, rd, rs1, "f", "")
+
 #define TYPED_X_FF(length, instruction, rs1_val, rs2_val, fcsr_val, rd, rs1,   \
                    rs2, dpre)                                                  \
    {                                                                           \
