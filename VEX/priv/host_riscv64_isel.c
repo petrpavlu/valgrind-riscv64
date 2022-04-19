@@ -1158,7 +1158,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
    /* We get here if no pattern matched. */
 irreducible:
    ppIRExpr(e);
-   vpanic("iselIntExpr_R: cannot reduce tree");
+   vpanic("iselIntExpr_R(riscv64)");
 }
 
 static HReg iselIntExpr_R(ISelEnv* env, IRExpr* e)

@@ -158,7 +158,7 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx\n", #rd, w[0]);                            \
    }
 
-#define TYPED_LOAD(length, instruction, rd, rs1, ipref)                        \
+#define TYPED_LOAD(length, instruction, rd, rs1, ipre)                         \
    {                                                                           \
       const size_t   N     = 4096;                                             \
       unsigned char* area  = memalign16(N);                                    \
@@ -174,12 +174,12 @@ static void show_block_diff(unsigned char* block1,
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         ipref "sd " #rd ", 16(%[w]);" /* Spill rd. */                         \
+         ipre "sd " #rd ", 16(%[w]);"  /* Spill rd. */                         \
          "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
          "ld " #rs1 ", 8(%[w]);"       /* Load the first input. */             \
          ASMINST_##length(instruction) ";"                                     \
-         ipref "sd " #rd ", 0(%[w]);"  /* Save result of the operation. */     \
-         ipref "ld " #rd ", 16(%[w]);" /* Reload rd. */                        \
+         ipre "sd " #rd ", 0(%[w]);"   /* Save result of the operation. */     \
+         ipre "ld " #rd ", 16(%[w]);"  /* Reload rd. */                        \
          "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
          : [w] "r"(t1)                                                         \
@@ -198,7 +198,7 @@ static void show_block_diff(unsigned char* block1,
 #define TESTINST_1_1_FLOAD(length, instruction, rd, rs1)                       \
    TYPED_LOAD(length, instruction, rd, rs1, "f")
 
-#define TYPED_STORE(length, instruction, rs2_val, rs2, rs1, ipref)             \
+#define TYPED_STORE(length, instruction, rs2_val, rs2, rs1, ipre)              \
    {                                                                           \
       const size_t   N     = 4096;                                             \
       unsigned char* area  = memalign16(N);                                    \
@@ -214,12 +214,12 @@ static void show_block_diff(unsigned char* block1,
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         ipref "sd " #rs2 ", 16(%[w]);" /* Spill rs2. */                       \
+         ipre "sd " #rs2 ", 16(%[w]);" /* Spill rs2. */                        \
          "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
-         ipref "ld " #rs2 ", 0(%[w]);" /* Load the first input. */             \
+         ipre "ld " #rs2 ", 0(%[w]);"  /* Load the first input. */             \
          "ld " #rs1 ", 8(%[w]);"       /* Load the second input. */            \
          ASMINST_##length(instruction) ";"                                     \
-         ipref "ld " #rs2 ", 16(%[w]);" /* Reload rs2. */                      \
+         ipre "ld " #rs2 ", 16(%[w]);" /* Reload rs2. */                       \
          "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          :                                                                     \
          : [w] "r"(t1)                                                         \
@@ -532,11 +532,11 @@ static void show_block_diff(unsigned char* block1,
    JMP_COND(length, instruction, #rs1_val, #rs2_val, rs1, rs2)
 
 #define TYPED_X_FF(length, instruction, rs1_val, rs2_val, fcsr_val, rd, rs1,   \
-                   rs2, dpref)                                                 \
+                   rs2, dpre)                                                  \
    {                                                                           \
       unsigned long w[2 /*out*/ + 3 /*in*/ + 4 /*spill*/] = {                  \
          0, 0, (unsigned long)rs1_val, (unsigned long)rs2_val,                 \
-        (unsigned long)fcsr_val, 0, 0, 0, 0};                                  \
+         (unsigned long)fcsr_val, 0, 0, 0, 0};                                 \
       /* w[0] = output rd value                                                \
          w[1] = output fcsr value                                              \
          w[2] = input rs1 value                                                \
@@ -549,7 +549,7 @@ static void show_block_diff(unsigned char* block1,
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         dpref "sd " #rd ", 40(%[w]);" /* Spill rd. */                         \
+         dpre "sd " #rd ", 40(%[w]);"  /* Spill rd. */                         \
          "frcsr t2;"                                                           \
          "sd t2, 48(%[w]);"            /* Spill fcsr. */                       \
          "fsd " #rs1 ", 56(%[w]);"     /* Spill rs1. */                        \
@@ -559,12 +559,12 @@ static void show_block_diff(unsigned char* block1,
          "fld " #rs1 ", 16(%[w]);"     /* Load the first input. */             \
          "fld " #rs2 ", 24(%[w]);"     /* Load the second input. */            \
          ASMINST_##length(instruction) ";"                                     \
-         dpref "sd " #rd ", 0(%[w]);"  /* Save result of the operation. */     \
+         dpre "sd " #rd ", 0(%[w]);"   /* Save result of the operation. */     \
          "frcsr t2;"                                                           \
          "sd t2, 8(%[w]);"             /* Save fcsr. */                        \
          "ld t2, 48(%[w]);"                                                    \
          "fscsr t2;"                   /* Reload fcsr. */                      \
-         dpref "ld " #rd ", 40(%[w]);" /* Reload rd. */                        \
+         dpre "ld " #rd ", 40(%[w]);"  /* Reload rd. */                        \
          "fld " #rs1 ", 56(%[w]);"     /* Reload rs1. */                       \
          "fld " #rs2 ", 64(%[w]);"     /* Reload rs2. */                       \
          :                                                                     \
@@ -592,7 +592,7 @@ static void show_block_diff(unsigned char* block1,
    {                                                                           \
       unsigned long w[2 /*out*/ + 4 /*in*/ + 5 /*spill*/] = {                  \
          0, 0, (unsigned long)rs1_val, (unsigned long)rs2_val,                 \
-        (unsigned long)rs3_val, (unsigned long)fcsr_val, 0, 0, 0, 0, 0};       \
+         (unsigned long)rs3_val, (unsigned long)fcsr_val, 0, 0, 0, 0, 0};      \
       /* w[0] = output rd value                                                \
          w[1] = output fcsr value                                              \
          w[2] = input rs1 value                                                \
