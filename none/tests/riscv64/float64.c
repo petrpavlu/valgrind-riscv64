@@ -674,65 +674,65 @@ static void test_float64_shared(void)
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000000,
                   0x7ff0000000000000, 0x00, fa0, fa1, fa2);
 
-   /* DBL_TRUE_MIN * 2**-1 (RNE) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (RNE) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rne", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* 3*DBL_TRUE_MIN * 2**-1 (RNE) -> 2*DBL_TRUE_MIN (UF, NX) */
+   /* 3*DBL_TRUE_MIN * 0.5 (RNE) -> 2*DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rne", 0x0000000000000003,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (RTZ) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (RTZ) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rtz", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (RTZ) -> -0.0 (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (RTZ) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rtz", 0x8000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (RND) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (RND) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rdn", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (RND) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (RND) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rdn", 0x8000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (RUP) -> DBL_TRUE_MIN (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (RUP) -> DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rup", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (RUP) -> -0.0 (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (RUP) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rup", 0x8000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (RMM) -> DBL_TRUE_MIN (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (RMM) -> DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rmm", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (RMM) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (RMM) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rmm", 0x8000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
 
-   /* DBL_TRUE_MIN * 2**-1 (DYN-RNE) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (DYN-RNE) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* 3*DBL_TRUE_MIN * 2**-1 (DYN-RNE) -> 2*DBL_TRUE_MIN (UF, NX) */
+   /* 3*DBL_TRUE_MIN * 0.5 (DYN-RNE) -> 2*DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000003,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (DYN-RTZ) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (DYN-RTZ) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000001,
                   0x3fe0000000000000, 0x20, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (DYN-RTZ) -> -0.0 (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (DYN-RTZ) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x8000000000000001,
                   0x3fe0000000000000, 0x20, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (DYN-RND) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (DYN-RND) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000001,
                   0x3fe0000000000000, 0x40, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (DYN-RND) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (DYN-RND) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x8000000000000001,
                   0x3fe0000000000000, 0x40, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (DYN-RUP) -> DBL_TRUE_MIN (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (DYN-RUP) -> DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000001,
                   0x3fe0000000000000, 0x60, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (DYN-RUP) -> -0.0 (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (DYN-RUP) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x8000000000000001,
                   0x3fe0000000000000, 0x60, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 2**-1 (DYN-RMM) -> DBL_TRUE_MIN (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (DYN-RMM) -> DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000001,
                   0x3fe0000000000000, 0x80, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 2**-1 (DYN-RMM) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (DYN-RMM) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x8000000000000001,
                   0x3fe0000000000000, 0x80, fa0, fa1, fa2);
 
@@ -746,10 +746,10 @@ static void test_float64_shared(void)
    /* 1.0 / 2**1023 -> 1**-1023 (no UF because exact) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x3ff0000000000000,
                   0x7fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_MAX / 2**-1 -> INFINITY (OF, NX) */
+   /* DBL_MAX / 0.5 -> INFINITY (OF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x7fefffffffffffff,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_MAX / -2**-1 -> -INFINITY (OF, NX) */
+   /* DBL_MAX / -0.5 -> -INFINITY (OF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x7fefffffffffffff,
                   0xbfe0000000000000, 0x00, fa0, fa1, fa2);
    /* 1.0 / INFINITY -> 0.0 */
