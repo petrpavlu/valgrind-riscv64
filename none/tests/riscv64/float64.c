@@ -1001,7 +1001,12 @@ static void test_float64_shared(void)
    /* TODO Implement. */
 
    /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* 0 -> 0.0 */
+   TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0x0000000000000000, 0x00, fa0, a0);
+   /* INT_MAX -> INT_MAX */
+   TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0x000000007fffffff, 0x00, fa0, a0);
+   /* INT_MIN -> INT_MIN */
+   TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0xffffffff80000000, 0x00, fa0, a0);
 
    /* ---------------- fcvt.d.wu rd, rs1, rm ---------------- */
    /* TODO Implement. */
