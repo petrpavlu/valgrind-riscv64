@@ -11,4 +11,7 @@ BreakBeforeBraces: Linux
 ContinuationIndentWidth: 3
 IndentWidth: 3
 PointerAlignment: Left
+# Mark the VG_() and ML_() macros as type declarations which they are
+# sufficiently close to, otherwise clang-format gets confused by them.
+TypenameMacros: [VG_, ML_]
 ...
