@@ -1019,7 +1019,72 @@ static void test_float64_additions(void)
    printf("RV64D double-precision FP instruction set, additions\n");
 
    /* ---------------- fcvt.l.d rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* 0.0 -> 0 */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
+   /* DBL_TRUE_MIN -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
+   /* qNAN -> LONG_MAX (NV) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
+   /* nextafter(2**63, 0.0) -> 2**63-808 */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x43dfffffffffffff, 0x00, a0, fa0);
+   /* -2**63 -> -2**63 aka LONG_MIN */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xc3e0000000000000, 0x00, a0, fa0);
+   /* 2**63 -> 2**63-1 aka LONG_MAX (NV) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x43e0000000000000, 0x00, a0, fa0);
+   /* -nextafter(2**63) -> -2**63 aka LONG_MIN (NV) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xc3e0000000000001, 0x00, a0, fa0);
+
+   /* 0.5 (RNE) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rne", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* 1.5 (RNE) -> 2 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rne", 0x3ff8000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RTZ) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rtz", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* -0.5 (RTZ) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rtz", 0xbfe0000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RDN) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rdn", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* -0.5 (RDN) -> -1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rdn", 0xbfe0000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RUP) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rup", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* -0.5 (RUP) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rup", 0xbfe0000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RMM) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rmm", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* -0.5 (RMM) -> -1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rmm", 0xbfe0000000000000, 0x00, a0,
+                   fa0);
+
+   /* 0.5 (DYN-RNE) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x3fe0000000000000, 0x00, a0, fa0);
+   /* 1.5 (DYN-RNE) -> 2 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x3ff8000000000000, 0x00, a0, fa0);
+   /* 0.5 (DYN-RTZ) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x3fe0000000000000, 0x20, a0, fa0);
+   /* -0.5 (DYN-RTZ) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xbfe0000000000000, 0x20, a0, fa0);
+   /* 0.5 (DYN-RDN) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x3fe0000000000000, 0x40, a0, fa0);
+   /* -0.5 (DYN-RDN) -> -1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xbfe0000000000000, 0x40, a0, fa0);
+   /* 0.5 (DYN-RUP) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x3fe0000000000000, 0x60, a0, fa0);
+   /* -0.5 (DYN-RUP) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xbfe0000000000000, 0x60, a0, fa0);
+   /* 0.5 (DYN-RMM) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x3fe0000000000000, 0x80, a0, fa0);
+   /* -0.5 (DYN-RMM) -> -1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xbfe0000000000000, 0x80, a0, fa0);
 
    /* ---------------- fcvt.lu.d rd, rs1, rm ---------------- */
    /* TODO Implement. */

@@ -880,3 +880,84 @@ fcvt.d.w fa0, a0 ::
   output: fa0=0xc1e0000000000000, fcsr=0x00000000
 
 RV64D double-precision FP instruction set, additions
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x0000000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x0000000000000001, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
+  output: a0=0x7fffffffffffffff, fcsr=0x00000010
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x43dfffffffffffff, fcsr=0x00000000
+  output: a0=0x7ffffffffffffc00, fcsr=0x00000000
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0xc3e0000000000000, fcsr=0x00000000
+  output: a0=0x8000000000000000, fcsr=0x00000000
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x43e0000000000000, fcsr=0x00000000
+  output: a0=0x7fffffffffffffff, fcsr=0x00000010
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0xc3e0000000000001, fcsr=0x00000000
+  output: a0=0x8000000000000000, fcsr=0x00000010
+fcvt.l.d a0, fa0, rne ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0, rne ::
+  inputs: fa0=0x3ff8000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000002, fcsr=0x00000001
+fcvt.l.d a0, fa0, rtz ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0, rtz ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0, rdn ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0, rdn ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000000
+  output: a0=0xffffffffffffffff, fcsr=0x00000001
+fcvt.l.d a0, fa0, rup ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000001
+fcvt.l.d a0, fa0, rup ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0, rmm ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000001
+fcvt.l.d a0, fa0, rmm ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000000
+  output: a0=0xffffffffffffffff, fcsr=0x00000001
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x3ff8000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000002, fcsr=0x00000001
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000020
+  output: a0=0x0000000000000000, fcsr=0x00000021
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000020
+  output: a0=0x0000000000000000, fcsr=0x00000021
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000040
+  output: a0=0x0000000000000000, fcsr=0x00000041
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000040
+  output: a0=0xffffffffffffffff, fcsr=0x00000041
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000060
+  output: a0=0x0000000000000001, fcsr=0x00000061
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000060
+  output: a0=0x0000000000000000, fcsr=0x00000061
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x3fe0000000000000, fcsr=0x00000080
+  output: a0=0x0000000000000001, fcsr=0x00000081
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0xbfe0000000000000, fcsr=0x00000080
+  output: a0=0xffffffffffffffff, fcsr=0x00000081
