@@ -961,3 +961,9 @@ fcvt.l.d a0, fa0 ::
 fcvt.l.d a0, fa0 ::
   inputs: fa0=0xbfe0000000000000, fcsr=0x00000080
   output: a0=0xffffffffffffffff, fcsr=0x00000081
+fmv.x.d a0, fa0 ::
+  inputs: fa0=0xabcdef0123456789, fcsr=0x00000000
+  output: a0=0xabcdef0123456789, fcsr=0x00000000
+fmv.d.x fa0, a0 ::
+  inputs: a0=0xabcdef0123456789, fcsr=0x00000000
+  output: fa0=0xabcdef0123456789, fcsr=0x00000000

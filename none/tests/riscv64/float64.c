@@ -1090,7 +1090,7 @@ static void test_float64_additions(void)
    /* TODO Implement. */
 
    /* ------------------- fmv.x.d rd, rs1 ------------------- */
-   /* TODO Implement. */
+   TESTINST_1_1_IF(4, "fmv.x.d a0, fa0", 0xabcdef0123456789, 0x00, a0, fa0);
 
    /* ---------------- fcvt.d.l rd, rs1, rm ----------------- */
    /* TODO Implement. */
@@ -1099,7 +1099,7 @@ static void test_float64_additions(void)
    /* TODO Implement. */
 
    /* ------------------- fmv.d.x rd, rs1 ------------------- */
-   /* TODO Implement. */
+   TESTINST_1_1_FI(4, "fmv.d.x fa0, a0", 0xabcdef0123456789, 0x00, fa0, a0);
 }
 
 int main(void)
