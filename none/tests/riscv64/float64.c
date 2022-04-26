@@ -934,15 +934,15 @@ static void test_float64_shared(void)
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
    /* DBL_TRUE_MIN -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
-   /* qNAN -> INT_MAX (NV) */
+   /* qNAN -> 2**31-1 aka INT_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
-   /* INT_MAX -> INT_MAX */
+   /* 2**31-1 -> 2**31-1 aka INT_MAX */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x41dfffffffc00000, 0x00, a0, fa0);
-   /* INT_MIN -> INT_MIN */
+   /* -2**31 -> -2**31 aka INT_MIN */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0xc1e0000000000000, 0x00, a0, fa0);
-   /* INT_MAX+1 -> INT_MAX (NV) */
+   /* 2**31 -> 2**31-1 aka INT_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x41e0000000000000, 0x00, a0, fa0);
-   /* INT_MIN-1 -> INT_MIN (NV) */
+   /* -2**31-1 -> -2**31 aka INT_MIN (NV) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0xc1e0000000200000, 0x00, a0, fa0);
 
    /* 0.5 (RNE) -> 0 (NX) */
@@ -1003,9 +1003,9 @@ static void test_float64_shared(void)
    /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
    /* 0 -> 0.0 */
    TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0x0000000000000000, 0x00, fa0, a0);
-   /* INT_MAX -> INT_MAX */
+   /* 2**31-1 aka INT_MAX -> 2**31-1 */
    TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0x000000007fffffff, 0x00, fa0, a0);
-   /* INT_MIN -> INT_MIN */
+   /* -2**31 aka INT_MIN -> -2**31 */
    TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0xffffffff80000000, 0x00, fa0, a0);
 
    /* ---------------- fcvt.d.wu rd, rs1, rm ---------------- */
@@ -1025,7 +1025,7 @@ static void test_float64_additions(void)
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
    /* qNAN -> LONG_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
-   /* nextafter(2**63, 0.0) -> 2**63-808 */
+   /* nextafter(2**63, 0.0) -> 2**63-1024 */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x43dfffffffffffff, 0x00, a0, fa0);
    /* -2**63 -> -2**63 aka LONG_MIN */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xc3e0000000000000, 0x00, a0, fa0);
