@@ -964,6 +964,78 @@ fcvt.l.d a0, fa0 ::
 fmv.x.d a0, fa0 ::
   inputs: fa0=0xabcdef0123456789, fcsr=0x00000000
   output: a0=0xabcdef0123456789, fcsr=0x00000000
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0000000000000000, fcsr=0x00000000
+  output: fa0=0x0000000000000000, fcsr=0x00000000
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x7ffffffffffffc00, fcsr=0x00000000
+  output: fa0=0x43dfffffffffffff, fcsr=0x00000000
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0x43e0000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x8000000000000000, fcsr=0x00000000
+  output: fa0=0xc3e0000000000000, fcsr=0x00000000
+fcvt.d.l fa0, a0, rne ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000000
+  output: fa0=0x4340000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0, rne ::
+  inputs: a0=0x0020000000000003, fcsr=0x00000000
+  output: fa0=0x4340000000000002, fcsr=0x00000001
+fcvt.d.l fa0, a0, rtz ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000000
+  output: fa0=0x4340000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0, rtz ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000000
+  output: fa0=0xc340000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0, rdn ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000000
+  output: fa0=0x4340000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0, rdn ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000000
+  output: fa0=0xc340000000000001, fcsr=0x00000001
+fcvt.d.l fa0, a0, rup ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000000
+  output: fa0=0x4340000000000001, fcsr=0x00000001
+fcvt.d.l fa0, a0, rup ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000000
+  output: fa0=0xc340000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0, rmm ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000000
+  output: fa0=0x4340000000000001, fcsr=0x00000001
+fcvt.d.l fa0, a0, rmm ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000000
+  output: fa0=0xc340000000000001, fcsr=0x00000001
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000000
+  output: fa0=0x4340000000000000, fcsr=0x00000001
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0020000000000003, fcsr=0x00000000
+  output: fa0=0x4340000000000002, fcsr=0x00000001
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000020
+  output: fa0=0x4340000000000000, fcsr=0x00000021
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000020
+  output: fa0=0xc340000000000000, fcsr=0x00000021
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000040
+  output: fa0=0x4340000000000000, fcsr=0x00000041
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000040
+  output: fa0=0xc340000000000001, fcsr=0x00000041
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000060
+  output: fa0=0x4340000000000001, fcsr=0x00000061
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000060
+  output: fa0=0xc340000000000000, fcsr=0x00000061
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0x0020000000000001, fcsr=0x00000080
+  output: fa0=0x4340000000000001, fcsr=0x00000081
+fcvt.d.l fa0, a0 ::
+  inputs: a0=0xffdfffffffffffff, fcsr=0x00000080
+  output: fa0=0xc340000000000001, fcsr=0x00000081
 fmv.d.x fa0, a0 ::
   inputs: a0=0xabcdef0123456789, fcsr=0x00000000
   output: fa0=0xabcdef0123456789, fcsr=0x00000000

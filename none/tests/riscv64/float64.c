@@ -1093,7 +1093,66 @@ static void test_float64_additions(void)
    TESTINST_1_1_IF(4, "fmv.x.d a0, fa0", 0xabcdef0123456789, 0x00, a0, fa0);
 
    /* ---------------- fcvt.d.l rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* 0 -> 0.0 */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0000000000000000, 0x00, fa0, a0);
+   /* 2**63-1024 -> nextafter(2**63, 0.0) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x7ffffffffffffc00, 0x00, fa0, a0);
+   /* 2**63-1 aka LONG_MAX -> 2**63 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x7fffffffffffffff, 0x00, fa0, a0);
+   /* -2**63 aka LONG_MIN -> -2**63 */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x8000000000000000, 0x00, fa0, a0);
+
+   /* 2**53+1 (RNE) -> 2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rne", 0x0020000000000001, 0x00, fa0,
+                   a0);
+   /* 2**53+3 (RNE) -> 2**53+4 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rne", 0x0020000000000003, 0x00, fa0,
+                   a0);
+   /* 2**53+1 (RTZ) -> 2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rtz", 0x0020000000000001, 0x00, fa0,
+                   a0);
+   /* -2**53-1 (RTZ) -> -2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rtz", 0xffdfffffffffffff, 0x00, fa0,
+                   a0);
+   /* 2**53+1 (RDN) -> 2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rdn", 0x0020000000000001, 0x00, fa0,
+                   a0);
+   /* -2**53-1 (RDN) -> -2**53-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rdn", 0xffdfffffffffffff, 0x00, fa0,
+                   a0);
+   /* 2**53+1 (RUP) -> 2**53+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rup", 0x0020000000000001, 0x00, fa0,
+                   a0);
+   /* -2**53-1 (RUP) -> -2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rup", 0xffdfffffffffffff, 0x00, fa0,
+                   a0);
+   /* 2**53+1 (RMM) -> 2**53+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rmm", 0x0020000000000001, 0x00, fa0,
+                   a0);
+   /* -2**53-1 (RMM) -> -2**53-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0, rmm", 0xffdfffffffffffff, 0x00, fa0,
+                   a0);
+
+   /* 2**53+1 (DYN-RNE) -> 2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0020000000000001, 0x00, fa0, a0);
+   /* 2**53+3 (DYN-RNE) -> 2**53+4 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0020000000000003, 0x00, fa0, a0);
+   /* 2**53+1 (DYN-RTZ) -> 2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0020000000000001, 0x20, fa0, a0);
+   /* -2**53-1 (DYN-RTZ) -> -2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0xffdfffffffffffff, 0x20, fa0, a0);
+   /* 2**53+1 (DYN-RDN) -> 2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0020000000000001, 0x40, fa0, a0);
+   /* -2**53-1 (DYN-RDN) -> -2**53-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0xffdfffffffffffff, 0x40, fa0, a0);
+   /* 2**53+1 (DYN-RUP) -> 2**53+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0020000000000001, 0x60, fa0, a0);
+   /* -2**53-1 (DYN-RUP) -> -2**53 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0xffdfffffffffffff, 0x60, fa0, a0);
+   /* 2**53+1 (DYN-RMM) -> 2**53+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0x0020000000000001, 0x80, fa0, a0);
+   /* -2**53-1 (DYN-RMM) -> -2**53-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.d.l fa0, a0", 0xffdfffffffffffff, 0x80, fa0, a0);
 
    /* ---------------- fcvt.d.lu rd, rs1, rm ---------------- */
    /* TODO Implement. */
