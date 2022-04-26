@@ -2234,8 +2234,15 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt   rs1 = INSN(19, 15);
       IRTemp rm_RISCV, rm_IR;
       mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
-      putFReg64(irsb, rd, binop(Iop_I64StoF64, mkexpr(rm_IR), getIReg64(rs1)));
-      /* TODO Implement setting of fflags. */
+      IRTemp a1 = newTemp(irsb, Ity_I64);
+      assign(irsb, a1, getIReg64(rs1));
+      putFReg64(irsb, rd, binop(Iop_I64StoF64, mkexpr(rm_IR), mkexpr(a1)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(
+                             Ity_I32, 0 /*regparms*/,
+                             "riscv64g_calculate_fflags_fcvt_d_l",
+                             riscv64g_calculate_fflags_fcvt_d_l,
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
       DIP("fcvt.d.l %s, %s%s\n", nameFReg(rd), nameIReg(rs1),
           nameRMOperand(rm));
       return True;

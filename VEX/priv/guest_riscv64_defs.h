@@ -80,6 +80,7 @@ extern VexGuestLayout riscv64guest_layout;
    format (NV DZ OF UF NX) and remaining upper bits are zero. */
 UInt riscv64g_calculate_fflags_fcvt_w_d(Double a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_l_d(Double a1, UInt rm_RISCV);
+UInt riscv64g_calculate_fflags_fcvt_d_l(ULong a1, UInt rm_RISCV);
 
 UInt riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV);

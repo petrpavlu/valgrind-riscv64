@@ -64,10 +64,29 @@
          : "t0", "t1");                                                        \
       return res;                                                              \
    } while (0)
+#define CALCULATE_FFLAGS_UNARY64_FI(inst)                                      \
+   do {                                                                        \
+      UInt res;                                                                \
+      __asm__ __volatile__(                                                    \
+         "csrr t0, fcsr\n\t"                                                   \
+         "csrw frm, %[rm]\n\t"                                                 \
+         "csrw fflags, zero\n\t"                                               \
+         inst " ft0, %[a1]\n\t"                                                \
+         "csrr %[res], fflags\n\t"                                             \
+         "csrw fcsr, t0\n\t"                                                   \
+         : [res] "=r"(res)                                                     \
+         : [a1] "r"(a1), [rm] "r"(rm_RISCV)                                    \
+         : "t0", "ft0");                                                       \
+      return res;                                                              \
+   } while (0)
 /* clang-format on */
 #else
 /* No simulated version is currently implemented. */
 #define CALCULATE_FFLAGS_UNARY64_IF(inst)                                      \
+   do {                                                                        \
+      return 0;                                                                \
+   } while (0)
+#define CALCULATE_FFLAGS_UNARY64_FI(inst)                                      \
    do {                                                                        \
       return 0;                                                                \
    } while (0)
@@ -81,6 +100,10 @@ UInt riscv64g_calculate_fflags_fcvt_w_d(Double a1, UInt rm_RISCV)
 UInt riscv64g_calculate_fflags_fcvt_l_d(Double a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_IF("fcvt.l.d");
+}
+UInt riscv64g_calculate_fflags_fcvt_d_l(ULong a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_FI("fcvt.d.l");
 }
 
 #if defined(__riscv) && (__riscv_xlen == 64)
