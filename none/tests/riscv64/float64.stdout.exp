@@ -743,17 +743,53 @@ fsgnj.d fa0, fa1, fa1 ::
 fsgnj.d fa0, fa1, fa1 ::
   inputs: fa1=0xbff0000000000000, fa1=0xbff0000000000000, fcsr=0x00000000
   output: fa0=0xbff0000000000000, fcsr=0x00000000
+fsgnj.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsgnj.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x8000000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000000
+fsgnj.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsgnj.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x8000000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000000
 fsgnjn.d fa0, fa1, fa1 ::
   inputs: fa1=0x3ff0000000000000, fa1=0x3ff0000000000000, fcsr=0x00000000
   output: fa0=0xbff0000000000000, fcsr=0x00000000
 fsgnjn.d fa0, fa1, fa1 ::
   inputs: fa1=0xbff0000000000000, fa1=0xbff0000000000000, fcsr=0x00000000
   output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsgnjn.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000000
+fsgnjn.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x8000000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsgnjn.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000000
+fsgnjn.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x8000000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
 fsgnjx.d fa0, fa1, fa1 ::
   inputs: fa1=0x3ff0000000000000, fa1=0x3ff0000000000000, fcsr=0x00000000
   output: fa0=0x3ff0000000000000, fcsr=0x00000000
 fsgnjx.d fa0, fa1, fa1 ::
   inputs: fa1=0xbff0000000000000, fa1=0xbff0000000000000, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsgnjx.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000000
+fsgnjx.d fa0, fa1, fa2 ::
+  inputs: fa1=0x3ff0000000000000, fa2=0x8000000000000000, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000000
+fsgnjx.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x7fffffffffffffff, fcsr=0x00000000
+  output: fa0=0xbff0000000000000, fcsr=0x00000000
+fsgnjx.d fa0, fa1, fa2 ::
+  inputs: fa1=0xbff0000000000000, fa2=0x8000000000000000, fcsr=0x00000000
   output: fa0=0x3ff0000000000000, fcsr=0x00000000
 feq.d a0, fa0, fa1 ::
   inputs: fa0=0x0000000000000000, fa1=0x3ff0000000000000, fcsr=0x00000000

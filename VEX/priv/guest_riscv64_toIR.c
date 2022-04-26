@@ -2084,10 +2084,20 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rs1 == rs2) {
          putFReg64(irsb, rd, getFReg64(rs1));
          DIP("fmv.d %s, %s\n", nameFReg(rd), nameIReg(rs1));
-         return True;
       } else {
-         /* TODO Implement full support for fsgnj.d. */
+         putFReg64(
+            irsb, rd,
+            unop(Iop_ReinterpI64asF64,
+                 binop(
+                    Iop_Or64,
+                    binop(Iop_And64, unop(Iop_ReinterpF64asI64, getFReg64(rs1)),
+                          mkU64(0x7fffffffffffffff)),
+                    binop(Iop_And64, unop(Iop_ReinterpF64asI64, getFReg64(rs2)),
+                          mkU64(0x8000000000000000)))));
+         DIP("fsgnj.d %s, %s, %s\n", nameFReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
       }
+      return True;
    }
 
    /* ---------------- fsgnjn.d rd, rs1, rs2 ---------------- */
@@ -2099,10 +2109,21 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rs1 == rs2) {
          putFReg64(irsb, rd, unop(Iop_NegF64, getFReg64(rs1)));
          DIP("fneg.d %s, %s\n", nameFReg(rd), nameIReg(rs1));
-         return True;
       } else {
-         /* TODO Implement full support for fsgnjn.d. */
+         putFReg64(irsb, rd,
+                   unop(Iop_ReinterpI64asF64,
+                        binop(Iop_Or64,
+                              binop(Iop_And64,
+                                    unop(Iop_ReinterpF64asI64, getFReg64(rs1)),
+                                    mkU64(0x7fffffffffffffff)),
+                              binop(Iop_And64,
+                                    unop(Iop_ReinterpF64asI64,
+                                         unop(Iop_NegF64, getFReg64(rs2))),
+                                    mkU64(0x8000000000000000)))));
+         DIP("fsgnjn.d %s, %s, %s\n", nameFReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
       }
+      return True;
    }
 
    /* ---------------- fsgnjx.d rd, rs1, rs2 ---------------- */
@@ -2114,10 +2135,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rs1 == rs2) {
          putFReg64(irsb, rd, unop(Iop_AbsF64, getFReg64(rs1)));
          DIP("fabs.d %s, %s\n", nameFReg(rd), nameIReg(rs1));
-         return True;
       } else {
-         /* TODO Implement full support for fsgnjx.d. */
+         putFReg64(
+            irsb, rd,
+            unop(Iop_ReinterpI64asF64,
+                 binop(Iop_Xor64, unop(Iop_ReinterpF64asI64, getFReg64(rs1)),
+                       binop(Iop_And64,
+                             unop(Iop_ReinterpF64asI64, getFReg64(rs2)),
+                             mkU64(0x8000000000000000)))));
+         DIP("fsgnjx.d %s, %s, %s\n", nameFReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
       }
+      return True;
    }
 
    /* ------------- f{eq,lt,le}.d rd, rs1, rs2 -------------- */

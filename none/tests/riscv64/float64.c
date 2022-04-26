@@ -828,28 +828,64 @@ static void test_float64_shared(void)
    /* TODO Implement. */
 
    /* ---------------- fsgnj.d rd, rs1, rs2 ----------------- */
-   /* fmv.d fa0, fa1 */
+   /* fmv.d rd, rs1 */
    TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa1", 0x3ff0000000000000,
                   0x3ff0000000000000, 0x00, fa0, fa1, fa1);
    TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa1", 0xbff0000000000000,
                   0xbff0000000000000, 0x00, fa0, fa1, fa1);
-   /* TODO Implement. */
+
+   /* fsgnj(1.0, +) -> 1.0 */
+   TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x7fffffffffffffff, 0x00, fa0, fa1, fa2);
+   /* fsgnj(1.0, -) -> -1.0 */
+   TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
+   /* fsgnj(-1.0, +) -> 1.0 */
+   TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0x7fffffffffffffff, 0x00, fa0, fa1, fa2);
+   /* fsgnj(-1.0, -) -> -1.0 */
+   TESTINST_1_2_F(4, "fsgnj.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
 
    /* ---------------- fsgnjn.d rd, rs1, rs2 ---------------- */
-   /* fneg.d fa0, fa1 */
+   /* fneg.d rd, rs1 */
    TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa1", 0x3ff0000000000000,
                   0x3ff0000000000000, 0x00, fa0, fa1, fa1);
    TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa1", 0xbff0000000000000,
                   0xbff0000000000000, 0x00, fa0, fa1, fa1);
-   /* TODO Implement. */
+
+   /* fsgnjn(1.0, +) -> -1.0 */
+   TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x7fffffffffffffff, 0x00, fa0, fa1, fa2);
+   /* fsgnjn(1.0, -) -> 1.0 */
+   TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
+   /* fsgnjn(-1.0, +) -> -1.0 */
+   TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0x7fffffffffffffff, 0x00, fa0, fa1, fa2);
+   /* fsgnjn(-1.0, -) -> 1.0 */
+   TESTINST_1_2_F(4, "fsgnjn.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
 
    /* ---------------- fsgnjx.d rd, rs1, rs2 ---------------- */
-   /* fabs.d fa0, fa1 */
+   /* fabs.d rd, rs1 */
    TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa1", 0x3ff0000000000000,
                   0x3ff0000000000000, 0x00, fa0, fa1, fa1);
    TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa1", 0xbff0000000000000,
                   0xbff0000000000000, 0x00, fa0, fa1, fa1);
-   /* TODO Implement. */
+
+   /* fsgnjx(1.0, +) -> 1.0 */
+   TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x7fffffffffffffff, 0x00, fa0, fa1, fa2);
+   /* fsgnjx(1.0, -) -> -1.0 */
+   TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa2", 0x3ff0000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
+   /* fsgnjx(-1.0, +) -> -1.0 */
+   TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0x7fffffffffffffff, 0x00, fa0, fa1, fa2);
+   /* fsgnjx(-1.0, -) -> 1.0 */
+   TESTINST_1_2_F(4, "fsgnjx.d fa0, fa1, fa2", 0xbff0000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
 
    /* ----------------- fmin.d rd, rs1, rs2 ----------------- */
    /* TODO Implement. */
