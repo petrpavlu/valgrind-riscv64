@@ -569,6 +569,9 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx, fcsr=0x%08lx\n", #rd, w[0], w[1]);        \
    }
 
+#define TESTINST_1_1_F(length, instruction, rs1_val, fcsr_val, rd, rs1)        \
+    TYPED_X_X(length, instruction, rs1_val, fcsr_val, rd, rs1, "f", "f")
+
 #define TESTINST_1_1_IF(length, instruction, rs1_val, fcsr_val, rd, rs1)       \
     TYPED_X_X(length, instruction, rs1_val, fcsr_val, rd, rs1, "", "f")
 

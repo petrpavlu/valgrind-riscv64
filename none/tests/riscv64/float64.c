@@ -825,7 +825,78 @@ static void test_float64_shared(void)
                   0x4000000000000000, 0x80, fa0, fa1, fa2);
 
    /* ----------------- fsqrt.d rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* sqrt(0.0) -> 0.0 */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x0000000000000000, 0x00, fa0, fa1);
+   /* sqrt(INFINITY) -> INFINITY */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x7ff0000000000000, 0x00, fa0, fa1);
+   /* sqrt(DBL_TRUE_MIN) -> 2**-537 */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x0000000000000001, 0x00, fa0, fa1);
+   /* sqrt(qNAN) -> qNAN */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x7ff8000000000000, 0x00, fa0, fa1);
+   /* sqrt(-1.0) -> qNAN (NV) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0xbff0000000000000, 0x00, fa0, fa1);
+
+   /* sqrt(nextafter(1.0)) (RNE) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rne", 0x3ff0000000000001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (RNE) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rne", 0x3ff0000000000002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rtz", 0x3ff0000000000001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rtz", 0x3ff0000000000002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rdn", 0x3ff0000000000001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rdn", 0x3ff0000000000002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rup", 0x3ff0000000000001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rup", 0x3ff0000000000002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (RMM) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rmm", 0x3ff0000000000001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rmm", 0x3ff0000000000002, 0x00, fa0,
+                  fa1);
+
+   /* sqrt(nextafter(1.0)) (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rne", 0x3ff0000000000001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (DYN-RNE) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rne", 0x3ff0000000000002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rtz", 0x3ff0000000000001, 0x20, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rtz", 0x3ff0000000000002, 0x20, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rdn", 0x3ff0000000000001, 0x40, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rdn", 0x3ff0000000000002, 0x40, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (DYN-RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rup", 0x3ff0000000000001, 0x60, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (DYN-RUP) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rup", 0x3ff0000000000002, 0x60, fa0,
+                  fa1);
+   /* sqrt(nextafter(1.0)) (DYN-RMM) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rmm", 0x3ff0000000000001, 0x80, fa0,
+                  fa1);
+   /* sqrt(2nextafter(1.0)) (DYN-RMM) -> nextafter(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rmm", 0x3ff0000000000002, 0x80, fa0,
+                  fa1);
 
    /* ---------------- fsgnj.d rd, rs1, rs2 ----------------- */
    /* fmv.d rd, rs1 */

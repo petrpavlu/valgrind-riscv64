@@ -49,6 +49,21 @@
 
 #if defined(__riscv) && (__riscv_xlen == 64)
 /* clang-format off */
+#define CALCULATE_FFLAGS_UNARY64_F(inst)                                       \
+   do {                                                                        \
+      UInt res;                                                                \
+      __asm__ __volatile__(                                                    \
+         "csrr t0, fcsr\n\t"                                                   \
+         "csrw frm, %[rm]\n\t"                                                 \
+         "csrw fflags, zero\n\t"                                               \
+         inst " ft0, %[a1]\n\t"                                                \
+         "csrr %[res], fflags\n\t"                                             \
+         "csrw fcsr, t0\n\t"                                                   \
+         : [res] "=r"(res)                                                     \
+         : [a1] "f"(a1), [rm] "r"(rm_RISCV)                                    \
+         : "t0", "ft0");                                                       \
+      return res;                                                              \
+   } while (0)
 #define CALCULATE_FFLAGS_UNARY64_IF(inst)                                      \
    do {                                                                        \
       UInt res;                                                                \
@@ -82,6 +97,10 @@
 /* clang-format on */
 #else
 /* No simulated version is currently implemented. */
+#define CALCULATE_FFLAGS_UNARY64_F(inst)                                       \
+   do {                                                                        \
+      return 0;                                                                \
+   } while (0)
 #define CALCULATE_FFLAGS_UNARY64_IF(inst)                                      \
    do {                                                                        \
       return 0;                                                                \
@@ -93,6 +112,10 @@
 #endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPERS */
+UInt riscv64g_calculate_fflags_fsqrt_d(Double a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_F("fsqrt.d");
+}
 UInt riscv64g_calculate_fflags_fcvt_w_d(Double a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_IF("fcvt.w.d");

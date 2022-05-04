@@ -1343,6 +1343,13 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
    /* ---------------------- BINARY OP ---------------------- */
    case Iex_Binop: {
       switch (e->Iex.Binop.op) {
+      case Iop_SqrtF64: {
+         HReg dst = newVRegF(env);
+         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
+         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
+         addInstr(env, RISCV64Instr_FSQRT_D(dst, src));
+         return dst;
+      }
       case Iop_I64StoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);

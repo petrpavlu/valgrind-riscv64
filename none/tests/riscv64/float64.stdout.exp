@@ -737,6 +737,81 @@ fdiv.d fa0, fa1, fa2 ::
 fdiv.d fa0, fa1, fa2 ::
   inputs: fa1=0x8000000000000001, fa2=0x4000000000000000, fcsr=0x00000080
   output: fa0=0x8000000000000001, fcsr=0x00000083
+fsqrt.d fa0, fa1 ::
+  inputs: fa1=0x0000000000000000, fcsr=0x00000000
+  output: fa0=0x0000000000000000, fcsr=0x00000000
+fsqrt.d fa0, fa1 ::
+  inputs: fa1=0x7ff0000000000000, fcsr=0x00000000
+  output: fa0=0x7ff0000000000000, fcsr=0x00000000
+fsqrt.d fa0, fa1 ::
+  inputs: fa1=0x0000000000000001, fcsr=0x00000000
+  output: fa0=0x1e60000000000000, fcsr=0x00000000
+fsqrt.d fa0, fa1 ::
+  inputs: fa1=0x7ff8000000000000, fcsr=0x00000000
+  output: fa0=0x7ff8000000000000, fcsr=0x00000000
+fsqrt.d fa0, fa1 ::
+  inputs: fa1=0xbff0000000000000, fcsr=0x00000000
+  output: fa0=0x7ff8000000000000, fcsr=0x00000010
+fsqrt.d fa0, fa1, rne ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rne ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsqrt.d fa0, fa1, rtz ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rtz ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rdn ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rdn ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rup ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsqrt.d fa0, fa1, rup ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsqrt.d fa0, fa1, rmm ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rmm ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsqrt.d fa0, fa1, rne ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000000
+  output: fa0=0x3ff0000000000000, fcsr=0x00000001
+fsqrt.d fa0, fa1, rne ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000000
+  output: fa0=0x3ff0000000000001, fcsr=0x00000001
+fsqrt.d fa0, fa1, rtz ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000020
+  output: fa0=0x3ff0000000000000, fcsr=0x00000021
+fsqrt.d fa0, fa1, rtz ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000020
+  output: fa0=0x3ff0000000000000, fcsr=0x00000021
+fsqrt.d fa0, fa1, rdn ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000040
+  output: fa0=0x3ff0000000000000, fcsr=0x00000041
+fsqrt.d fa0, fa1, rdn ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000040
+  output: fa0=0x3ff0000000000000, fcsr=0x00000041
+fsqrt.d fa0, fa1, rup ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000060
+  output: fa0=0x3ff0000000000001, fcsr=0x00000061
+fsqrt.d fa0, fa1, rup ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000060
+  output: fa0=0x3ff0000000000001, fcsr=0x00000061
+fsqrt.d fa0, fa1, rmm ::
+  inputs: fa1=0x3ff0000000000001, fcsr=0x00000080
+  output: fa0=0x3ff0000000000000, fcsr=0x00000081
+fsqrt.d fa0, fa1, rmm ::
+  inputs: fa1=0x3ff0000000000002, fcsr=0x00000080
+  output: fa0=0x3ff0000000000001, fcsr=0x00000081
 fsgnj.d fa0, fa1, fa1 ::
   inputs: fa1=0x3ff0000000000000, fa1=0x3ff0000000000000, fcsr=0x00000000
   output: fa0=0x3ff0000000000000, fcsr=0x00000000

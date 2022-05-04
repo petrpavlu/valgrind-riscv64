@@ -178,6 +178,8 @@ typedef enum {
                                  registers. */
    RISCV64in_FDIV_D,          /* Division of a 64-bit floating-point register by
                                  another. */
+   RISCV64in_FSQRT_D,         /* Square root of a 64-bit floating-point
+                                 register. */
    RISCV64in_FSGNJN_D,        /* Copy of a 64-bit floating-point register to
                                  another with the sign bit taken from the second
                                  input and negated. */
@@ -540,6 +542,11 @@ typedef struct {
          HReg src1;
          HReg src2;
       } FDIV_D;
+      /* Square root of a 64-bit floating-point register. */
+      struct {
+         HReg dst;
+         HReg src1;
+      } FSQRT_D;
       /* Copy of a 64-bit floating-point register to another with the sign bit
          taken from the second input and negated. */
       struct {
@@ -748,6 +755,7 @@ RISCV64Instr* RISCV64Instr_FADD_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSUB_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FMUL_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FDIV_D(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FSQRT_D(HReg dst, HReg src1);
 RISCV64Instr* RISCV64Instr_FSGNJN_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSGNJX_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FEQ_D(HReg dst, HReg src1, HReg src2);
