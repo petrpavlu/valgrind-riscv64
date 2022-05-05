@@ -977,6 +977,12 @@ static void test_float64_shared(void)
    /* 0.0 == 0.0 -> 1 */
    TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x0000000000000000,
                      0x0000000000000000, 0x00, a0, fa0, fa1);
+   /* 0.0 == -0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x0000000000000000,
+                     0x8000000000000000, 0x00, a0, fa0, fa1);
+   /* -0.0 == 0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x8000000000000000,
+                     0x0000000000000000, 0x00, a0, fa0, fa1);
    /* INFINITY == INFINITY -> 1 */
    TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x7ff0000000000000,
                      0x7ff0000000000000, 0x00, a0, fa0, fa1);
@@ -997,6 +1003,12 @@ static void test_float64_shared(void)
    /* 0.0 < 1.0 -> 1 */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x0000000000000000,
                      0x3ff0000000000000, 0x00, a0, fa0, fa1);
+   /* 0.0 < -0.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x0000000000000000,
+                     0x8000000000000000, 0x00, a0, fa0, fa1);
+   /* -0.0 < 0.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x8000000000000000,
+                     0x0000000000000000, 0x00, a0, fa0, fa1);
    /* INFINITY < INFINITY -> 0 */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x7ff0000000000000,
                      0x7ff0000000000000, 0x00, a0, fa0, fa1);
@@ -1020,6 +1032,12 @@ static void test_float64_shared(void)
    /* 0.0 <= 1.0 -> 1 */
    TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x0000000000000000,
                      0x3ff0000000000000, 0x00, a0, fa0, fa1);
+   /* 0.0 <= -0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x0000000000000000,
+                     0x8000000000000000, 0x00, a0, fa0, fa1);
+   /* -0.0 <= 0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x8000000000000000,
+                     0x0000000000000000, 0x00, a0, fa0, fa1);
    /* INFINITY <= INFINITY -> 1 */
    TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x7ff0000000000000,
                      0x7ff0000000000000, 0x00, a0, fa0, fa1);
