@@ -186,6 +186,10 @@ typedef enum {
    RISCV64in_FSGNJX_D,        /* Copy of a 64-bit floating-point register to
                                  another with the sign bit XOR'ed from the
                                  second input. */
+   RISCV64in_FMIN_D,          /* Select minimum-number of two 64-bit
+                                 floating-point registers. */
+   RISCV64in_FMAX_D,          /* Select maximum-number of two 64-bit
+                                 floating-point registers. */
    RISCV64in_FEQ_D,           /* Equality comparison of two 64-bit
                                  floating-point registers. */
    RISCV64in_FLT_D,           /* Less-than comparison of two 64-bit
@@ -561,6 +565,18 @@ typedef struct {
          HReg src1;
          HReg src2;
       } FSGNJX_D;
+      /* Select minimum-number of two 64-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FMIN_D;
+      /* Select maximum-number of two 64-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FMAX_D;
       /* Equality comparison of two 64-bit floating-point registers. */
       struct {
          HReg dst;
@@ -758,6 +774,8 @@ RISCV64Instr* RISCV64Instr_FDIV_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSQRT_D(HReg dst, HReg src1);
 RISCV64Instr* RISCV64Instr_FSGNJN_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSGNJX_D(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FMIN_D(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FMAX_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FEQ_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FCVT_W_D(HReg dst, HReg src);

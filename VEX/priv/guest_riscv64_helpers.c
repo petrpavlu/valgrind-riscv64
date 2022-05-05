@@ -168,6 +168,16 @@ UInt riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_BINARY64("fdiv.d");
 }
+UInt riscv64g_calculate_fflags_fmin_d(Double a1, Double a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64("fmin.d");
+}
+UInt riscv64g_calculate_fflags_fmax_d(Double a1, Double a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64("fmax.d");
+}
 
 #if defined(__riscv) && (__riscv_xlen == 64)
 /* clang-format off */

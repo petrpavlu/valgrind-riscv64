@@ -959,10 +959,44 @@ static void test_float64_shared(void)
                   0x8000000000000000, 0x00, fa0, fa1, fa2);
 
    /* ----------------- fmin.d rd, rs1, rs2 ----------------- */
-   /* TODO Implement. */
+   /* min(0.0, 1.0) -> 0.0 */
+   TESTINST_1_2_F(4, "fmin.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x3ff0000000000000, 0x00, fa0, fa1, fa2);
+   /* min(0.0, -0.0) -> -0.0 */
+   TESTINST_1_2_F(4, "fmin.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
+   /* min(-0.0, 0.0) -> -0.0 */
+   TESTINST_1_2_F(4, "fmin.d fa0, fa1, fa2", 0x8000000000000000,
+                  0x0000000000000000, 0x00, fa0, fa1, fa2);
+   /* min(INFINITY, INFINITY) -> INFINITY */
+   TESTINST_1_2_F(4, "fmin.d fa0, fa1, fa2", 0x7ff0000000000000,
+                  0x7ff0000000000000, 0x00, fa0, fa1, fa2);
+   /* min(0.0, qNAN) -> 0.0 */
+   TESTINST_1_2_F(4, "fmin.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x7ff8000000000000, 0x00, fa0, fa1, fa2);
+   /* min(0.0, sNAN) -> 0.0 (NV) */
+   TESTINST_1_2_F(4, "fmin.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x7ff4000000000000, 0x00, fa0, fa1, fa2);
 
    /* ----------------- fmax.d rd, rs1, rs2 ----------------- */
-   /* TODO Implement. */
+   /* max(0.0, 1.0) -> 1.0 */
+   TESTINST_1_2_F(4, "fmax.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x3ff0000000000000, 0x00, fa0, fa1, fa2);
+   /* max(0.0, -0.0) -> 0.0 */
+   TESTINST_1_2_F(4, "fmax.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x8000000000000000, 0x00, fa0, fa1, fa2);
+   /* max(-0.0, 0.0) -> 0.0 */
+   TESTINST_1_2_F(4, "fmax.d fa0, fa1, fa2", 0x8000000000000000,
+                  0x0000000000000000, 0x00, fa0, fa1, fa2);
+   /* max(INFINITY, INFINITY) -> INFINITY */
+   TESTINST_1_2_F(4, "fmax.d fa0, fa1, fa2", 0x7ff0000000000000,
+                  0x7ff0000000000000, 0x00, fa0, fa1, fa2);
+   /* max(0.0, qNAN) -> 0.0 */
+   TESTINST_1_2_F(4, "fmax.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x7ff8000000000000, 0x00, fa0, fa1, fa2);
+   /* max(0.0, sNAN) -> 0.0 (NV) */
+   TESTINST_1_2_F(4, "fmax.d fa0, fa1, fa2", 0x0000000000000000,
+                  0x7ff4000000000000, 0x00, fa0, fa1, fa2);
 
    /* ---------------- fcvt.s.d rd, rs1, rm ----------------- */
    /* TODO Implement. */
