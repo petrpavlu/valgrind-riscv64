@@ -146,10 +146,29 @@ UInt riscv64g_calculate_fflags_fcvt_d_l(ULong a1, UInt rm_RISCV)
          : "t0");                                                              \
       return res;                                                              \
    } while (0)
+#define CALCULATE_FFLAGS_BINARY64_IFF(inst)                                    \
+   do {                                                                        \
+      UInt res;                                                                \
+      __asm__ __volatile__(                                                    \
+         "csrr t0, fcsr\n\t"                                                   \
+         "csrw frm, %[rm]\n\t"                                                 \
+         "csrw fflags, zero\n\t"                                               \
+         inst " t1, %[a1], %[a2]\n\t"                                          \
+         "csrr %[res], fflags\n\t"                                             \
+         "csrw fcsr, t0\n\t"                                                   \
+         : [res] "=r"(res)                                                     \
+         : [a1] "f"(a1), [a2] "f"(a2), [rm] "r"(rm_RISCV)                      \
+         : "t0", "t1");                                                        \
+      return res;                                                              \
+   } while (0)
 /* clang-format on */
 #else
 /* No simulated version is currently implemented. */
 #define CALCULATE_FFLAGS_BINARY64(inst)                                        \
+   do {                                                                        \
+      return 0;                                                                \
+   } while (0)
+#define CALCULATE_FFLAGS_BINARY64_IFF(inst)                                    \
    do {                                                                        \
       return 0;                                                                \
    } while (0)
@@ -177,6 +196,21 @@ UInt riscv64g_calculate_fflags_fmax_d(Double a1, Double a2)
 {
    UInt rm_RISCV = 0; /* unused */
    CALCULATE_FFLAGS_BINARY64("fmax.d");
+}
+UInt riscv64g_calculate_fflags_feq_d(Double a1, Double a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64_IFF("feq.d");
+}
+UInt riscv64g_calculate_fflags_flt_d(Double a1, Double a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64_IFF("flt.d");
+}
+UInt riscv64g_calculate_fflags_fle_d(Double a1, Double a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64_IFF("fle.d");
 }
 
 #if defined(__riscv) && (__riscv_xlen == 64)

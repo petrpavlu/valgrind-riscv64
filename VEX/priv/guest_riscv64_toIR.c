@@ -2224,18 +2224,28 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       if (rm != 0b010 && rm != 0b001 && rm != 0b000) {
          /* Invalid F{EQ,LT,LE}.D, fall through. */
       } else {
+         IRTemp a1 = newTemp(irsb, Ity_F64);
+         IRTemp a2 = newTemp(irsb, Ity_F64);
+         assign(irsb, a1, getFReg64(rs1));
+         assign(irsb, a2, getFReg64(rs2));
          IRTemp cmp = newTemp(irsb, Ity_I32);
-         assign(irsb, cmp, binop(Iop_CmpF64, getFReg64(rs1), getFReg64(rs2)));
+         assign(irsb, cmp, binop(Iop_CmpF64, mkexpr(a1), mkexpr(a2)));
          const HChar* name;
          IRTemp       res = newTemp(irsb, Ity_I1);
+         const HChar* helper_name;
+         void*        helper_addr;
          switch (rm) {
          case 0b010:
             name = "feq";
             assign(irsb, res, binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ)));
+            helper_name = "riscv64g_calculate_fflags_feq_d";
+            helper_addr = riscv64g_calculate_fflags_feq_d;
             break;
          case 0b001:
             name = "flt";
             assign(irsb, res, binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)));
+            helper_name = "riscv64g_calculate_fflags_flt_d";
+            helper_addr = riscv64g_calculate_fflags_flt_d;
             break;
          case 0b000:
             name = "fle";
@@ -2243,12 +2253,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
                    binop(Iop_Or1,
                          binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)),
                          binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ))));
+            helper_name = "riscv64g_calculate_fflags_fle_d";
+            helper_addr = riscv64g_calculate_fflags_fle_d;
             break;
          default:
             vassert(0);
          }
          putIReg64(irsb, rd, unop(Iop_1Uto64, mkexpr(res)));
-         /* TODO Implement setting of fflags (for a signaling NaN). */
+         putFCSR(irsb,
+                 binop(Iop_Or32, getFCSR(),
+                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                     helper_addr,
+                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
          DIP("%s.d %s, %s, %s\n", name, nameIReg(rd), nameFReg(rs1),
              nameFReg(rs2));
          return True;

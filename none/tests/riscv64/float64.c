@@ -1023,12 +1023,9 @@ static void test_float64_shared(void)
    /* 0.0 == qNAN -> 0 */
    TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff8000000000000, 0x00, a0, fa0, fa1);
-   /* TODO Implement. */
-#if 0
    /* 0.0 == sNAN -> 0 (NV) */
    TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
-#endif
 
    /* ----------------- flt.d rd, rs1, rs2 ------------------ */
    /* 0.0 < 0.0 -> 0 */
@@ -1046,15 +1043,12 @@ static void test_float64_shared(void)
    /* INFINITY < INFINITY -> 0 */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x7ff0000000000000,
                      0x7ff0000000000000, 0x00, a0, fa0, fa1);
-   /* TODO Implement. */
-#if 0
    /* 0.0 < qNAN -> 0 (NV) */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff8000000000000, 0x00, a0, fa0, fa1);
    /* 0.0 < sNAN -> 0 (NV) */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
-#endif
 
    /* ----------------- fle.d rd, rs1, rs2 ------------------ */
    /* 1.0 < 0.0 -> 0 */
@@ -1075,15 +1069,12 @@ static void test_float64_shared(void)
    /* INFINITY <= INFINITY -> 1 */
    TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x7ff0000000000000,
                      0x7ff0000000000000, 0x00, a0, fa0, fa1);
-   /* TODO Implement. */
-#if 0
    /* 0.0 <= qNAN -> 0 (NV) */
    TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff8000000000000, 0x00, a0, fa0, fa1);
    /* 0.0 <= sNAN -> 0 (NV) */
    TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
-#endif
 
    /* ------------------ fclass.d rd, rs1 ------------------- */
    /* TODO Implement. */
