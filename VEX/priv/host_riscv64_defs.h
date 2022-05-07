@@ -200,6 +200,8 @@ typedef enum {
                                  a 32-bit unsigned integer. */
    RISCV64in_FCVT_D_W,        /* Convert a 32-bit signed integer to a 64-bit
                                  floating-point number. */
+   RISCV64in_FCVT_D_WU,       /* Convert a 32-bit unsigned integer to a 64-bit
+                                 floating-point number. */
    RISCV64in_FCVT_L_D,        /* Convert a 64-bit floating-point number to
                                  a 64-bit integer. */
    RISCV64in_FCVT_D_L,        /* Convert a 64-bit signed integer to a 64-bit
@@ -606,6 +608,11 @@ typedef struct {
          HReg dst;
          HReg src;
       } FCVT_D_W;
+      /* Convert a 32-bit unsigned integer to a 64-bit floating-point number. */
+      struct {
+         HReg dst;
+         HReg src;
+      } FCVT_D_WU;
       /* Convert a 64-bit floating-point value to a 64-bit integer. */
       struct {
          HReg dst;
@@ -788,6 +795,7 @@ RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FCVT_W_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_WU_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_D_W(HReg dst, HReg src);
+RISCV64Instr* RISCV64Instr_FCVT_D_WU(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_L_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_D_L(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_X_D(HReg dst, HReg src);

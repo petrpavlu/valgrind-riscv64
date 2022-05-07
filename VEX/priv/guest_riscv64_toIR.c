@@ -2298,15 +2298,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
-   if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00000 &&
+   /* -------------- fcvt.d.{w,wu} rd, rs1, rm -------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 21) == 0b0000 &&
        INSN(31, 25) == 0b1101001) {
       UInt rd  = INSN(11, 7);
       UInt rm  = INSN(14, 12); /* Ignored as the result is always exact. */
       UInt rs1 = INSN(19, 15);
-      putFReg64(irsb, rd, unop(Iop_I32StoF64, getIReg32(rs1)));
-      DIP("fcvt.d.w %s, %s%s\n", nameFReg(rd), nameIReg(rs1),
-          nameRMOperand(rm));
+      Bool is_signed = INSN(20, 20) == 0b0;
+      putFReg64(
+         irsb, rd,
+         unop(is_signed ? Iop_I32StoF64 : Iop_I32UtoF64, getIReg32(rs1)));
+      DIP("fcvt.d.w%s %s, %s%s\n", is_signed ? "" : "u", nameFReg(rd),
+          nameIReg(rs1), nameRMOperand(rm));
       return True;
    }
 

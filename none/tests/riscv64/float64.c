@@ -1200,7 +1200,10 @@ static void test_float64_shared(void)
    TESTINST_1_1_FI(4, "fcvt.d.w fa0, a0", 0xffffffff80000000, 0x00, fa0, a0);
 
    /* ---------------- fcvt.d.wu rd, rs1, rm ---------------- */
-   /* TODO Implement. */
+   /* 0 -> 0.0 */
+   TESTINST_1_1_FI(4, "fcvt.d.wu fa0, a0", 0x0000000000000000, 0x00, fa0, a0);
+   /* 2**32-1 aka UINT_MAX -> 2**32-1 */
+   TESTINST_1_1_FI(4, "fcvt.d.wu fa0, a0", 0x00000000ffffffff, 0x00, fa0, a0);
 
    printf("\n");
 }

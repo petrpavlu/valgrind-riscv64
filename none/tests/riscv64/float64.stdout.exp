@@ -1109,6 +1109,12 @@ fcvt.d.w fa0, a0 ::
 fcvt.d.w fa0, a0 ::
   inputs: a0=0xffffffff80000000, fcsr=0x00000000
   output: fa0=0xc1e0000000000000, fcsr=0x00000000
+fcvt.d.wu fa0, a0 ::
+  inputs: a0=0x0000000000000000, fcsr=0x00000000
+  output: fa0=0x0000000000000000, fcsr=0x00000000
+fcvt.d.wu fa0, a0 ::
+  inputs: a0=0x00000000ffffffff, fcsr=0x00000000
+  output: fa0=0x41efffffffe00000, fcsr=0x00000000
 
 RV64D double-precision FP instruction set, additions
 fcvt.l.d a0, fa0 ::
