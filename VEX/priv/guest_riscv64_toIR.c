@@ -2215,6 +2215,28 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ---------------- fcvt.s.d rd, rs1, rm ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00001 &&
+       INSN(31, 25) == 0b0100000) {
+      UInt   rd  = INSN(11, 7);
+      UInt   rm  = INSN(14, 12);
+      UInt   rs1 = INSN(19, 15);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
+      IRTemp a1 = newTemp(irsb, Ity_F64);
+      assign(irsb, a1, getFReg64(rs1));
+      putFReg32(irsb, rd, binop(Iop_F64toF32, mkexpr(rm_IR), mkexpr(a1)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(
+                             Ity_I32, 0 /*regparms*/,
+                             "riscv64g_calculate_fflags_fcvt_s_d",
+                             riscv64g_calculate_fflags_fcvt_s_d,
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+      DIP("fcvt.s.d %s, %s%s\n", nameFReg(rd), nameFReg(rs1),
+          nameRMOperand(rm));
+      return True;
+   }
+
    /* ------------- f{eq,lt,le}.d rd, rs1, rs2 -------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b1010001) {
       UInt rd  = INSN(11, 7);

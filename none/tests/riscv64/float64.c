@@ -999,7 +999,76 @@ static void test_float64_shared(void)
                   0x7ff4000000000000, 0x00, fa0, fa1, fa2);
 
    /* ---------------- fcvt.s.d rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* 0.0 -> 0.0 */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x0000000000000000, 0x00, fa0, fa1);
+   /* DBL_TRUE_MIN -> 0.0 (UF, NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x0000000000000001, 0x00, fa0, fa1);
+   /* INFINITY -> INFINITY */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x7ff0000000000000, 0x00, fa0, fa1);
+   /* qNAN -> qNAN */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x7ff8000000000000, 0x00, fa0, fa1);
+   /* FLT_MAX -> FLT_MAX */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x47efffffe0000000, 0x00, fa0, fa1);
+   /* -FLT_MAX -> -FLT_MAX */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xc7efffffe0000000, 0x00, fa0, fa1);
+   /* nextafter(FLT_MAX) -> FLT_MAX (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x47efffffe0000001, 0x00, fa0, fa1);
+   /* -nextafter(FLT_MAX) -> -FLT_MAX (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xc7efffffe0000001, 0x00, fa0, fa1);
+   /* DBL_MAX -> FLT_MAX (OF, NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x7fefffffffffffff, 0x00, fa0, fa1);
+
+   /* 1.0 + FLT_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rne", 0x3ff0000010000000, 0x00, fa0,
+                  fa1);
+   /* nextafterf(1.0) + FLT_EPSILON/2 (RNE) -> 2nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rne", 0x3ff0000030000000, 0x00, fa0,
+                  fa1);
+   /* 1.0 + FLT_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rtz", 0x3ff0000010000000, 0x00, fa0,
+                  fa1);
+   /* -1.0 + -FLT_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rtz", 0xbff0000010000000, 0x00, fa0,
+                  fa1);
+   /* 1.0 + FLT_EPSILON/2 (RND) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rdn", 0x3ff0000010000000, 0x00, fa0,
+                  fa1);
+   /* -1.0 + -FLT_EPSILON/2 (RND) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rdn", 0xbff0000010000000, 0x00, fa0,
+                  fa1);
+   /* 1.0 + FLT_EPSILON/2 (RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rup", 0x3ff0000010000000, 0x00, fa0,
+                  fa1);
+   /* -1.0 + -FLT_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rup", 0xbff0000010000000, 0x00, fa0,
+                  fa1);
+   /* 1.0 + FLT_EPSILON/2 (RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rmm", 0x3ff0000010000000, 0x00, fa0,
+                  fa1);
+   /* -1.0 + -FLT_EPSILON/2 (RMM) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rmm", 0xbff0000010000000, 0x00, fa0,
+                  fa1);
+
+   /* 1.0 + FLT_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x00, fa0, fa1);
+   /* nextafterf(1.0) + FLT_EPSILON/2 (DYN-RNE) -> 2nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000030000000, 0x00, fa0, fa1);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x20, fa0, fa1);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x20, fa0, fa1);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RND) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x40, fa0, fa1);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RND) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x40, fa0, fa1);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x60, fa0, fa1);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x60, fa0, fa1);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x80, fa0, fa1);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RMM) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x80, fa0, fa1);
 
    /* ---------------- fcvt.d.s rd, rs1, rm ----------------- */
    /* TODO Implement. */
