@@ -1148,7 +1148,48 @@ static void test_float64_shared(void)
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0xbfe0000000000000, 0x80, a0, fa0);
 
    /* ---------------- fcvt.wu.d rd, rs1, rm ---------------- */
-   /* TODO Implement. */
+   /* 0.0 -> 0 */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
+   /* DBL_TRUE_MIN -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
+   /* qNAN -> 2**32-1 aka UINT_MAX (NV) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
+   /* 2**32-1 -> 2**32-1 aka UINT_MAX */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x41efffffffe00000, 0x00, a0, fa0);
+   /* -1.0 -> 0 (NV) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0xbff0000000000000, 0x00, a0, fa0);
+
+   /* 0.5 (RNE) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rne", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* 1.5 (RNE) -> 2 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rne", 0x3ff8000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RTZ) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rtz", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RDN) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rdn", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RUP) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rup", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+   /* 0.5 (RMM) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rmm", 0x3fe0000000000000, 0x00, a0,
+                   fa0);
+
+   /* 0.5 (DYN-RNE) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x3fe0000000000000, 0x00, a0, fa0);
+   /* 1.5 (DYN-RNE) -> 2 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x3ff8000000000000, 0x00, a0, fa0);
+   /* 0.5 (DYN-RTZ) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x3fe0000000000000, 0x20, a0, fa0);
+   /* 0.5 (DYN-RDN) -> 0 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x3fe0000000000000, 0x40, a0, fa0);
+   /* 0.5 (DYN-RUP) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x3fe0000000000000, 0x60, a0, fa0);
+   /* 0.5 (DYN-RMM) -> 1 (NX) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x3fe0000000000000, 0x80, a0, fa0);
 
    /* ---------------- fcvt.d.w rd, rs1, rm ----------------- */
    /* 0 -> 0.0 */

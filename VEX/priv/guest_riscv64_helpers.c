@@ -120,6 +120,10 @@ UInt riscv64g_calculate_fflags_fcvt_w_d(Double a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_IF("fcvt.w.d");
 }
+UInt riscv64g_calculate_fflags_fcvt_wu_d(Double a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_IF("fcvt.wu.d");
+}
 UInt riscv64g_calculate_fflags_fcvt_l_d(Double a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_IF("fcvt.l.d");
