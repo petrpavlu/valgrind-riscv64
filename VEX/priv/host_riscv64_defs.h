@@ -208,6 +208,8 @@ typedef enum {
                                  a 64-bit unsigned integer. */
    RISCV64in_FCVT_D_L,        /* Convert a 64-bit signed integer to a 64-bit
                                  floating-point number. */
+   RISCV64in_FCVT_D_LU,       /* Convert a 64-bit unsigned integer to a 64-bit
+                                 floating-point number. */
    RISCV64in_FMV_X_D,         /* Move as-is a 64-bit value from a floating-point
                                  register to an integer register. */
    RISCV64in_FMV_D_X,         /* Move as-is a 64-bit value from an integer
@@ -630,6 +632,11 @@ typedef struct {
          HReg dst;
          HReg src;
       } FCVT_D_L;
+      /* Convert a 64-bit unsigned integer to a 64-bit floating-point number. */
+      struct {
+         HReg dst;
+         HReg src;
+      } FCVT_D_LU;
       /* Move as-is a 64-bit value from a floating-point register to an integer
          register. */
       struct {
@@ -806,6 +813,7 @@ RISCV64Instr* RISCV64Instr_FCVT_D_WU(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_L_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_LU_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FCVT_D_L(HReg dst, HReg src);
+RISCV64Instr* RISCV64Instr_FCVT_D_LU(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_X_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_D_X(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FLD(HReg dst, HReg base, Int soff12);

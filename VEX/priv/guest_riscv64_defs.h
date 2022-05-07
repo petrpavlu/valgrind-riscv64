@@ -84,6 +84,7 @@ UInt riscv64g_calculate_fflags_fcvt_wu_d(Double a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_l_d(Double a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_lu_d(Double a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_d_l(ULong a1, UInt rm_RISCV);
+UInt riscv64g_calculate_fflags_fcvt_d_lu(ULong a1, UInt rm_RISCV);
 
 UInt riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fmul_d(Double a1, Double a2, UInt rm_RISCV);

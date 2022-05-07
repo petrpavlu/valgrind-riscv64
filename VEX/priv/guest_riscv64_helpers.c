@@ -136,6 +136,10 @@ UInt riscv64g_calculate_fflags_fcvt_d_l(ULong a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_FI("fcvt.d.l");
 }
+UInt riscv64g_calculate_fflags_fcvt_d_lu(ULong a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_FI("fcvt.d.lu");
+}
 
 #if defined(__riscv) && (__riscv_xlen == 64)
 /* clang-format off */
