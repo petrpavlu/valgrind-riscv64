@@ -1153,6 +1153,8 @@ static void test_float64_shared(void)
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
    /* DBL_TRUE_MIN -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
+   /* INFINITY -> 2**31-1 aka INT_MAX (NV)  */
+   TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x7ff0000000000000, 0x00, a0, fa0);
    /* qNAN -> 2**31-1 aka INT_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
    /* 2**31-1 -> 2**31-1 aka INT_MAX */
@@ -1221,6 +1223,8 @@ static void test_float64_shared(void)
    TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
    /* DBL_TRUE_MIN -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
+   /* INFINITY -> 2**32-1 aka UINT_MAX (NV) */
+   TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x7ff0000000000000, 0x00, a0, fa0);
    /* qNAN -> 2**32-1 aka UINT_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
    /* 2**32-1 -> 2**32-1 aka UINT_MAX */
@@ -1286,7 +1290,9 @@ static void test_float64_additions(void)
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
    /* DBL_TRUE_MIN -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
-   /* qNAN -> LONG_MAX (NV) */
+   /* INFINITY -> 2**63-1 aka LONG_MAX (NV) */
+   TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x7ff0000000000000, 0x00, a0, fa0);
+   /* qNAN -> 2**63-1 aka LONG_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
    /* nextafter(2**63, 0.0) -> 2**63-1024 */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0x43dfffffffffffff, 0x00, a0, fa0);
@@ -1354,7 +1360,9 @@ static void test_float64_additions(void)
    TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
    /* DBL_TRUE_MIN -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
-   /* qNAN -> ULONG_MAX (NV) */
+   /* INFINITY -> 2**64-1 aka ULONG_MAX (NV) */
+   TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0", 0x7ff0000000000000, 0x00, a0, fa0);
+   /* qNAN -> 2**64-1 aka ULONG_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
    /* nextafter(2**64, 0.0) -> 2**63-2048 */
    TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0", 0x43efffffffffffff, 0x00, a0, fa0);

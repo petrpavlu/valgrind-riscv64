@@ -1062,6 +1062,9 @@ fcvt.w.d a0, fa0 ::
   inputs: fa0=0x0000000000000001, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
 fcvt.w.d a0, fa0 ::
+  inputs: fa0=0x7ff0000000000000, fcsr=0x00000000
+  output: a0=0x000000007fffffff, fcsr=0x00000010
+fcvt.w.d a0, fa0 ::
   inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
   output: a0=0x000000007fffffff, fcsr=0x00000010
 fcvt.w.d a0, fa0 ::
@@ -1143,6 +1146,9 @@ fcvt.wu.d a0, fa0 ::
   inputs: fa0=0x0000000000000001, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
 fcvt.wu.d a0, fa0 ::
+  inputs: fa0=0x7ff0000000000000, fcsr=0x00000000
+  output: a0=0xffffffffffffffff, fcsr=0x00000010
+fcvt.wu.d a0, fa0 ::
   inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
   output: a0=0xffffffffffffffff, fcsr=0x00000010
 fcvt.wu.d a0, fa0 ::
@@ -1210,6 +1216,9 @@ fcvt.l.d a0, fa0 ::
 fcvt.l.d a0, fa0 ::
   inputs: fa0=0x0000000000000001, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.l.d a0, fa0 ::
+  inputs: fa0=0x7ff0000000000000, fcsr=0x00000000
+  output: a0=0x7fffffffffffffff, fcsr=0x00000010
 fcvt.l.d a0, fa0 ::
   inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
   output: a0=0x7fffffffffffffff, fcsr=0x00000010
@@ -1291,6 +1300,9 @@ fcvt.lu.d a0, fa0 ::
 fcvt.lu.d a0, fa0 ::
   inputs: fa0=0x0000000000000001, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
+fcvt.lu.d a0, fa0 ::
+  inputs: fa0=0x7ff0000000000000, fcsr=0x00000000
+  output: a0=0xffffffffffffffff, fcsr=0x00000010
 fcvt.lu.d a0, fa0 ::
   inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
   output: a0=0xffffffffffffffff, fcsr=0x00000010
