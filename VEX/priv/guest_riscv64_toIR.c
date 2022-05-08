@@ -2307,6 +2307,19 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* ------------------ fclass.d rd, rs1 ------------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b001 &&
+       INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      putIReg64(irsb, rd,
+                mkIRExprCCall(
+                   Ity_I64, 0 /*regparms*/, "riscv64g_calculate_fclass_d",
+                   riscv64g_calculate_fclass_d, mkIRExprVec_1(getFReg64(rs1))));
+      DIP("fclass.d %s, %s\n", nameIReg(rd), nameFReg(rs1));
+      return True;
+   }
+
    /* -------------- fcvt.{w,wu}.d rd, rs1, rm -------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(24, 21) == 0b0000 &&
        INSN(31, 25) == 0b1100001) {

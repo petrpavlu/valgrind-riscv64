@@ -1162,7 +1162,26 @@ static void test_float64_shared(void)
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
 
    /* ------------------ fclass.d rd, rs1 ------------------- */
-   /* TODO Implement. */
+   /* fclass(-INFINITY) -> 0x001 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0xfff0000000000000, 0x00, a0, fa0);
+   /* fclass(-1.0) -> 0x002 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0xbff0000000000000, 0x00, a0, fa0);
+   /* fclass(-DBL_TRUE_MIN) -> 0x004 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x8000000000000001, 0x00, a0, fa0);
+   /* fclass(-0.0) -> 0x008 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x8000000000000000, 0x00, a0, fa0);
+   /* fclass(0.0) -> 0x010 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
+   /* fclass(DBL_TRUE_MIN) -> 0x020 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x0000000000000001, 0x00, a0, fa0);
+   /* fclass(1.0) -> 0x040 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x3ff0000000000000, 0x00, a0, fa0);
+   /* fclass(INFINITY) -> 0x080 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x7ff0000000000000, 0x00, a0, fa0);
+   /* fclass(sNAN) -> 0x100 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x7ff4000000000000, 0x00, a0, fa0);
+   /* fclass(qNAN) -> 0x200 */
+   TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
 
    /* ---------------- fcvt.w.d rd, rs1, rm ----------------- */
    /* 0.0 -> 0 */

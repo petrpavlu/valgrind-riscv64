@@ -264,6 +264,32 @@ UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
    CALCULATE_FFLAGS_TERNARY64("fmadd.d");
 }
 
+#if defined(__riscv) && (__riscv_xlen == 64)
+/* clang-format off */
+#define CALCULATE_FCLASS(inst)                                                 \
+   do {                                                                        \
+      ULong res;                                                               \
+      __asm__ __volatile__(                                                    \
+         inst " %[res], %[a1]\n\t"                                             \
+         : [res] "=r"(res)                                                     \
+         : [a1] "f"(a1));                                                      \
+      return res;                                                              \
+   } while (0)
+/* clang-format on */
+#else
+/* No simulated version is currently implemented. */
+#define CALCULATE_FCLASS(inst)                                                 \
+   do {                                                                        \
+      return 0;                                                                \
+   } while (0)
+#endif
+
+/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+ULong riscv64g_calculate_fclass_d(Double a1)
+{
+   CALCULATE_FCLASS("fclass.d");
+}
+
 /*------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers. ---*/
 /*--- These help iropt specialise calls the above run-time ---*/

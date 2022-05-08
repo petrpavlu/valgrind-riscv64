@@ -1073,6 +1073,36 @@ fle.d a0, fa0, fa1 ::
 fle.d a0, fa0, fa1 ::
   inputs: fa0=0x0000000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000010
+fclass.d a0, fa0 ::
+  inputs: fa0=0xfff0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0xbff0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000002, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x8000000000000001, fcsr=0x00000000
+  output: a0=0x0000000000000004, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x8000000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000008, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x0000000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000010, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x0000000000000001, fcsr=0x00000000
+  output: a0=0x0000000000000020, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x3ff0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000040, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x7ff0000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000080, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x7ff4000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000100, fcsr=0x00000000
+fclass.d a0, fa0 ::
+  inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000200, fcsr=0x00000000
 fcvt.w.d a0, fa0 ::
   inputs: fa0=0x0000000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000000
