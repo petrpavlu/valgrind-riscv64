@@ -1071,7 +1071,23 @@ static void test_float64_shared(void)
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x80, fa0, fa1);
 
    /* ---------------- fcvt.d.s rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* 0.0 -> 0.0 */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0xffffffff00000000, 0x00, fa0, fa1);
+   /* FLT_TRUE_MIN -> FLT_TRUE_MIN */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0xffffffff00000001, 0x00, fa0, fa1);
+   /* INFINITY -> INFINITY */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0xffffffff7f800000, 0x00, fa0, fa1);
+   /* qNAN -> qNAN */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0xffffffff7fc00000, 0x00, fa0, fa1);
+   /* FLT_MAX -> FLT_MAX */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0xffffffff7f7fffff, 0x00, fa0, fa1);
+   /* -FLT_MAX -> -FLT_MAX */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0xffffffffff7fffff, 0x00, fa0, fa1);
+#if 0
+   /* TODO Implement correctly. */
+   /* non-NaN-boxed 0.0 -> qNaN */
+   TESTINST_1_1_F(4, "fcvt.d.s fa0, fa1", 0x0000000000000000, 0x00, fa0, fa1);
+#endif
 
    /* ----------------- feq.d rd, rs1, rs2 ------------------ */
    /* 0.0 == 1.0 -> 0 */

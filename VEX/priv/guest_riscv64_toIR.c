@@ -522,6 +522,8 @@ static IRExpr* getFReg32(UInt fregNo)
    vassert(fregNo < 32);
    /* Note that the following access depends on the host being little-endian
       which is checked in disInstr_RISCV64(). */
+   /* TODO Check that the value is correctly NaN-boxed. If not then return
+      the 32-bit canonical qNaN, as mandated by the RISC-V ISA. */
    return IRExpr_Get(offsetFReg(fregNo), Ity_F32);
 }
 
@@ -2233,6 +2235,18 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
                              riscv64g_calculate_fflags_fcvt_s_d,
                              mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
       DIP("fcvt.s.d %s, %s%s\n", nameFReg(rd), nameFReg(rs1),
+          nameRMOperand(rm));
+      return True;
+   }
+
+   /* ---------------- fcvt.d.s rd, rs1, rm ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00000 &&
+       INSN(31, 25) == 0b0100001) {
+      UInt rd  = INSN(11, 7);
+      UInt rm  = INSN(14, 12); /* Ignored as the result is always exact. */
+      UInt rs1 = INSN(19, 15);
+      putFReg64(irsb, rd, unop(Iop_F32toF64, getFReg32(rs1)));
+      DIP("fcvt.d.s %s, %s%s\n", nameFReg(rd), nameFReg(rs1),
           nameRMOperand(rm));
       return True;
    }
