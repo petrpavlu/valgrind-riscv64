@@ -1178,28 +1178,22 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
    if (INSN(6, 0) == 0b0110111) {
       UInt rd       = INSN(11, 7);
       UInt imm31_12 = INSN(31, 12);
-      if (rd == 0) {
-         /* Invalid LUI, fall through. */
-      } else {
+      if (rd != 0)
          putIReg64(irsb, rd, mkU64(vex_sx_to_64(imm31_12 << 12, 32)));
-         DIP("lui %s, 0x%x\n", nameIReg(rd), imm31_12);
-         return True;
-      }
+      DIP("lui %s, 0x%x\n", nameIReg(rd), imm31_12);
+      return True;
    }
 
    /* ---------------- auipc rd, imm[31:12] ----------------- */
    if (INSN(6, 0) == 0b0010111) {
       UInt rd       = INSN(11, 7);
       UInt imm31_12 = INSN(31, 12);
-      if (rd == 0) {
-         /* Invalid AUIPC, fall through. */
-      } else {
+      if (rd != 0)
          putIReg64(
             irsb, rd,
             mkU64(guest_pc_curr_instr + vex_sx_to_64(imm31_12 << 12, 32)));
-         DIP("auipc %s, 0x%x\n", nameIReg(rd), imm31_12);
-         return True;
-      }
+      DIP("auipc %s, 0x%x\n", nameIReg(rd), imm31_12);
+      return True;
    }
 
    /* ------------------ jal rd, imm[20:1] ------------------ */
@@ -1311,46 +1305,66 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
-      if (rd == 0 || funct3 == 0b111) {
+      if (funct3 == 0b111) {
          /* Invalid L<x>, fall through. */
       } else {
-         ULong        simm = vex_sx_to_64(imm11_0, 12);
-         IRExpr*      ea   = binop(Iop_Add64, getIReg64(rs1), mkU64(simm));
+         ULong simm = vex_sx_to_64(imm11_0, 12);
+         if (rd != 0) {
+            IRExpr* ea = binop(Iop_Add64, getIReg64(rs1), mkU64(simm));
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b000:
+               expr = unop(Iop_8Sto64, loadLE(Ity_I8, ea));
+               break;
+            case 0b001:
+               expr = unop(Iop_16Sto64, loadLE(Ity_I16, ea));
+               break;
+            case 0b010:
+               expr = unop(Iop_32Sto64, loadLE(Ity_I32, ea));
+               break;
+            case 0b011:
+               expr = loadLE(Ity_I64, ea);
+               break;
+            case 0b100:
+               expr = unop(Iop_8Uto64, loadLE(Ity_I8, ea));
+               break;
+            case 0b101:
+               expr = unop(Iop_16Uto64, loadLE(Ity_I16, ea));
+               break;
+            case 0b110:
+               expr = unop(Iop_32Uto64, loadLE(Ity_I32, ea));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg64(irsb, rd, expr);
+         }
          const HChar* name;
-         IRExpr*      expr;
          switch (funct3) {
          case 0b000:
             name = "lb";
-            expr = unop(Iop_8Sto64, loadLE(Ity_I8, ea));
             break;
          case 0b001:
             name = "lh";
-            expr = unop(Iop_16Sto64, loadLE(Ity_I16, ea));
             break;
          case 0b010:
             name = "lw";
-            expr = unop(Iop_32Sto64, loadLE(Ity_I32, ea));
             break;
          case 0b011:
             name = "ld";
-            expr = loadLE(Ity_I64, ea);
             break;
          case 0b100:
             name = "lbu";
-            expr = unop(Iop_8Uto64, loadLE(Ity_I8, ea));
             break;
          case 0b101:
             name = "lhu";
-            expr = unop(Iop_16Uto64, loadLE(Ity_I16, ea));
             break;
          case 0b110:
             name = "lwu";
-            expr = unop(Iop_32Uto64, loadLE(Ity_I32, ea));
             break;
          default:
             vassert(0);
          }
-         putIReg64(irsb, rd, expr);
          DIP("%s %s, %lld(%s)\n", name, nameIReg(rd), (Long)simm,
              nameIReg(rs1));
          return True;
@@ -1405,45 +1419,63 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
-      if (rd == 0 || funct3 == 0b001 || funct3 == 0b101) {
+      if (funct3 == 0b001 || funct3 == 0b101) {
          /* Invalid <x>I, fall through. */
       } else {
-         ULong        simm = vex_sx_to_64(imm11_0, 12);
+         ULong simm = vex_sx_to_64(imm11_0, 12);
+         if (rd != 0) {
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b000:
+               expr = binop(Iop_Add64, getIReg64(rs1), mkU64(simm));
+               break;
+            case 0b010:
+               expr = unop(Iop_1Uto64,
+                           binop(Iop_CmpLT64S, getIReg64(rs1), mkU64(simm)));
+               break;
+            case 0b011:
+               /* Note that the comparison itself is unsigned but the immediate
+                  is sign-extended. */
+               expr = unop(Iop_1Uto64,
+                           binop(Iop_CmpLT64U, getIReg64(rs1), mkU64(simm)));
+               break;
+            case 0b100:
+               expr = binop(Iop_Xor64, getIReg64(rs1), mkU64(simm));
+               break;
+            case 0b110:
+               expr = binop(Iop_Or64, getIReg64(rs1), mkU64(simm));
+               break;
+            case 0b111:
+               expr = binop(Iop_And64, getIReg64(rs1), mkU64(simm));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg64(irsb, rd, expr);
+         }
          const HChar* name;
-         IRExpr*      expr;
          switch (funct3) {
          case 0b000:
             name = "addi";
-            expr = binop(Iop_Add64, getIReg64(rs1), mkU64(simm));
             break;
          case 0b010:
             name = "slti";
-            expr = unop(Iop_1Uto64,
-                        binop(Iop_CmpLT64S, getIReg64(rs1), mkU64(simm)));
             break;
          case 0b011:
-            /* Note that the comparison itself is unsigned but the immediate is
-               sign-extended. */
             name = "sltiu";
-            expr = unop(Iop_1Uto64,
-                        binop(Iop_CmpLT64U, getIReg64(rs1), mkU64(simm)));
             break;
          case 0b100:
             name = "xori";
-            expr = binop(Iop_Xor64, getIReg64(rs1), mkU64(simm));
             break;
          case 0b110:
             name = "ori";
-            expr = binop(Iop_Or64, getIReg64(rs1), mkU64(simm));
             break;
          case 0b111:
             name = "andi";
-            expr = binop(Iop_And64, getIReg64(rs1), mkU64(simm));
             break;
          default:
             vassert(0);
          }
-         putIReg64(irsb, rd, expr);
          DIP("%s %s, %s, %lld\n", name, nameIReg(rd), nameIReg(rs1),
              (Long)simm);
          return True;
@@ -1456,13 +1488,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt uimm5_0 = INSN(25, 20);
-      if (rd == 0) {
-         /* Invalid SLLI, fall through. */
-      } else {
+      if (rd != 0)
          putIReg64(irsb, rd, binop(Iop_Shl64, getIReg64(rs1), mkU8(uimm5_0)));
-         DIP("slli %s, %s, %u\n", nameIReg(rd), nameIReg(rs1), uimm5_0);
-         return True;
-      }
+      DIP("slli %s, %s, %u\n", nameIReg(rd), nameIReg(rs1), uimm5_0);
+      return True;
    }
 
    /* ----------- {srli,srai} rd, rs1, uimm[5:0] ----------=- */
@@ -1472,16 +1501,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt uimm5_0 = INSN(25, 20);
-      if (rd == 0) {
-         /* Invalid {SRLI,SRAI}, fall through. */
-      } else {
+      if (rd != 0)
          putIReg64(irsb, rd,
                    binop(is_log ? Iop_Shr64 : Iop_Sar64, getIReg64(rs1),
                          mkU8(uimm5_0)));
-         DIP("%s %s, %s, %u\n", is_log ? "srli" : "srai", nameIReg(rd),
-             nameIReg(rs1), uimm5_0);
-         return True;
-      }
+      DIP("%s %s, %s, %u\n", is_log ? "srli" : "srai", nameIReg(rd),
+          nameIReg(rs1), uimm5_0);
+      return True;
    }
 
    /* --------------- {add,sub} rd, rs1, rs2 ---------------- */
@@ -1495,53 +1521,75 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt rs2     = INSN(24, 20);
-      if (rd == 0 || (!is_base && funct3 != 0b000 && funct3 != 0b101)) {
+      if (!is_base && funct3 != 0b000 && funct3 != 0b101) {
          /* Invalid <x>, fall through. */
       } else {
+         if (rd != 0) {
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b000: /* sll */
+               expr = binop(is_base ? Iop_Add64 : Iop_Sub64, getIReg64(rs1),
+                            getIReg64(rs2));
+               break;
+            case 0b001:
+               expr = binop(Iop_Shl64, getIReg64(rs1),
+                            unop(Iop_64to8, getIReg64(rs2)));
+               break;
+            case 0b010:
+               expr = unop(Iop_1Uto64,
+                           binop(Iop_CmpLT64S, getIReg64(rs1), getIReg64(rs2)));
+               break;
+            case 0b011:
+               expr = unop(Iop_1Uto64,
+                           binop(Iop_CmpLT64U, getIReg64(rs1), getIReg64(rs2)));
+               break;
+            case 0b100:
+               expr = binop(Iop_Xor64, getIReg64(rs1), getIReg64(rs2));
+               break;
+            case 0b101:
+               expr = binop(is_base ? Iop_Shr64 : Iop_Sar64, getIReg64(rs1),
+                            unop(Iop_64to8, getIReg64(rs2)));
+               break;
+            case 0b110:
+               expr = binop(Iop_Or64, getIReg64(rs1), getIReg64(rs2));
+               break;
+            case 0b111:
+               expr = binop(Iop_And64, getIReg64(rs1), getIReg64(rs2));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg64(irsb, rd, expr);
+         }
          const HChar* name;
-         IRExpr*      expr;
          switch (funct3) {
          case 0b000:
             name = is_base ? "add" : "sub";
-            expr = binop(is_base ? Iop_Add64 : Iop_Sub64, getIReg64(rs1),
-                         getIReg64(rs2));
             break;
          case 0b001:
             name = "sll";
-            expr = binop(Iop_Shl64, getIReg64(rs1),
-                         unop(Iop_64to8, getIReg64(rs2)));
             break;
          case 0b010:
             name = "slt";
-            expr = unop(Iop_1Uto64,
-                        binop(Iop_CmpLT64S, getIReg64(rs1), getIReg64(rs2)));
             break;
          case 0b011:
             name = "sltu";
-            expr = unop(Iop_1Uto64,
-                        binop(Iop_CmpLT64U, getIReg64(rs1), getIReg64(rs2)));
             break;
          case 0b100:
             name = "xor";
-            expr = binop(Iop_Xor64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b101:
             name = is_base ? "srl" : "sra";
-            expr = binop(is_base ? Iop_Shr64 : Iop_Sar64, getIReg64(rs1),
-                         unop(Iop_64to8, getIReg64(rs2)));
             break;
          case 0b110:
             name = "or";
-            expr = binop(Iop_Or64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b111:
             name = "and";
-            expr = binop(Iop_And64, getIReg64(rs1), getIReg64(rs2));
             break;
          default:
             vassert(0);
          }
-         putIReg64(irsb, rd, expr);
          DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
              nameIReg(rs2));
          return True;
@@ -1578,14 +1626,11 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt imm11_0 = INSN(31, 20);
-      if (rd == 0) {
-         /* Invalid ADDIW, fall through. */
-      } else {
-         UInt simm = (UInt)vex_sx_to_64(imm11_0, 12);
+      UInt simm    = (UInt)vex_sx_to_64(imm11_0, 12);
+      if (rd != 0)
          putIReg32(irsb, rd, binop(Iop_Add32, getIReg32(rs1), mkU32(simm)));
-         DIP("addiw %s, %s, %d\n", nameIReg(rd), nameIReg(rs1), (Int)simm);
-         return True;
-      }
+      DIP("addiw %s, %s, %d\n", nameIReg(rd), nameIReg(rs1), (Int)simm);
+      return True;
    }
 
    /* -------------- slliw rd, rs1, uimm[4:0] --------------- */
@@ -1594,13 +1639,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt uimm4_0 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid SLLIW, fall through. */
-      } else {
+      if (rd != 0)
          putIReg32(irsb, rd, binop(Iop_Shl32, getIReg32(rs1), mkU8(uimm4_0)));
-         DIP("slliw %s, %s, %u\n", nameIReg(rd), nameIReg(rs1), uimm4_0);
-         return True;
-      }
+      DIP("slliw %s, %s, %u\n", nameIReg(rd), nameIReg(rs1), uimm4_0);
+      return True;
    }
 
    /* ---------- {srliw,sraiw} rd, rs1, uimm[4:0] ----------- */
@@ -1610,16 +1652,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd      = INSN(11, 7);
       UInt rs1     = INSN(19, 15);
       UInt uimm4_0 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid {SRLIW,SRAIW}, fall through. */
-      } else {
+      if (rd != 0)
          putIReg32(irsb, rd,
                    binop(is_log ? Iop_Shr32 : Iop_Sar32, getIReg32(rs1),
                          mkU8(uimm4_0)));
-         DIP("%s %s, %s, %u\n", is_log ? "srliw" : "sraiw", nameIReg(rd),
-             nameIReg(rs1), uimm4_0);
-         return True;
-      }
+      DIP("%s %s, %s, %u\n", is_log ? "srliw" : "sraiw", nameIReg(rd),
+          nameIReg(rs1), uimm4_0);
+      return True;
    }
 
    /* -------------- {addw,subw} rd, rs1, rs2 --------------- */
@@ -1629,16 +1668,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd     = INSN(11, 7);
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid {ADDW,SUBW}, fall through. */
-      } else {
+      if (rd != 0)
          putIReg32(irsb, rd,
                    binop(is_add ? Iop_Add32 : Iop_Sub32, getIReg32(rs1),
                          getIReg32(rs2)));
-         DIP("%s %s, %s, %s\n", is_add ? "addw" : "subw", nameIReg(rd),
-             nameIReg(rs1), nameIReg(rs2));
-         return True;
-      }
+      DIP("%s %s, %s, %s\n", is_add ? "addw" : "subw", nameIReg(rd),
+          nameIReg(rs1), nameIReg(rs2));
+      return True;
    }
 
    /* ------------------ sllw rd, rs1, rs2 ------------------ */
@@ -1647,15 +1683,12 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd  = INSN(11, 7);
       UInt rs1 = INSN(19, 15);
       UInt rs2 = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid SLLW, fall through. */
-      } else {
+      if (rd != 0)
          putIReg32(
             irsb, rd,
             binop(Iop_Shl32, getIReg32(rs1), unop(Iop_64to8, getIReg64(rs2))));
-         DIP("sllw %s, %s, %s\n", nameIReg(rd), nameIReg(rs1), nameIReg(rs2));
-         return True;
-      }
+      DIP("sllw %s, %s, %s\n", nameIReg(rd), nameIReg(rs1), nameIReg(rs2));
+      return True;
    }
 
    /* -------------- {srlw,sraw} rd, rs1, rs2 --------------- */
@@ -1665,16 +1698,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rd     = INSN(11, 7);
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
-      if (rd == 0) {
-         /* Invalid {SRLW,SRAW}, fall through. */
-      } else {
+      if (rd != 0)
          putIReg32(irsb, rd,
                    binop(is_log ? Iop_Shr32 : Iop_Sar32, getIReg32(rs1),
                          unop(Iop_64to8, getIReg64(rs2))));
-         DIP("%s %s, %s, %s\n", is_log ? "srlw" : "sraw", nameIReg(rd),
-             nameIReg(rs1), nameIReg(rs2));
-         return True;
-      }
+      DIP("%s %s, %s, %s\n", is_log ? "srlw" : "sraw", nameIReg(rd),
+          nameIReg(rs1), nameIReg(rs2));
+      return True;
    }
 
    /* -------------- RV64M standard extension --------------- */

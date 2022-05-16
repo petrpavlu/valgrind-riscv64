@@ -343,6 +343,23 @@ static void show_block_diff(unsigned char* block1,
       free(area2);                                                             \
    }
 
+#define DEST_FMT_zero              "0x%016lx"
+#define DEST_DIFF_zero(dest, base) (dest)
+
+#define DEST_FMT_norm              "1f%+ld"
+#define DEST_DIFF_norm(dest, base) ((long)(dest - base))
+#define DEST_FMT_ra                DEST_FMT_norm
+#define DEST_DIFF_ra(dest, base)   DEST_DIFF_norm(dest, base)
+#define DEST_FMT_a0                DEST_FMT_norm
+#define DEST_DIFF_a0(dest, base)   DEST_DIFF_norm(dest, base)
+#define DEST_FMT_t0                DEST_FMT_norm
+#define DEST_DIFF_t0(dest, base)   DEST_DIFF_norm(dest, base)
+#define DEST_FMT_t6                DEST_FMT_norm
+#define DEST_DIFF_t6(dest, base)   DEST_DIFF_norm(dest, base)
+
+#define DEST_FMT_unused              "%s"
+#define DEST_DIFF_unused(dest, base) "unused"
+
 #define TESTINST_1_0_AUIPC(length, instruction, rd)                            \
    {                                                                           \
       unsigned long w[2 /*out*/ + 1 /*spill*/] = {0, 0, 0};                    \
@@ -363,7 +380,8 @@ static void show_block_diff(unsigned char* block1,
          : [w] "r"(t1)                                                         \
          : "t2", "memory");                                                    \
       printf("%s ::\n", instruction);                                          \
-      printf("  output: %s=1f%+ld\n", #rd, (long)(w[0] - w[1]));               \
+      printf("  output: %s=" DEST_FMT_##rd "\n", #rd,                          \
+             DEST_DIFF_##rd(w[0], w[1]));                                      \
    }
 
 #define JMP_RANGE(length, instruction, rs1_val, rs2_val, offset, rd, rs1, rs2) \
@@ -380,14 +398,14 @@ static void show_block_diff(unsigned char* block1,
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         ".if \"" #rd "\" != \"unused\";"                                      \
          "sd " #rd ", 40(%[w]);"       /* Spill rd. */                         \
          ".endif;"                                                             \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "sd " #rs1 ", 48(%[w]);"      /* Spill rs1. */                        \
          "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
          ".endif;"                                                             \
-         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         ".if \"" #rs2 "\" != \"unused\";"                                     \
          "sd " #rs2 ", 56(%[w]);"      /* Spill rs2. */                        \
          "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
          ".endif;"                                                             \
@@ -415,7 +433,7 @@ static void show_block_diff(unsigned char* block1,
          ".endif;"                                                             \
          "2:;"                                                                 \
          ".option pop;"                                                        \
-         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         ".if \"" #rd "\" != \"unused\";"                                      \
          "sd " #rd ", 0(%[w]);"        /* Store the output return address. */  \
          "la t2, 1b;"                                                          \
          "sd t2, 8(%[w]);"             /* Store address of the test instr. */  \
@@ -430,13 +448,13 @@ static void show_block_diff(unsigned char* block1,
          "li t2, 1;"                                                           \
          "sd t2, 32(%[w]);"            /* Flag that rs2 is valid. */           \
          ".endif;"                                                             \
-         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         ".if \"" #rd "\" != \"unused\";"                                      \
          "ld " #rd ", 40(%[w]);"       /* Reload rd. */                        \
          ".endif;"                                                             \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "ld " #rs1 ", 48(%[w]);"      /* Reload rs1. */                       \
          ".endif;"                                                             \
-         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         ".if \"" #rs2 "\" != \"unused\";"                                     \
          "ld " #rs2 ", 56(%[w]);"      /* Reload rs2. */                       \
          ".endif;"                                                             \
          :                                                                     \
@@ -450,7 +468,8 @@ static void show_block_diff(unsigned char* block1,
          printf("\n");                                                         \
       }                                                                        \
       if (w[2] != 0) /* If rd is valid. */                                     \
-         printf("  output: %s=1f%+ld\n", #rd, (long)(w[0] - w[1]));            \
+         printf("  output: %s=" DEST_FMT_##rd "\n", #rd,                       \
+                DEST_DIFF_##rd(w[0], w[1]));                                   \
       printf("  target: reached\n");                                           \
    }
 
@@ -486,11 +505,11 @@ static void show_block_diff(unsigned char* block1,
       __asm__ __volatile__(                                                    \
          "li t2, 1;"                                                           \
          "sd t2, 0(%[w]);"             /* Set result to "taken". */            \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "sd " #rs1 ", 24(%[w]);"      /* Spill rs1. */                        \
          "la " #rs1 ", " rs1_val ";"   /* Load the first input. */             \
          ".endif;"                                                             \
-         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         ".if \"" #rs2 "\" != \"unused\";"                                     \
          "sd " #rs2 ", 32(%[w]);"      /* Spill rs2. */                        \
          "la " #rs2 ", " rs2_val ";"   /* Load the second input. */            \
          ".endif;"                                                             \
@@ -506,10 +525,10 @@ static void show_block_diff(unsigned char* block1,
          "li t2, 1;"                                                           \
          "sd t2, 16(%[w]);"            /* Flag that rs2 is valid. */           \
          ".endif;"                                                             \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "ld " #rs1 ", 24(%[w]);"      /* Reload rs1. */                       \
          ".endif;"                                                             \
-         ".if \"" #rs2 "\" != \"unused\" && \"" #rs2 "\" != \"zero\";"         \
+         ".if \"" #rs2 "\" != \"unused\";"                                     \
          "ld " #rs2 ", 32(%[w]);"      /* Reload rs2. */                       \
          ".endif;"                                                             \
          :                                                                     \
@@ -700,31 +719,31 @@ static void show_block_diff(unsigned char* block1,
        */                                                                      \
       register unsigned long* t1 asm("t1") = w;                                \
       __asm__ __volatile__(                                                    \
-         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         ".if \"" #rd "\" != \"unused\";"                                      \
          "sd " #rd ", 32(%[w]);"       /* Spill rd. */                         \
          ".endif;"                                                             \
          "csrr t2, " #csr ";"                                                  \
          "sd t2, 40(%[w]);"            /* Spill csr. */                        \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "sd " #rs1 ", 48(%[w]);"      /* Spill rs1. */                        \
          ".endif;"                                                             \
          "ld t2, 16(%[w]);"                                                    \
          "csrw " #csr ", t2;"          /* Load csr. */                         \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "ld " #rs1 ", 24(%[w]);"      /* Load the first input. */             \
          ".endif;"                                                             \
          ASMINST_##length(instruction) ";"                                     \
-         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         ".if \"" #rd "\" != \"unused\";"                                      \
          "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
          ".endif;"                                                             \
          "csrr t2, " #csr ";"                                                  \
          "sd t2, 8(%[w]);"             /* Save csr. */                         \
          "ld t2, 40(%[w]);"                                                    \
          "csrw " #csr ", t2;"          /* Reload csr. */                       \
-         ".if \"" #rd "\" != \"unused\" && \"" #rd "\" != \"zero\";"           \
+         ".if \"" #rd "\" != \"unused\";"                                      \
          "ld " #rd ", 32(%[w]);"       /* Reload rd. */                        \
          ".endif;"                                                             \
-         ".if \"" #rs1 "\" != \"unused\" && \"" #rs1 "\" != \"zero\";"         \
+         ".if \"" #rs1 "\" != \"unused\";"                                     \
          "ld " #rs1 ", 48(%[w]);"      /* Reload rs1. */                       \
          ".endif;"                                                             \
          :                                                                     \
