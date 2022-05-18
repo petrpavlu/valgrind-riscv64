@@ -2334,38 +2334,52 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
          IRTemp a2 = newTemp(irsb, Ity_F64);
          assign(irsb, a1, getFReg64(rs1));
          assign(irsb, a2, getFReg64(rs2));
-         IRTemp cmp = newTemp(irsb, Ity_I32);
-         assign(irsb, cmp, binop(Iop_CmpF64, mkexpr(a1), mkexpr(a2)));
+         if (rd != 0) {
+            IRTemp cmp = newTemp(irsb, Ity_I32);
+            assign(irsb, cmp, binop(Iop_CmpF64, mkexpr(a1), mkexpr(a2)));
+            IRTemp res = newTemp(irsb, Ity_I1);
+            switch (rm) {
+            case 0b010:
+               assign(irsb, res,
+                      binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ)));
+               break;
+            case 0b001:
+               assign(irsb, res,
+                      binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)));
+               break;
+            case 0b000:
+               assign(irsb, res,
+                      binop(Iop_Or1,
+                            binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)),
+                            binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ))));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg64(irsb, rd, unop(Iop_1Uto64, mkexpr(res)));
+         }
          const HChar* name;
-         IRTemp       res = newTemp(irsb, Ity_I1);
          const HChar* helper_name;
          void*        helper_addr;
          switch (rm) {
          case 0b010:
-            name = "feq";
-            assign(irsb, res, binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ)));
+            name        = "feq";
             helper_name = "riscv64g_calculate_fflags_feq_d";
             helper_addr = riscv64g_calculate_fflags_feq_d;
             break;
          case 0b001:
-            name = "flt";
-            assign(irsb, res, binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)));
+            name        = "flt";
             helper_name = "riscv64g_calculate_fflags_flt_d";
             helper_addr = riscv64g_calculate_fflags_flt_d;
             break;
          case 0b000:
-            name = "fle";
-            assign(irsb, res,
-                   binop(Iop_Or1,
-                         binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)),
-                         binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ))));
+            name        = "fle";
             helper_name = "riscv64g_calculate_fflags_fle_d";
             helper_addr = riscv64g_calculate_fflags_fle_d;
             break;
          default:
             vassert(0);
          }
-         putIReg64(irsb, rd, unop(Iop_1Uto64, mkexpr(res)));
          putFCSR(irsb,
                  binop(Iop_Or32, getFCSR(),
                        mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
@@ -2382,10 +2396,12 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
        INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110001) {
       UInt rd  = INSN(11, 7);
       UInt rs1 = INSN(19, 15);
-      putIReg64(irsb, rd,
-                mkIRExprCCall(
-                   Ity_I64, 0 /*regparms*/, "riscv64g_calculate_fclass_d",
-                   riscv64g_calculate_fclass_d, mkIRExprVec_1(getFReg64(rs1))));
+      if (rd != 0)
+         putIReg64(irsb, rd,
+                   mkIRExprCCall(Ity_I64, 0 /*regparms*/,
+                                 "riscv64g_calculate_fclass_d",
+                                 riscv64g_calculate_fclass_d,
+                                 mkIRExprVec_1(getFReg64(rs1))));
       DIP("fclass.d %s, %s\n", nameIReg(rd), nameFReg(rs1));
       return True;
    }
@@ -2401,9 +2417,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       IRTemp a1 = newTemp(irsb, Ity_F64);
       assign(irsb, a1, getFReg64(rs1));
-      putIReg32(irsb, rd,
-                binop(is_signed ? Iop_F64toI32S : Iop_F64toI32U, mkexpr(rm_IR),
-                      mkexpr(a1)));
+      if (rd != 0)
+         putIReg32(irsb, rd,
+                   binop(is_signed ? Iop_F64toI32S : Iop_F64toI32U,
+                         mkexpr(rm_IR), mkexpr(a1)));
       putFCSR(irsb, binop(Iop_Or32, getFCSR(),
                           mkIRExprCCall(
                              Ity_I32, 0 /*regparms*/,
@@ -2443,9 +2460,10 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
       IRTemp a1 = newTemp(irsb, Ity_F64);
       assign(irsb, a1, getFReg64(rs1));
-      putIReg64(irsb, rd,
-                binop(is_signed ? Iop_F64toI64S : Iop_F64toI64U, mkexpr(rm_IR),
-                      mkexpr(a1)));
+      if (rd != 0)
+         putIReg64(irsb, rd,
+                   binop(is_signed ? Iop_F64toI64S : Iop_F64toI64U,
+                         mkexpr(rm_IR), mkexpr(a1)));
       putFCSR(irsb, binop(Iop_Or32, getFCSR(),
                           mkIRExprCCall(
                              Ity_I32, 0 /*regparms*/,
@@ -2464,7 +2482,8 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
        INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110001) {
       UInt rd  = INSN(11, 7);
       UInt rs1 = INSN(19, 15);
-      putIReg64(irsb, rd, unop(Iop_ReinterpF64asI64, getFReg64(rs1)));
+      if (rd != 0)
+         putIReg64(irsb, rd, unop(Iop_ReinterpF64asI64, getFReg64(rs1)));
       DIP("fmv.x.d %s, %s\n", nameIReg(rd), nameFReg(rs1));
       return True;
    }

@@ -1112,6 +1112,10 @@ static void test_float64_shared(void)
    TESTINST_1_2_FCMP(4, "feq.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
 
+   /* sNAN == sNAN (rd=zero) -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "feq.d zero, fa0, fa1", 0x7ff4000000000000,
+                     0x7ff4000000000000, 0x00, zero, fa0, fa1);
+
    /* ----------------- flt.d rd, rs1, rs2 ------------------ */
    /* 0.0 < 0.0 -> 0 */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x0000000000000000,
@@ -1134,6 +1138,10 @@ static void test_float64_shared(void)
    /* 0.0 < sNAN -> 0 (NV) */
    TESTINST_1_2_FCMP(4, "flt.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
+
+   /* sNAN < sNAN (rd=zero) -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "flt.d zero, fa0, fa1", 0x7ff4000000000000,
+                     0x7ff4000000000000, 0x00, zero, fa0, fa1);
 
    /* ----------------- fle.d rd, rs1, rs2 ------------------ */
    /* 1.0 < 0.0 -> 0 */
@@ -1161,6 +1169,10 @@ static void test_float64_shared(void)
    TESTINST_1_2_FCMP(4, "fle.d a0, fa0, fa1", 0x0000000000000000,
                      0x7ff4000000000000, 0x00, a0, fa0, fa1);
 
+   /* sNAN <= sNAN (rd=zero) -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "fle.d zero, fa0, fa1", 0x7ff4000000000000,
+                     0x7ff4000000000000, 0x00, zero, fa0, fa1);
+
    /* ------------------ fclass.d rd, rs1 ------------------- */
    /* fclass(-INFINITY) -> 0x001 */
    TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0xfff0000000000000, 0x00, a0, fa0);
@@ -1183,6 +1195,10 @@ static void test_float64_shared(void)
    /* fclass(qNAN) -> 0x200 */
    TESTINST_1_1_IF(4, "fclass.d a0, fa0", 0x7ff8000000000000, 0x00, a0, fa0);
 
+   /* fclass(-INFINITY) (rd=zero) -> 0x000 */
+   TESTINST_1_1_IF(4, "fclass.d zero, fa0", 0xfff0000000000000, 0x00, zero,
+                   fa0);
+
    /* ---------------- fcvt.w.d rd, rs1, rm ----------------- */
    /* 0.0 -> 0 */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x0000000000000000, 0x00, a0, fa0);
@@ -1200,6 +1216,10 @@ static void test_float64_shared(void)
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0x41e0000000000000, 0x00, a0, fa0);
    /* -2**31-1 -> -2**31 aka INT_MIN (NV) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0", 0xc1e0000000200000, 0x00, a0, fa0);
+
+   /* 1.0 (rd=zero) -> 0 */
+   TESTINST_1_1_IF(4, "fcvt.w.d zero, fa0", 0x3ff0000000000000, 0x00, zero,
+                   fa0);
 
    /* 0.5 (RNE) -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.w.d a0, fa0, rne", 0x3fe0000000000000, 0x00, a0,
@@ -1266,6 +1286,10 @@ static void test_float64_shared(void)
    TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0x41efffffffe00000, 0x00, a0, fa0);
    /* -1.0 -> 0 (NV) */
    TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0", 0xbff0000000000000, 0x00, a0, fa0);
+
+   /* 1.0 (rd=zero) -> 0 */
+   TESTINST_1_1_IF(4, "fcvt.wu.d zero, fa0", 0x3ff0000000000000, 0x00, zero,
+                   fa0);
 
    /* 0.5 (RNE) -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.wu.d a0, fa0, rne", 0x3fe0000000000000, 0x00, a0,
@@ -1338,6 +1362,10 @@ static void test_float64_additions(void)
    /* -nextafter(2**63) -> -2**63 aka LONG_MIN (NV) */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0", 0xc3e0000000000001, 0x00, a0, fa0);
 
+   /* 1.0 (rd=zero) -> 0 */
+   TESTINST_1_1_IF(4, "fcvt.l.d zero, fa0", 0x3ff0000000000000, 0x00, zero,
+                   fa0);
+
    /* 0.5 (RNE) -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.l.d a0, fa0, rne", 0x3fe0000000000000, 0x00, a0,
                    fa0);
@@ -1406,6 +1434,10 @@ static void test_float64_additions(void)
    /* -1.0 -> 0 (NV) */
    TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0", 0xbff0000000000000, 0x00, a0, fa0);
 
+   /* 1.0 (rd=zero) -> 0 */
+   TESTINST_1_1_IF(4, "fcvt.lu.d zero, fa0", 0x3ff0000000000000, 0x00, zero,
+                   fa0);
+
    /* 0.5 (RNE) -> 0 (NX) */
    TESTINST_1_1_IF(4, "fcvt.lu.d a0, fa0, rne", 0x3fe0000000000000, 0x00, a0,
                    fa0);
@@ -1440,6 +1472,9 @@ static void test_float64_additions(void)
 
    /* ------------------- fmv.x.d rd, rs1 ------------------- */
    TESTINST_1_1_IF(4, "fmv.x.d a0, fa0", 0xabcdef0123456789, 0x00, a0, fa0);
+
+   /* 1.0 (rd=zero) -> 0 */
+   TESTINST_1_1_IF(4, "fmv.x.d zero, fa0", 0x3ff0000000000000, 0x00, zero, fa0);
 
    /* ---------------- fcvt.d.l rd, rs1, rm ----------------- */
    /* 0 -> 0.0 */

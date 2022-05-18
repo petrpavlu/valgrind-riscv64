@@ -1028,6 +1028,9 @@ feq.d a0, fa0, fa1 ::
 feq.d a0, fa0, fa1 ::
   inputs: fa0=0x0000000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000010
+feq.d zero, fa0, fa1 ::
+  inputs: fa0=0x7ff4000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000010
 flt.d a0, fa0, fa1 ::
   inputs: fa0=0x0000000000000000, fa1=0x0000000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000000
@@ -1049,6 +1052,9 @@ flt.d a0, fa0, fa1 ::
 flt.d a0, fa0, fa1 ::
   inputs: fa0=0x0000000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000010
+flt.d zero, fa0, fa1 ::
+  inputs: fa0=0x7ff4000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000010
 fle.d a0, fa0, fa1 ::
   inputs: fa0=0x3ff0000000000000, fa1=0x0000000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000000
@@ -1073,6 +1079,9 @@ fle.d a0, fa0, fa1 ::
 fle.d a0, fa0, fa1 ::
   inputs: fa0=0x0000000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000010
+fle.d zero, fa0, fa1 ::
+  inputs: fa0=0x7ff4000000000000, fa1=0x7ff4000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000010
 fclass.d a0, fa0 ::
   inputs: fa0=0xfff0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000001, fcsr=0x00000000
@@ -1103,6 +1112,9 @@ fclass.d a0, fa0 ::
 fclass.d a0, fa0 ::
   inputs: fa0=0x7ff8000000000000, fcsr=0x00000000
   output: a0=0x0000000000000200, fcsr=0x00000000
+fclass.d zero, fa0 ::
+  inputs: fa0=0xfff0000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
 fcvt.w.d a0, fa0 ::
   inputs: fa0=0x0000000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000000
@@ -1127,6 +1139,9 @@ fcvt.w.d a0, fa0 ::
 fcvt.w.d a0, fa0 ::
   inputs: fa0=0xc1e0000000200000, fcsr=0x00000000
   output: a0=0xffffffff80000000, fcsr=0x00000010
+fcvt.w.d zero, fa0 ::
+  inputs: fa0=0x3ff0000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
 fcvt.w.d a0, fa0, rne ::
   inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
@@ -1205,6 +1220,9 @@ fcvt.wu.d a0, fa0 ::
 fcvt.wu.d a0, fa0 ::
   inputs: fa0=0xbff0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000010
+fcvt.wu.d zero, fa0 ::
+  inputs: fa0=0x3ff0000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
 fcvt.wu.d a0, fa0, rne ::
   inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
@@ -1282,6 +1300,9 @@ fcvt.l.d a0, fa0 ::
 fcvt.l.d a0, fa0 ::
   inputs: fa0=0xc3e0000000000001, fcsr=0x00000000
   output: a0=0x8000000000000000, fcsr=0x00000010
+fcvt.l.d zero, fa0 ::
+  inputs: fa0=0x3ff0000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
 fcvt.l.d a0, fa0, rne ::
   inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
@@ -1363,6 +1384,9 @@ fcvt.lu.d a0, fa0 ::
 fcvt.lu.d a0, fa0 ::
   inputs: fa0=0xbff0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000010
+fcvt.lu.d zero, fa0 ::
+  inputs: fa0=0x3ff0000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
 fcvt.lu.d a0, fa0, rne ::
   inputs: fa0=0x3fe0000000000000, fcsr=0x00000000
   output: a0=0x0000000000000000, fcsr=0x00000001
@@ -1402,6 +1426,9 @@ fcvt.lu.d a0, fa0 ::
 fmv.x.d a0, fa0 ::
   inputs: fa0=0xabcdef0123456789, fcsr=0x00000000
   output: a0=0xabcdef0123456789, fcsr=0x00000000
+fmv.x.d zero, fa0 ::
+  inputs: fa0=0x3ff0000000000000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
 fcvt.d.l fa0, a0 ::
   inputs: a0=0x0000000000000000, fcsr=0x00000000
   output: fa0=0x0000000000000000, fcsr=0x00000000
