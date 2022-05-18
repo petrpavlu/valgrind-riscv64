@@ -1718,53 +1718,77 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
       /* TODO Handle mulhsu. */
-      if (rd == 0 || funct3 == 0b010) {
+      if (funct3 == 0b010) {
          /* Invalid {MUL,DIV,REM}<x>, fall through. */
       } else {
+         if (rd != 0) {
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b000:
+               expr = binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2));
+               break;
+            case 0b001:
+               expr = unop(Iop_128HIto64,
+                           binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2)));
+               break;
+            case 0b010:
+               /* TODO */
+               vassert(0);
+               break;
+            case 0b011:
+               expr = unop(Iop_128HIto64,
+                           binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2)));
+               break;
+            case 0b100:
+               expr = binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2));
+               break;
+            case 0b101:
+               expr = binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2));
+               break;
+            case 0b110:
+               expr =
+                  unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
+                                            getIReg64(rs2)));
+               break;
+            case 0b111:
+               expr =
+                  unop(Iop_128HIto64, binop(Iop_DivModU64to64, getIReg64(rs1),
+                                            getIReg64(rs2)));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg64(irsb, rd, expr);
+         }
          const HChar* name;
-         IRExpr*      expr;
          switch (funct3) {
          case 0b000:
             name = "mul";
-            expr = binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b001:
             name = "mulh";
-            expr = unop(Iop_128HIto64,
-                        binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2)));
             break;
          case 0b010:
             name = "mulhsu";
-            /* TODO */
-            vassert(0);
             break;
          case 0b011:
             name = "mulhu";
-            expr = unop(Iop_128HIto64,
-                        binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2)));
             break;
          case 0b100:
             name = "div";
-            expr = binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b101:
             name = "divu";
-            expr = binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b110:
             name = "rem";
-            expr = unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
-                                             getIReg64(rs2)));
             break;
          case 0b111:
             name = "remu";
-            expr = unop(Iop_128HIto64, binop(Iop_DivModU64to64, getIReg64(rs1),
-                                             getIReg64(rs2)));
             break;
          default:
             vassert(0);
          }
-         putIReg64(irsb, rd, expr);
          DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
              nameIReg(rs2));
          return True;
@@ -1779,38 +1803,54 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       UInt funct3 = INSN(14, 12);
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
-      if (rd == 0 || (funct3 == 0b001 || funct3 == 0b010 || funct3 == 0b011)) {
+      if (funct3 == 0b001 || funct3 == 0b010 || funct3 == 0b011) {
          /* Invalid {MUL,DIV,REM}<x>W, fall through. */
       } else {
+         if (rd != 0) {
+            IRExpr* expr;
+            switch (funct3) {
+            case 0b000:
+               expr = binop(Iop_Mul32, getIReg32(rs1), getIReg32(rs2));
+               break;
+            case 0b100:
+               expr = binop(Iop_DivS32, getIReg32(rs1), getIReg32(rs2));
+               break;
+            case 0b101:
+               expr = binop(Iop_DivU32, getIReg32(rs1), getIReg32(rs2));
+               break;
+            case 0b110:
+               expr = unop(Iop_64HIto32, binop(Iop_DivModS32to32,
+                                               getIReg32(rs1), getIReg32(rs2)));
+               break;
+            case 0b111:
+               expr = unop(Iop_64HIto32, binop(Iop_DivModU32to32,
+                                               getIReg32(rs1), getIReg32(rs2)));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg32(irsb, rd, expr);
+         }
          const HChar* name;
-         IRExpr*      expr;
          switch (funct3) {
          case 0b000:
             name = "mulw";
-            expr = binop(Iop_Mul32, getIReg32(rs1), getIReg32(rs2));
             break;
          case 0b100:
             name = "divw";
-            expr = binop(Iop_DivS32, getIReg32(rs1), getIReg32(rs2));
             break;
          case 0b101:
             name = "divuw";
-            expr = binop(Iop_DivU32, getIReg32(rs1), getIReg32(rs2));
             break;
          case 0b110:
             name = "remw";
-            expr = unop(Iop_64HIto32, binop(Iop_DivModS32to32, getIReg32(rs1),
-                                            getIReg32(rs2)));
             break;
          case 0b111:
             name = "remuw";
-            expr = unop(Iop_64HIto32, binop(Iop_DivModU32to32, getIReg32(rs1),
-                                            getIReg32(rs2)));
             break;
          default:
             vassert(0);
          }
-         putIReg32(irsb, rd, expr);
          DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
              nameIReg(rs2));
          return True;
