@@ -703,13 +703,16 @@ static const HChar* nameRMOperand(UInt rm)
 /*--- Disassemble a single instruction                     ---*/
 /*------------------------------------------------------------*/
 
-static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
-                                   /*OUT*/ IRSB*         irsb,
-                                   UInt                  insn,
-                                   Addr                  guest_pc_curr_instr,
-                                   Bool                  sigill_diag)
-{
+/* A macro to fish bits out of 'insn' which is a local variable to all
+   disassembly functions. */
 #define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
+
+static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
+                      /*OUT*/ IRSB*         irsb,
+                      UInt                  insn,
+                      Addr                  guest_pc_curr_instr,
+                      Bool                  sigill_diag)
+{
    vassert(INSN(1, 0) == 0b00 || INSN(1, 0) == 0b01 || INSN(1, 0) == 0b10);
 
    /* ---- RV64C compressed instruction set, quadrant 0 ----- */
@@ -1159,19 +1162,13 @@ static Bool dis_RISCV64_compressed(/*MB_OUT*/ DisResult* dres,
    if (sigill_diag)
       vex_printf("RISCV64 front end: compressed\n");
    return False;
-#undef INSN
 }
 
-static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
-                                 /*OUT*/ IRSB*         irsb,
-                                 UInt                  insn,
-                                 Addr                  guest_pc_curr_instr,
-                                 const VexAbiInfo*     abiinfo,
-                                 Bool                  sigill_diag)
+static Bool dis_RV64I(/*MB_OUT*/ DisResult* dres,
+                      /*OUT*/ IRSB*         irsb,
+                      UInt                  insn,
+                      Addr                  guest_pc_curr_instr)
 {
-#define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
-   vassert(INSN(1, 0) == 0b11);
-
    /* ------------- RV64I base instruction set -------------- */
 
    /* ----------------- lui rd, imm[31:12] ------------------ */
@@ -1707,6 +1704,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   return False;
+}
+
+static Bool dis_RV64M(/*MB_OUT*/ DisResult* dres,
+                      /*OUT*/ IRSB*         irsb,
+                      UInt                  insn)
+{
    /* -------------- RV64M standard extension --------------- */
 
    /* -------- {mul,mulh,mulhsu,mulhu} rd, rs1, rs2 --------- */
@@ -1857,122 +1861,261 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       }
    }
 
-   /* ------------ RV64Zicsr standard extension ------------- */
+   return False;
+}
 
-   /* ----------------- csrrw rd, csr, rs1 ------------------ */
-   if (INSN(6, 0) == 0b1110011 && INSN(14, 12) == 0b001) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt csr = INSN(31, 20);
-      if (csr != 0x001 && csr != 0x002 && csr != 0x003) {
-         /* Invalid CSRRW, fall through. */
+static Bool dis_RV64A(/*MB_OUT*/ DisResult* dres,
+                      /*OUT*/ IRSB*         irsb,
+                      UInt                  insn,
+                      Addr                  guest_pc_curr_instr,
+                      const VexAbiInfo*     abiinfo)
+{
+   /* -------------- RV64A standard extension --------------- */
+
+   /* ----------------- lr.{w,d} rd, (rs1) ------------------ */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01 &&
+       INSN(24, 20) == 0b00000 && INSN(31, 27) == 0b00010) {
+      UInt rd    = INSN(11, 7);
+      Bool is_32 = INSN(12, 12) == 0b0;
+      UInt rs1   = INSN(19, 15);
+      UInt aqrl  = INSN(26, 25);
+
+      if (aqrl & 0x1)
+         stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+      IRType ty = is_32 ? Ity_I32 : Ity_I64;
+      if (abiinfo->guest__use_fallback_LLSC) {
+         /* Get address of the load. */
+         IRTemp ea = newTemp(irsb, Ity_I64);
+         assign(irsb, ea, getIReg64(rs1));
+
+         /* Load the value. */
+         IRTemp res = newTemp(irsb, Ity_I64);
+         assign(irsb, res, widenSto64(ty, loadLE(ty, mkexpr(ea))));
+
+         /* Set up the LLSC fallback data. */
+         stmt(irsb, IRStmt_Put(OFFB_LLSC_DATA, mkexpr(res)));
+         stmt(irsb, IRStmt_Put(OFFB_LLSC_ADDR, mkexpr(ea)));
+         stmt(irsb, IRStmt_Put(OFFB_LLSC_SIZE, mkU64(4)));
+
+         /* Write the result to the destination register. */
+         if (rd != 0)
+            putIReg64(irsb, rd, mkexpr(res));
       } else {
-         switch (csr) {
-         case 0x001: {
-            /* fflags */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(irsb, rd,
-                         unop(Iop_32Uto64,
-                              binop(Iop_And32, mkexpr(fcsr), mkU32(0x1f))));
-            putFCSR(irsb,
-                    binop(Iop_Or32,
-                          binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffffe0)),
-                          binop(Iop_And32, getIReg32(rs1), mkU32(0x1f))));
+         /* TODO Rework the non-fallback mode by recognizing common LR+SC
+            sequences and simulating them as one. */
+         IRTemp res = newTemp(irsb, ty);
+         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), NULL /*LL*/));
+         if (rd != 0)
+            putIReg64(irsb, rd, widenSto64(ty, mkexpr(res)));
+      }
+
+      if (aqrl & 0x2)
+         stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+      DIP("lr.%s%s %s, (%s)%s\n", is_32 ? "w" : "d", nameAqRlSuffix(aqrl),
+          nameIReg(rd), nameIReg(rs1),
+          abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
+                                            : "");
+      return True;
+   }
+
+   /* --------------- sc.{w,d} rd, rs2, (rs1) --------------- */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01 &&
+       INSN(31, 27) == 0b00011) {
+      UInt rd    = INSN(11, 7);
+      Bool is_32 = INSN(12, 12) == 0b0;
+      UInt rs1   = INSN(19, 15);
+      UInt rs2   = INSN(24, 20);
+      UInt aqrl  = INSN(26, 25);
+
+      if (aqrl & 0x1)
+         stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+      IRType ty = is_32 ? Ity_I32 : Ity_I64;
+      if (abiinfo->guest__use_fallback_LLSC) {
+         /* Get address of the load. */
+         IRTemp ea = newTemp(irsb, Ity_I64);
+         assign(irsb, ea, getIReg64(rs1));
+
+         /* Get the continuation address. */
+         IRConst* nia = IRConst_U64(guest_pc_curr_instr + 4);
+
+         /* Mark the SC initially as failed. */
+         if (rd != 0)
+            putIReg64(irsb, rd, mkU64(1));
+
+         /* Set that no transaction is in progress. */
+         IRTemp size = newTemp(irsb, Ity_I64);
+         assign(irsb, size, IRExpr_Get(OFFB_LLSC_SIZE, Ity_I64));
+         stmt(irsb,
+              IRStmt_Put(OFFB_LLSC_SIZE, mkU64(0) /* "no transaction" */));
+
+         /* Fail if no or wrong-size transaction. */
+         stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(size), mkU64(4)),
+                                Ijk_Boring, nia, OFFB_PC));
+
+         /* Fail if the address doesn't match the LL address. */
+         stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(ea),
+                                      IRExpr_Get(OFFB_LLSC_ADDR, Ity_I64)),
+                                Ijk_Boring, nia, OFFB_PC));
+
+         /* Fail if the data doesn't match the LL data. */
+         IRTemp data = newTemp(irsb, Ity_I64);
+         assign(irsb, data, IRExpr_Get(OFFB_LLSC_DATA, Ity_I64));
+         stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64,
+                                      widenSto64(ty, loadLE(ty, mkexpr(ea))),
+                                      mkexpr(data)),
+                                Ijk_Boring, nia, OFFB_PC));
+
+         /* Try to CAS the new value in. */
+         IRTemp old  = newTemp(irsb, ty);
+         IRTemp expd = newTemp(irsb, ty);
+         assign(irsb, expd, narrowFrom64(ty, mkexpr(data)));
+         stmt(irsb, IRStmt_CAS(mkIRCAS(
+                       /*oldHi*/ IRTemp_INVALID, old, Iend_LE, mkexpr(ea),
+                       /*expdHi*/ NULL, mkexpr(expd),
+                       /*dataHi*/ NULL, narrowFrom64(ty, getIReg64(rs2)))));
+
+         /* Fail if the CAS failed (old != expd). */
+         stmt(irsb, IRStmt_Exit(binop(is_32 ? Iop_CmpNE32 : Iop_CmpNE64,
+                                      mkexpr(old), mkexpr(expd)),
+                                Ijk_Boring, nia, OFFB_PC));
+
+         /* Otherwise mark the operation as successful. */
+         if (rd != 0)
+            putIReg64(irsb, rd, mkU64(0));
+      } else {
+         IRTemp res = newTemp(irsb, Ity_I1);
+         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1),
+                                narrowFrom64(ty, getIReg64(rs2))));
+         /* IR semantics: res is 1 if store succeeds, 0 if it fails. Need to set
+            rd to 1 on failure, 0 on success. */
+         if (rd != 0)
+            putIReg64(
+               irsb, rd,
+               binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)), mkU64(1)));
+      }
+
+      if (aqrl & 0x2)
+         stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+      DIP("sc.%s%s %s, %s, (%s)%s\n", is_32 ? "w" : "d", nameAqRlSuffix(aqrl),
+          nameIReg(rd), nameIReg(rs2), nameIReg(rs1),
+          abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
+                                            : "");
+      return True;
+   }
+
+   /* --------- amo{swap,add}.{w,d} rd, rs2, (rs1) ---------- */
+   /* -------- amo{xor,and,or}.{w,d} rd, rs2, (rs1) --------- */
+   /* ---------- amo{min,max}.{w,d} rd, rs2, (rs1) ---------- */
+   /* --------- amo{minu,maxu}.{w,d} rd, rs2, (rs1) --------- */
+   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01) {
+      UInt rd     = INSN(11, 7);
+      Bool is_32  = INSN(12, 12) == 0b0;
+      UInt rs1    = INSN(19, 15);
+      UInt rs2    = INSN(24, 20);
+      UInt aqrl   = INSN(26, 25);
+      UInt funct5 = INSN(31, 27);
+      if ((funct5 & 0b00010) || funct5 == 0b00101 || funct5 == 0b01001 ||
+          funct5 == 0b01101 || funct5 == 0b10001 || funct5 == 0b10101 ||
+          funct5 == 0b11001 || funct5 == 0b11101) {
+         /* Invalid AMO<x>, fall through. */
+      } else {
+         if (aqrl & 0x1)
+            stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+         IRTemp addr = newTemp(irsb, Ity_I64);
+         assign(irsb, addr, getIReg64(rs1));
+
+         IRType ty   = is_32 ? Ity_I32 : Ity_I64;
+         IRTemp orig = newTemp(irsb, ty);
+         assign(irsb, orig, loadLE(ty, mkexpr(addr)));
+         IRExpr* lhs = mkexpr(orig);
+         IRExpr* rhs = narrowFrom64(ty, getIReg64(rs2));
+
+         /* Perform the operation. */
+         const HChar* name;
+         IRExpr*      res;
+         switch (funct5) {
+         case 0b00001:
+            name = "amoswap";
+            res  = rhs;
             break;
-         }
-         case 0x002: {
-            /* frm */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(
-                  irsb, rd,
-                  unop(Iop_32Uto64,
-                       binop(Iop_And32, binop(Iop_Shr32, mkexpr(fcsr), mkU8(5)),
-                             mkU32(0x7))));
-            putFCSR(irsb,
-                    binop(Iop_Or32,
-                          binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffff1f)),
-                          binop(Iop_Shl32,
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
-                                mkU8(5))));
+         case 0b00000:
+            name = "amoadd";
+            res  = binop(is_32 ? Iop_Add32 : Iop_Add64, lhs, rhs);
             break;
-         }
-         case 0x003: {
-            /* fcsr */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(irsb, rd, unop(Iop_32Uto64, mkexpr(fcsr)));
-            putFCSR(irsb, binop(Iop_And32, getIReg32(rs1), mkU32(0xff)));
+         case 0b00100:
+            name = "amoxor";
+            res  = binop(is_32 ? Iop_Xor32 : Iop_Xor64, lhs, rhs);
             break;
-         }
+         case 0b01100:
+            name = "amoand";
+            res  = binop(is_32 ? Iop_And32 : Iop_And64, lhs, rhs);
+            break;
+         case 0b01000:
+            name = "amoor";
+            res  = binop(is_32 ? Iop_Or32 : Iop_Or64, lhs, rhs);
+            break;
+         case 0b10000:
+            name = "amomin";
+            res  = IRExpr_ITE(
+                binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), lhs, rhs);
+            break;
+         case 0b10100:
+            name = "amomax";
+            res  = IRExpr_ITE(
+                binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), rhs, lhs);
+            break;
+         case 0b11000:
+            name = "amominu";
+            res  = IRExpr_ITE(
+                binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), lhs, rhs);
+            break;
+         case 0b11100:
+            name = "amomaxu";
+            res  = IRExpr_ITE(
+                binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), rhs, lhs);
+            break;
          default:
             vassert(0);
          }
-         DIP("csrrs %s, %s, %s\n", nameIReg(rd), nameCSR(csr), nameIReg(rs1));
+
+         /* Store the result back if the original value remains unchanged in
+            memory. */
+         IRTemp old = newTemp(irsb, ty);
+         stmt(irsb, IRStmt_CAS(mkIRCAS(/*oldHi*/ IRTemp_INVALID, old, Iend_LE,
+                                       mkexpr(addr),
+                                       /*expdHi*/ NULL, mkexpr(orig),
+                                       /*dataHi*/ NULL, res)));
+
+         if (aqrl & 0x2)
+            stmt(irsb, IRStmt_MBE(Imbe_Fence));
+
+         /* Retry if the CAS failed (i.e. when old != orig). */
+         stmt(irsb, IRStmt_Exit(binop(is_32 ? Iop_CasCmpNE32 : Iop_CasCmpNE64,
+                                      mkexpr(old), mkexpr(orig)),
+                                Ijk_Boring, IRConst_U64(guest_pc_curr_instr),
+                                OFFB_PC));
+         /* Otherwise we succeeded. */
+         if (rd != 0)
+            putIReg64(irsb, rd, widenSto64(ty, mkexpr(old)));
+
+         DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d",
+             nameAqRlSuffix(aqrl), nameIReg(rd), nameIReg(rs2), nameIReg(rs1));
          return True;
       }
    }
 
-   /* ----------------- csrrs rd, csr, rs1 ------------------ */
-   if (INSN(6, 0) == 0b1110011 && INSN(14, 12) == 0b010) {
-      UInt rd  = INSN(11, 7);
-      UInt rs1 = INSN(19, 15);
-      UInt csr = INSN(31, 20);
-      if (csr != 0x001 && csr != 0x002 && csr != 0x003) {
-         /* Invalid CSRRS, fall through. */
-      } else {
-         switch (csr) {
-         case 0x001: {
-            /* fflags */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(irsb, rd,
-                         unop(Iop_32Uto64,
-                              binop(Iop_And32, mkexpr(fcsr), mkU32(0x1f))));
-            putFCSR(irsb, binop(Iop_Or32, mkexpr(fcsr),
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0x1f))));
-            break;
-         }
-         case 0x002: {
-            /* frm */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(
-                  irsb, rd,
-                  unop(Iop_32Uto64,
-                       binop(Iop_And32, binop(Iop_Shr32, mkexpr(fcsr), mkU8(5)),
-                             mkU32(0x7))));
-            putFCSR(irsb,
-                    binop(Iop_Or32, mkexpr(fcsr),
-                          binop(Iop_Shl32,
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
-                                mkU8(5))));
-            break;
-         }
-         case 0x003: {
-            /* fcsr */
-            IRTemp fcsr = newTemp(irsb, Ity_I32);
-            assign(irsb, fcsr, getFCSR());
-            if (rd != 0)
-               putIReg64(irsb, rd, unop(Iop_32Uto64, mkexpr(fcsr)));
-            putFCSR(irsb, binop(Iop_Or32, mkexpr(fcsr),
-                                binop(Iop_And32, getIReg32(rs1), mkU32(0xff))));
-            break;
-         }
-         default:
-            vassert(0);
-         }
-         DIP("csrrs %s, %s, %s\n", nameIReg(rd), nameCSR(csr), nameIReg(rs1));
-         return True;
-      }
-   }
+   return False;
+}
 
+static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
+                      /*OUT*/ IRSB*         irsb,
+                      UInt                  insn)
+{
    /* -------------- RV64F standard extension --------------- */
 
    /* --------------- flw rd, imm[11:0](rs1) ---------------- */
@@ -1999,6 +2142,13 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   return False;
+}
+
+static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
+                      /*OUT*/ IRSB*         irsb,
+                      UInt                  insn)
+{
    /* -------------- RV64D standard extension --------------- */
 
    /* --------------- fld rd, imm[11:0](rs1) ---------------- */
@@ -2525,249 +2675,160 @@ static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
-   /* -------------- RV64A standard extension --------------- */
+   return False;
+}
 
-   /* ----------------- lr.{w,d} rd, (rs1) ------------------ */
-   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01 &&
-       INSN(24, 20) == 0b00000 && INSN(31, 27) == 0b00010) {
-      UInt rd    = INSN(11, 7);
-      Bool is_32 = INSN(12, 12) == 0b0;
-      UInt rs1   = INSN(19, 15);
-      UInt aqrl  = INSN(26, 25);
+static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
+                          /*OUT*/ IRSB*         irsb,
+                          UInt                  insn)
+{
+   /* ------------ RV64Zicsr standard extension ------------- */
 
-      if (aqrl & 0x1)
-         stmt(irsb, IRStmt_MBE(Imbe_Fence));
-
-      IRType ty = is_32 ? Ity_I32 : Ity_I64;
-      if (abiinfo->guest__use_fallback_LLSC) {
-         /* Get address of the load. */
-         IRTemp ea = newTemp(irsb, Ity_I64);
-         assign(irsb, ea, getIReg64(rs1));
-
-         /* Load the value. */
-         IRTemp res = newTemp(irsb, Ity_I64);
-         assign(irsb, res, widenSto64(ty, loadLE(ty, mkexpr(ea))));
-
-         /* Set up the LLSC fallback data. */
-         stmt(irsb, IRStmt_Put(OFFB_LLSC_DATA, mkexpr(res)));
-         stmt(irsb, IRStmt_Put(OFFB_LLSC_ADDR, mkexpr(ea)));
-         stmt(irsb, IRStmt_Put(OFFB_LLSC_SIZE, mkU64(4)));
-
-         /* Write the result to the destination register. */
-         if (rd != 0)
-            putIReg64(irsb, rd, mkexpr(res));
+   /* ----------------- csrrw rd, csr, rs1 ------------------ */
+   if (INSN(6, 0) == 0b1110011 && INSN(14, 12) == 0b001) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt csr = INSN(31, 20);
+      if (csr != 0x001 && csr != 0x002 && csr != 0x003) {
+         /* Invalid CSRRW, fall through. */
       } else {
-         /* TODO Rework the non-fallback mode by recognizing common LR+SC
-            sequences and simulating them as one. */
-         IRTemp res = newTemp(irsb, ty);
-         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1), NULL /*LL*/));
-         if (rd != 0)
-            putIReg64(irsb, rd, widenSto64(ty, mkexpr(res)));
-      }
-
-      if (aqrl & 0x2)
-         stmt(irsb, IRStmt_MBE(Imbe_Fence));
-
-      DIP("lr.%s%s %s, (%s)%s\n", is_32 ? "w" : "d", nameAqRlSuffix(aqrl),
-          nameIReg(rd), nameIReg(rs1),
-          abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
-                                            : "");
-      return True;
-   }
-
-   /* --------------- sc.{w,d} rd, rs2, (rs1) --------------- */
-   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01 &&
-       INSN(31, 27) == 0b00011) {
-      UInt rd    = INSN(11, 7);
-      Bool is_32 = INSN(12, 12) == 0b0;
-      UInt rs1   = INSN(19, 15);
-      UInt rs2   = INSN(24, 20);
-      UInt aqrl  = INSN(26, 25);
-
-      if (aqrl & 0x1)
-         stmt(irsb, IRStmt_MBE(Imbe_Fence));
-
-      IRType ty = is_32 ? Ity_I32 : Ity_I64;
-      if (abiinfo->guest__use_fallback_LLSC) {
-         /* Get address of the load. */
-         IRTemp ea = newTemp(irsb, Ity_I64);
-         assign(irsb, ea, getIReg64(rs1));
-
-         /* Get the continuation address. */
-         IRConst* nia = IRConst_U64(guest_pc_curr_instr + 4);
-
-         /* Mark the SC initially as failed. */
-         if (rd != 0)
-            putIReg64(irsb, rd, mkU64(1));
-
-         /* Set that no transaction is in progress. */
-         IRTemp size = newTemp(irsb, Ity_I64);
-         assign(irsb, size, IRExpr_Get(OFFB_LLSC_SIZE, Ity_I64));
-         stmt(irsb,
-              IRStmt_Put(OFFB_LLSC_SIZE, mkU64(0) /* "no transaction" */));
-
-         /* Fail if no or wrong-size transaction. */
-         stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(size), mkU64(4)),
-                                Ijk_Boring, nia, OFFB_PC));
-
-         /* Fail if the address doesn't match the LL address. */
-         stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64, mkexpr(ea),
-                                      IRExpr_Get(OFFB_LLSC_ADDR, Ity_I64)),
-                                Ijk_Boring, nia, OFFB_PC));
-
-         /* Fail if the data doesn't match the LL data. */
-         IRTemp data = newTemp(irsb, Ity_I64);
-         assign(irsb, data, IRExpr_Get(OFFB_LLSC_DATA, Ity_I64));
-         stmt(irsb, IRStmt_Exit(binop(Iop_CmpNE64,
-                                      widenSto64(ty, loadLE(ty, mkexpr(ea))),
-                                      mkexpr(data)),
-                                Ijk_Boring, nia, OFFB_PC));
-
-         /* Try to CAS the new value in. */
-         IRTemp old  = newTemp(irsb, ty);
-         IRTemp expd = newTemp(irsb, ty);
-         assign(irsb, expd, narrowFrom64(ty, mkexpr(data)));
-         stmt(irsb, IRStmt_CAS(mkIRCAS(
-                       /*oldHi*/ IRTemp_INVALID, old, Iend_LE, mkexpr(ea),
-                       /*expdHi*/ NULL, mkexpr(expd),
-                       /*dataHi*/ NULL, narrowFrom64(ty, getIReg64(rs2)))));
-
-         /* Fail if the CAS failed (old != expd). */
-         stmt(irsb, IRStmt_Exit(binop(is_32 ? Iop_CmpNE32 : Iop_CmpNE64,
-                                      mkexpr(old), mkexpr(expd)),
-                                Ijk_Boring, nia, OFFB_PC));
-
-         /* Otherwise mark the operation as successful. */
-         if (rd != 0)
-            putIReg64(irsb, rd, mkU64(0));
-      } else {
-         IRTemp res = newTemp(irsb, Ity_I1);
-         stmt(irsb, IRStmt_LLSC(Iend_LE, res, getIReg64(rs1),
-                                narrowFrom64(ty, getIReg64(rs2))));
-         /* IR semantics: res is 1 if store succeeds, 0 if it fails. Need to set
-            rd to 1 on failure, 0 on success. */
-         if (rd != 0)
-            putIReg64(
-               irsb, rd,
-               binop(Iop_Xor64, unop(Iop_1Uto64, mkexpr(res)), mkU64(1)));
-      }
-
-      if (aqrl & 0x2)
-         stmt(irsb, IRStmt_MBE(Imbe_Fence));
-
-      DIP("sc.%s%s %s, %s, (%s)%s\n", is_32 ? "w" : "d", nameAqRlSuffix(aqrl),
-          nameIReg(rd), nameIReg(rs2), nameIReg(rs1),
-          abiinfo->guest__use_fallback_LLSC ? " (fallback implementation)"
-                                            : "");
-      return True;
-   }
-
-   /* --------- amo{swap,add}.{w,d} rd, rs2, (rs1) ---------- */
-   /* -------- amo{xor,and,or}.{w,d} rd, rs2, (rs1) --------- */
-   /* ---------- amo{min,max}.{w,d} rd, rs2, (rs1) ---------- */
-   /* --------- amo{minu,maxu}.{w,d} rd, rs2, (rs1) --------- */
-   if (INSN(6, 0) == 0b0101111 && INSN(14, 13) == 0b01) {
-      UInt rd     = INSN(11, 7);
-      Bool is_32  = INSN(12, 12) == 0b0;
-      UInt rs1    = INSN(19, 15);
-      UInt rs2    = INSN(24, 20);
-      UInt aqrl   = INSN(26, 25);
-      UInt funct5 = INSN(31, 27);
-      if ((funct5 & 0b00010) || funct5 == 0b00101 || funct5 == 0b01001 ||
-          funct5 == 0b01101 || funct5 == 0b10001 || funct5 == 0b10101 ||
-          funct5 == 0b11001 || funct5 == 0b11101) {
-         /* Invalid AMO<x>, fall through. */
-      } else {
-         if (aqrl & 0x1)
-            stmt(irsb, IRStmt_MBE(Imbe_Fence));
-
-         IRTemp addr = newTemp(irsb, Ity_I64);
-         assign(irsb, addr, getIReg64(rs1));
-
-         IRType ty   = is_32 ? Ity_I32 : Ity_I64;
-         IRTemp orig = newTemp(irsb, ty);
-         assign(irsb, orig, loadLE(ty, mkexpr(addr)));
-         IRExpr* lhs = mkexpr(orig);
-         IRExpr* rhs = narrowFrom64(ty, getIReg64(rs2));
-
-         /* Perform the operation. */
-         const HChar* name;
-         IRExpr*      res;
-         switch (funct5) {
-         case 0b00001:
-            name = "amoswap";
-            res  = rhs;
+         switch (csr) {
+         case 0x001: {
+            /* fflags */
+            IRTemp fcsr = newTemp(irsb, Ity_I32);
+            assign(irsb, fcsr, getFCSR());
+            if (rd != 0)
+               putIReg64(irsb, rd,
+                         unop(Iop_32Uto64,
+                              binop(Iop_And32, mkexpr(fcsr), mkU32(0x1f))));
+            putFCSR(irsb,
+                    binop(Iop_Or32,
+                          binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffffe0)),
+                          binop(Iop_And32, getIReg32(rs1), mkU32(0x1f))));
             break;
-         case 0b00000:
-            name = "amoadd";
-            res  = binop(is_32 ? Iop_Add32 : Iop_Add64, lhs, rhs);
+         }
+         case 0x002: {
+            /* frm */
+            IRTemp fcsr = newTemp(irsb, Ity_I32);
+            assign(irsb, fcsr, getFCSR());
+            if (rd != 0)
+               putIReg64(
+                  irsb, rd,
+                  unop(Iop_32Uto64,
+                       binop(Iop_And32, binop(Iop_Shr32, mkexpr(fcsr), mkU8(5)),
+                             mkU32(0x7))));
+            putFCSR(irsb,
+                    binop(Iop_Or32,
+                          binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffff1f)),
+                          binop(Iop_Shl32,
+                                binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
+                                mkU8(5))));
             break;
-         case 0b00100:
-            name = "amoxor";
-            res  = binop(is_32 ? Iop_Xor32 : Iop_Xor64, lhs, rhs);
+         }
+         case 0x003: {
+            /* fcsr */
+            IRTemp fcsr = newTemp(irsb, Ity_I32);
+            assign(irsb, fcsr, getFCSR());
+            if (rd != 0)
+               putIReg64(irsb, rd, unop(Iop_32Uto64, mkexpr(fcsr)));
+            putFCSR(irsb, binop(Iop_And32, getIReg32(rs1), mkU32(0xff)));
             break;
-         case 0b01100:
-            name = "amoand";
-            res  = binop(is_32 ? Iop_And32 : Iop_And64, lhs, rhs);
-            break;
-         case 0b01000:
-            name = "amoor";
-            res  = binop(is_32 ? Iop_Or32 : Iop_Or64, lhs, rhs);
-            break;
-         case 0b10000:
-            name = "amomin";
-            res  = IRExpr_ITE(
-                binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), lhs, rhs);
-            break;
-         case 0b10100:
-            name = "amomax";
-            res  = IRExpr_ITE(
-                binop(is_32 ? Iop_CmpLT32S : Iop_CmpLT64S, lhs, rhs), rhs, lhs);
-            break;
-         case 0b11000:
-            name = "amominu";
-            res  = IRExpr_ITE(
-                binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), lhs, rhs);
-            break;
-         case 0b11100:
-            name = "amomaxu";
-            res  = IRExpr_ITE(
-                binop(is_32 ? Iop_CmpLT32U : Iop_CmpLT64U, lhs, rhs), rhs, lhs);
-            break;
+         }
          default:
             vassert(0);
          }
-
-         /* Store the result back if the original value remains unchanged in
-            memory. */
-         IRTemp old = newTemp(irsb, ty);
-         stmt(irsb, IRStmt_CAS(mkIRCAS(/*oldHi*/ IRTemp_INVALID, old, Iend_LE,
-                                       mkexpr(addr),
-                                       /*expdHi*/ NULL, mkexpr(orig),
-                                       /*dataHi*/ NULL, res)));
-
-         if (aqrl & 0x2)
-            stmt(irsb, IRStmt_MBE(Imbe_Fence));
-
-         /* Retry if the CAS failed (i.e. when old != orig). */
-         stmt(irsb, IRStmt_Exit(binop(is_32 ? Iop_CasCmpNE32 : Iop_CasCmpNE64,
-                                      mkexpr(old), mkexpr(orig)),
-                                Ijk_Boring, IRConst_U64(guest_pc_curr_instr),
-                                OFFB_PC));
-         /* Otherwise we succeeded. */
-         if (rd != 0)
-            putIReg64(irsb, rd, widenSto64(ty, mkexpr(old)));
-
-         DIP("%s.%s%s %s, %s, (%s)\n", name, is_32 ? "w" : "d",
-             nameAqRlSuffix(aqrl), nameIReg(rd), nameIReg(rs2), nameIReg(rs1));
+         DIP("csrrs %s, %s, %s\n", nameIReg(rd), nameCSR(csr), nameIReg(rs1));
          return True;
       }
    }
 
+   /* ----------------- csrrs rd, csr, rs1 ------------------ */
+   if (INSN(6, 0) == 0b1110011 && INSN(14, 12) == 0b010) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt csr = INSN(31, 20);
+      if (csr != 0x001 && csr != 0x002 && csr != 0x003) {
+         /* Invalid CSRRS, fall through. */
+      } else {
+         switch (csr) {
+         case 0x001: {
+            /* fflags */
+            IRTemp fcsr = newTemp(irsb, Ity_I32);
+            assign(irsb, fcsr, getFCSR());
+            if (rd != 0)
+               putIReg64(irsb, rd,
+                         unop(Iop_32Uto64,
+                              binop(Iop_And32, mkexpr(fcsr), mkU32(0x1f))));
+            putFCSR(irsb, binop(Iop_Or32, mkexpr(fcsr),
+                                binop(Iop_And32, getIReg32(rs1), mkU32(0x1f))));
+            break;
+         }
+         case 0x002: {
+            /* frm */
+            IRTemp fcsr = newTemp(irsb, Ity_I32);
+            assign(irsb, fcsr, getFCSR());
+            if (rd != 0)
+               putIReg64(
+                  irsb, rd,
+                  unop(Iop_32Uto64,
+                       binop(Iop_And32, binop(Iop_Shr32, mkexpr(fcsr), mkU8(5)),
+                             mkU32(0x7))));
+            putFCSR(irsb,
+                    binop(Iop_Or32, mkexpr(fcsr),
+                          binop(Iop_Shl32,
+                                binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
+                                mkU8(5))));
+            break;
+         }
+         case 0x003: {
+            /* fcsr */
+            IRTemp fcsr = newTemp(irsb, Ity_I32);
+            assign(irsb, fcsr, getFCSR());
+            if (rd != 0)
+               putIReg64(irsb, rd, unop(Iop_32Uto64, mkexpr(fcsr)));
+            putFCSR(irsb, binop(Iop_Or32, mkexpr(fcsr),
+                                binop(Iop_And32, getIReg32(rs1), mkU32(0xff))));
+            break;
+         }
+         default:
+            vassert(0);
+         }
+         DIP("csrrs %s, %s, %s\n", nameIReg(rd), nameCSR(csr), nameIReg(rs1));
+         return True;
+      }
+   }
+
+   return False;
+}
+
+static Bool dis_RISCV64_standard(/*MB_OUT*/ DisResult* dres,
+                                 /*OUT*/ IRSB*         irsb,
+                                 UInt                  insn,
+                                 Addr                  guest_pc_curr_instr,
+                                 const VexAbiInfo*     abiinfo,
+                                 Bool                  sigill_diag)
+{
+   vassert(INSN(1, 0) == 0b11);
+
+   Bool ok = False;
+   if (!ok)
+      ok = dis_RV64I(dres, irsb, insn, guest_pc_curr_instr);
+   if (!ok)
+      ok = dis_RV64M(dres, irsb, insn);
+   if (!ok)
+      ok = dis_RV64A(dres, irsb, insn, guest_pc_curr_instr, abiinfo);
+   if (!ok)
+      ok = dis_RV64F(dres, irsb, insn);
+   if (!ok)
+      ok = dis_RV64D(dres, irsb, insn);
+   if (!ok)
+      ok = dis_RV64Zicsr(dres, irsb, insn);
+   if (ok)
+      return True;
+
    if (sigill_diag)
       vex_printf("RISCV64 front end: standard\n");
    return False;
-#undef INSN
 }
 
 /* Disassemble a single riscv64 instruction into IR. Returns True iff the
@@ -2781,9 +2842,6 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
                                  const VexAbiInfo*     abiinfo,
                                  Bool                  sigill_diag)
 {
-   /* A macro to fish bits out of 'insn'. */
-#define INSN(_bMax, _bMin) SLICE_UInt(insn, (_bMax), (_bMin))
-
    /* Set result defaults. */
    dres->whatNext    = Dis_Continue;
    dres->len         = 0;
@@ -2871,8 +2929,7 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
    case 0b01:
    case 0b10:
       dres->len = inst_size = 2;
-      ok = dis_RISCV64_compressed(dres, irsb, insn, guest_pc_curr_instr,
-                                  sigill_diag);
+      ok = dis_RV64C(dres, irsb, insn, guest_pc_curr_instr, sigill_diag);
       break;
 
    case 0b11:
@@ -2894,8 +2951,9 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
    }
 
    return ok;
-#undef INSN
 }
+
+#undef INSN
 
 /*------------------------------------------------------------*/
 /*--- Top-level fn                                         ---*/
