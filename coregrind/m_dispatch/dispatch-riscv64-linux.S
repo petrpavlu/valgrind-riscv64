@@ -8,8 +8,8 @@
   This file is part of Valgrind, a dynamic binary instrumentation
   framework.
 
-  Copyright (C) 2020-2021 Petr Pavlu
-      setup@dagobah.cz
+  Copyright (C) 2020-2022 Petr Pavlu
+      petr.pavlu@dagobah.cz
 
   This program is free software; you can redistribute it and/or
   modify it under the terms of the GNU General Public License as
