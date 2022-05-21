@@ -147,7 +147,7 @@ static IRExpr* triop(IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3)
 }
 
 /* Create a quaternary-operation expression. */
-static IRExpr* qop(IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3, IRExpr *a4)
+static IRExpr* qop(IROp op, IRExpr* a1, IRExpr* a2, IRExpr* a3, IRExpr* a4)
 {
    return IRExpr_Qop(op, a1, a2, a3, a4);
 }
@@ -589,7 +589,7 @@ static void mk_get_rounding_mode(/*MOD*/ IRSB*   irsb,
          rm_IR = t1 & t3
    */
    *rm_RISCV = newTemp(irsb, Ity_I32);
-   *rm_IR = newTemp(irsb, Ity_I32);
+   *rm_IR    = newTemp(irsb, Ity_I32);
    switch (inst_rm_RISCV) {
    case 0b000:
       assign(irsb, *rm_RISCV, mkU32(0));

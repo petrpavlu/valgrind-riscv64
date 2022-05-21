@@ -4087,12 +4087,12 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
             c.jr 0(t0)
          1:
       */
-      UInt base_amCounter = iregEnc(i->RISCV64in.EvCheck.base_amCounter);
+      UInt base_amCounter   = iregEnc(i->RISCV64in.EvCheck.base_amCounter);
       Int  soff12_amCounter = i->RISCV64in.EvCheck.soff12_amCounter;
       vassert(soff12_amCounter >= -2048 && soff12_amCounter < 2048);
       UInt imm11_0_amCounter = soff12_amCounter & 0xfff;
 
-      UInt base_amFailAddr = iregEnc(i->RISCV64in.EvCheck.base_amFailAddr);
+      UInt base_amFailAddr   = iregEnc(i->RISCV64in.EvCheck.base_amFailAddr);
       Int  soff12_amFailAddr = i->RISCV64in.EvCheck.soff12_amFailAddr;
       vassert(soff12_amFailAddr >= -2048 && soff12_amFailAddr < 2048);
       UInt imm11_0_amFailAddr = soff12_amFailAddr & 0xfff;

@@ -88,7 +88,7 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 40); }
 #undef ST_IN
 
 /* Number of registers used for argument passing in function calls. */
-#define RISCV64_N_ARGREGS 8 /* x10/a0 .. x17/a7 */
+#define RISCV64_N_ARGREGS  8 /* x10/a0 .. x17/a7 */
 #define RISCV64_N_FARGREGS 8 /* f10/fa0 .. f17/fa7 */
 
 /*------------------------------------------------------------*/

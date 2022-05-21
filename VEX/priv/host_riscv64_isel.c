@@ -1004,8 +1004,8 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_64to16:
       case Iop_64to32: {
          UInt shift = 64 - 8 * sizeofIRType(ty);
-         HReg tmp = newVRegI(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         HReg tmp   = newVRegI(env);
+         HReg src   = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env, RISCV64Instr_SLLI(tmp, src, shift));
          HReg dst = newVRegI(env);
          addInstr(env, RISCV64Instr_SRAI(dst, tmp, shift));

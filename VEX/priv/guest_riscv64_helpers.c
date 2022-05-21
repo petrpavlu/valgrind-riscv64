@@ -285,10 +285,7 @@ UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
 #endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
-ULong riscv64g_calculate_fclass_d(Double a1)
-{
-   CALCULATE_FCLASS("fclass.d");
-}
+ULong riscv64g_calculate_fclass_d(Double a1) { CALCULATE_FCLASS("fclass.d"); }
 
 /*------------------------------------------------------------*/
 /*--- Flag-helpers translation-time function specialisers. ---*/
