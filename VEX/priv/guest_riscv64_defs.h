@@ -97,6 +97,10 @@ UInt riscv64g_calculate_fflags_feq_d(Double a1, Double a2);
 UInt riscv64g_calculate_fflags_flt_d(Double a1, Double a2);
 UInt riscv64g_calculate_fflags_fle_d(Double a1, Double a2);
 
+UInt riscv64g_calculate_fflags_fmadd_s(Float a1,
+                                       Float a2,
+                                       Float a3,
+                                       UInt  rm_RISCV);
 UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
                                        Double a2,
                                        Double a3,

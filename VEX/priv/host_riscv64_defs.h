@@ -166,6 +166,11 @@ typedef enum {
    RISCV64in_SB,              /* 8-bit store. */
    RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
+   RISCV64in_FMADD_S,         /* Fused multiply-add of 32-bit floating-point
+                                 registers. */
+   RISCV64in_FSGNJN_S,        /* Copy of a 32-bit floating-point register to
+                                 another with the sign bit taken from the second
+                                 input and negated. */
    RISCV64in_FMV_D,           /* Copy one 64-bit floating-point register to
                                  another. */
    RISCV64in_FMADD_D,         /* Fused multiply-add of 64-bit floating-point
@@ -522,6 +527,20 @@ typedef struct {
          HReg src;
          HReg addr;
       } SC_W;
+      /* Fused multiply-add of 32-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+         HReg src3;
+      } FMADD_S;
+      /* Copy of a 32-bit floating-point register to another with the sign bit
+         taken from the second input and negated. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FSGNJN_S;
       /* Copy one 64-bit floating-point register to another. */
       struct {
          HReg dst;
@@ -809,6 +828,8 @@ RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
+RISCV64Instr* RISCV64Instr_FMADD_S(HReg dst, HReg src1, HReg src2, HReg src3);
+RISCV64Instr* RISCV64Instr_FSGNJN_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMADD_D(HReg dst, HReg src1, HReg src2, HReg src3);
 RISCV64Instr* RISCV64Instr_FADD_D(HReg dst, HReg src1, HReg src2);

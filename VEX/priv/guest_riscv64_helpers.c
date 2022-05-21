@@ -256,6 +256,13 @@ UInt riscv64g_calculate_fflags_fle_d(Double a1, Double a2)
 #endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
+UInt riscv64g_calculate_fflags_fmadd_s(Float a1,
+                                       Float a2,
+                                       Float a3,
+                                       UInt  rm_RISCV)
+{
+   CALCULATE_FFLAGS_TERNARY64("fmadd.s");
+}
 UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
                                        Double a2,
                                        Double a3,
