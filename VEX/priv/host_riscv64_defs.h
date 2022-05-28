@@ -168,6 +168,12 @@ typedef enum {
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_FMADD_S,         /* Fused multiply-add of 32-bit floating-point
                                  registers. */
+   RISCV64in_FADD_S,          /* Addition of two 32-bit floating-point
+                                 registers. */
+   RISCV64in_FMUL_S,          /* Multiplication of two 32-bit floating-point
+                                 registers. */
+   RISCV64in_FDIV_S,          /* Division of a 32-bit floating-point register by
+                                 another. */
    RISCV64in_FSGNJN_S,        /* Copy of a 32-bit floating-point register to
                                  another with the sign bit taken from the second
                                  input and negated. */
@@ -534,6 +540,24 @@ typedef struct {
          HReg src2;
          HReg src3;
       } FMADD_S;
+      /* Addition of two 32-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FADD_S;
+      /* Multiplication of two 32-bit floating-point registers. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FMUL_S;
+      /* Division of a 32-bit floating-point register by another. */
+      struct {
+         HReg dst;
+         HReg src1;
+         HReg src2;
+      } FDIV_S;
       /* Copy of a 32-bit floating-point register to another with the sign bit
          taken from the second input and negated. */
       struct {
@@ -829,6 +853,9 @@ RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FMADD_S(HReg dst, HReg src1, HReg src2, HReg src3);
+RISCV64Instr* RISCV64Instr_FADD_S(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FMUL_S(HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FDIV_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSGNJN_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMADD_D(HReg dst, HReg src1, HReg src2, HReg src3);

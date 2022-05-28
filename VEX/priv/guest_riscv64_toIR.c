@@ -2200,6 +2200,70 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------ f{add,sub}.s rd, rs1, rs2, rm ------------ */
+   /* ------------ f{mul,div}.s rd, rs1, rs2, rm ------------ */
+   if (INSN(6, 0) == 0b1010011 && INSN(26, 25) == 0b00 &&
+       INSN(31, 29) == 0b000) {
+      UInt   rd     = INSN(11, 7);
+      UInt   rm     = INSN(14, 12);
+      UInt   rs1    = INSN(19, 15);
+      UInt   rs2    = INSN(24, 20);
+      UInt   funct7 = INSN(31, 25);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
+      const HChar* name;
+      IROp         op;
+      IRTemp       a1 = newTemp(irsb, Ity_F32);
+      IRTemp       a2 = newTemp(irsb, Ity_F32);
+      const HChar* helper_name;
+      void*        helper_addr;
+      switch (funct7) {
+      case 0b0000000:
+         name = "fadd";
+         op   = Iop_AddF32;
+         assign(irsb, a1, getFReg32(rs1));
+         assign(irsb, a2, getFReg32(rs2));
+         helper_name = "riscv64g_calculate_fflags_fadd_s";
+         helper_addr = riscv64g_calculate_fflags_fadd_s;
+         break;
+      case 0b0000100:
+         name = "fsub";
+         op   = Iop_AddF32;
+         assign(irsb, a1, getFReg32(rs1));
+         assign(irsb, a2, unop(Iop_NegF32, getFReg32(rs2)));
+         helper_name = "riscv64g_calculate_fflags_fadd_s";
+         helper_addr = riscv64g_calculate_fflags_fadd_s;
+         break;
+      case 0b0001000:
+         name = "fmul";
+         op   = Iop_MulF32;
+         assign(irsb, a1, getFReg32(rs1));
+         assign(irsb, a2, getFReg32(rs2));
+         helper_name = "riscv64g_calculate_fflags_fmul_s";
+         helper_addr = riscv64g_calculate_fflags_fmul_s;
+         break;
+      case 0b0001100:
+         name = "fdiv";
+         op   = Iop_DivF32;
+         assign(irsb, a1, getFReg32(rs1));
+         assign(irsb, a2, getFReg32(rs2));
+         helper_name = "riscv64g_calculate_fflags_fdiv_s";
+         helper_addr = riscv64g_calculate_fflags_fdiv_s;
+         break;
+      default:
+         vassert(0);
+      }
+      putFReg32(irsb, rd, triop(op, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                        helper_addr,
+                                        mkIRExprVec_3(mkexpr(a1), mkexpr(a2),
+                                                      mkexpr(rm_RISCV)))));
+      DIP("%s.s %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
+          nameFReg(rs2), nameRMOperand(rm));
+      return True;
+   }
+
    return False;
 }
 

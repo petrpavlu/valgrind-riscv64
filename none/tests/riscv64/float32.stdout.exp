@@ -409,5 +409,332 @@ fnmadd.s fa0, fa1, fa2, fa3 ::
 fnmadd.s fa0, fa1, fa2, fa3 ::
   inputs: fa1=0xffffffff3f800000, fa2=0xffffffff3f800000, fa3=0xffffffff33800000, fcsr=0x00000080
   output: fa0=0xffffffffbf800001, fcsr=0x00000081
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff40000000, fa2=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff40400000, fcsr=0x00000000
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffffbf800000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000000
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff00000001, fcsr=0x00000000
+  output: fa0=0xffffffff00000002, fcsr=0x00000000
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f7fffff, fa2=0xffffffff7f7fffff, fcsr=0x00000000
+  output: fa0=0xffffffff7f800000, fcsr=0x00000005
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffff7fffff, fa2=0xffffffffff7fffff, fcsr=0x00000000
+  output: fa0=0xffffffffff800000, fcsr=0x00000005
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00800001, fa2=0xffffffff80800000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000000
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f800000, fa2=0xffffffffff800000, fcsr=0x00000000
+  output: fa0=0xffffffff7fc00000, fcsr=0x00000010
+fadd.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800002, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800001, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800001, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800001, fcsr=0x00000001
+fadd.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800001, fcsr=0x00000001
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800002, fcsr=0x00000001
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000020
+  output: fa0=0xffffffff3f800000, fcsr=0x00000021
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000020
+  output: fa0=0xffffffffbf800000, fcsr=0x00000021
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000040
+  output: fa0=0xffffffff3f800000, fcsr=0x00000041
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000040
+  output: fa0=0xffffffffbf800001, fcsr=0x00000041
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000060
+  output: fa0=0xffffffff3f800001, fcsr=0x00000061
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000060
+  output: fa0=0xffffffffbf800000, fcsr=0x00000061
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff33800000, fcsr=0x00000080
+  output: fa0=0xffffffff3f800001, fcsr=0x00000081
+fadd.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffffb3800000, fcsr=0x00000080
+  output: fa0=0xffffffffbf800001, fcsr=0x00000081
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff40000000, fa2=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000000
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff80000001, fcsr=0x00000000
+  output: fa0=0xffffffff00000002, fcsr=0x00000000
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f7fffff, fa2=0xffffffffff7fffff, fcsr=0x00000000
+  output: fa0=0xffffffff7f800000, fcsr=0x00000005
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffff7fffff, fa2=0xffffffff7f7fffff, fcsr=0x00000000
+  output: fa0=0xffffffffff800000, fcsr=0x00000005
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00800001, fa2=0xffffffff00800000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000000
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f800000, fa2=0xffffffff7f800000, fcsr=0x00000000
+  output: fa0=0xffffffff7fc00000, fcsr=0x00000010
+fsub.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff3f800002, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800002, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800001, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800001, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800001, fcsr=0x00000001
+fsub.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800001, fcsr=0x00000001
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000001
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800002, fa2=0xffffffff33800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800002, fcsr=0x00000001
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000020
+  output: fa0=0xffffffff3f800000, fcsr=0x00000021
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000020
+  output: fa0=0xffffffffbf800000, fcsr=0x00000021
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000040
+  output: fa0=0xffffffff3f800000, fcsr=0x00000041
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000040
+  output: fa0=0xffffffffbf800001, fcsr=0x00000041
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000060
+  output: fa0=0xffffffff3f800001, fcsr=0x00000061
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000060
+  output: fa0=0xffffffffbf800000, fcsr=0x00000061
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800001, fa2=0xffffffff33800000, fcsr=0x00000080
+  output: fa0=0xffffffff3f800001, fcsr=0x00000081
+fsub.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff33800000, fcsr=0x00000080
+  output: fa0=0xffffffffbf800001, fcsr=0x00000081
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff40000000, fa2=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff40000000, fcsr=0x00000000
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff00000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000000
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff1a800000, fa2=0xffffffff1a000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000000
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f7fffff, fa2=0xffffffff7f7fffff, fcsr=0x00000000
+  output: fa0=0xffffffff7f800000, fcsr=0x00000005
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f7fffff, fa2=0xffffffffff7fffff, fcsr=0x00000000
+  output: fa0=0xffffffffff800000, fcsr=0x00000005
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff7f800000, fcsr=0x00000000
+  output: fa0=0xffffffff7f800000, fcsr=0x00000000
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000000, fa2=0xffffffff7f800000, fcsr=0x00000000
+  output: fa0=0xffffffff7fc00000, fcsr=0x00000010
+fmul.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff00000003, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000002, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000000, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000001, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000000, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000003
+fmul.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000001, fcsr=0x00000003
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000003, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000002, fcsr=0x00000003
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000020
+  output: fa0=0xffffffff00000000, fcsr=0x00000023
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000020
+  output: fa0=0xffffffff80000000, fcsr=0x00000023
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000040
+  output: fa0=0xffffffff00000000, fcsr=0x00000043
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000040
+  output: fa0=0xffffffff80000001, fcsr=0x00000043
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000060
+  output: fa0=0xffffffff00000001, fcsr=0x00000063
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000060
+  output: fa0=0xffffffff80000000, fcsr=0x00000063
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff3f000000, fcsr=0x00000080
+  output: fa0=0xffffffff00000001, fcsr=0x00000083
+fmul.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff3f000000, fcsr=0x00000080
+  output: fa0=0xffffffff80000001, fcsr=0x00000083
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff40000000, fa2=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff40000000, fcsr=0x00000000
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000000, fa2=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000000
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff7f000000, fcsr=0x00000000
+  output: fa0=0xffffffff00400000, fcsr=0x00000000
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f7fffff, fa2=0xffffffff3f000000, fcsr=0x00000000
+  output: fa0=0xffffffff7f800000, fcsr=0x00000005
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff7f7fffff, fa2=0xffffffffbf000000, fcsr=0x00000000
+  output: fa0=0xffffffffff800000, fcsr=0x00000005
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff7f800000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000000
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff00000000, fcsr=0x00000000
+  output: fa0=0xffffffff7f800000, fcsr=0x00000008
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000000, fa2=0xffffffff00000000, fcsr=0x00000000
+  output: fa0=0xffffffff7fc00000, fcsr=0x00000010
+fdiv.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rne ::
+  inputs: fa1=0xffffffff00000003, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000002, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rtz ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000000, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rdn ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000001, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rup ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000000, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000001, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2, rmm ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff80000001, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000000, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000003, fa2=0xffffffff40000000, fcsr=0x00000000
+  output: fa0=0xffffffff00000002, fcsr=0x00000003
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000020
+  output: fa0=0xffffffff00000000, fcsr=0x00000023
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000020
+  output: fa0=0xffffffff80000000, fcsr=0x00000023
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000040
+  output: fa0=0xffffffff00000000, fcsr=0x00000043
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000040
+  output: fa0=0xffffffff80000001, fcsr=0x00000043
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000060
+  output: fa0=0xffffffff00000001, fcsr=0x00000063
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000060
+  output: fa0=0xffffffff80000000, fcsr=0x00000063
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff00000001, fa2=0xffffffff40000000, fcsr=0x00000080
+  output: fa0=0xffffffff00000001, fcsr=0x00000083
+fdiv.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff80000001, fa2=0xffffffff40000000, fcsr=0x00000080
+  output: fa0=0xffffffff80000001, fcsr=0x00000083
 
 RV64F single-precision FP instruction set, additions

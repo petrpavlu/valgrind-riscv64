@@ -191,6 +191,18 @@ UInt riscv64g_calculate_fflags_fcvt_d_lu(ULong a1, UInt rm_RISCV)
 #endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPERS */
+UInt riscv64g_calculate_fflags_fadd_s(Float a1, Float a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fadd.s");
+}
+UInt riscv64g_calculate_fflags_fmul_s(Float a1, Float a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fmul.s");
+}
+UInt riscv64g_calculate_fflags_fdiv_s(Float a1, Float a2, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_BINARY64("fdiv.s");
+}
 UInt riscv64g_calculate_fflags_fadd_d(Double a1, Double a2, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_BINARY64("fadd.d");

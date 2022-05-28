@@ -486,16 +486,347 @@ static void test_float32_shared(void)
                   fa3);
 
    /* --------------- fadd.s rd, rs1, rs2, rm --------------- */
-   /* TODO Implement. */
+   /* 2.0 + 1.0 -> 3.0 */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff40000000,
+                  0xffffffff3f800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + -1.0 -> 0.0 */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffffbf800000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN + FLT_TRUE_MIN -> 2*FLT_TRUE_MIN (no UF because exact) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff00000001, 0x00, fa0, fa1, fa2);
+   /* FLT_MAX + FLT_MAX -> INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff7f7fffff,
+                  0xffffffff7f7fffff, 0x00, fa0, fa1, fa2);
+   /* -FLT_MAX + -FLT_MAX -> -INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffffff7fffff,
+                  0xffffffffff7fffff, 0x00, fa0, fa1, fa2);
+   /* nextafterf(FLT_MIN) + -FLT_MIN -> FLT_TRUE_MIN (no UF because exact) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff00800001,
+                  0xffffffff80800000, 0x00, fa0, fa1, fa2);
+   /* INFINITY + -INFINITY -> qNAN (NV) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff7f800000,
+                  0xffffffffff800000, 0x00, fa0, fa1, fa2);
+
+   /* 1.0 + FLT_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rne", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) + FLT_EPSILON/2 (RNE) -> 2nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rne", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rtz", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rtz", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rdn", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (RDN) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rdn", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rup", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rup", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rmm", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (RMM) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2, rmm", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x00, fa0, fa1, fa2);
+
+   /* 1.0 + FLT_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) + FLT_EPSILON/2 (DYN-RNE) -> 2nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x20, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x20, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x40, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RDN) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x40, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x60, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x60, fa0, fa1, fa2);
+   /* 1.0 + FLT_EPSILON/2 (DYN-RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff33800000, 0x80, fa0, fa1, fa2);
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RMM) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fadd.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffffb3800000, 0x80, fa0, fa1, fa2);
 
    /* --------------- fsub.s rd, rs1, rs2, rm --------------- */
-   /* TODO Implement. */
+   /* 2.0 - 1.0 -> 1.0 */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff40000000,
+                  0xffffffff3f800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 - 1.0 -> 0.0 */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff3f800000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN - -FLT_TRUE_MIN -> 2*FLT_TRUE_MIN (no UF because exact) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff80000001, 0x00, fa0, fa1, fa2);
+   /* FLT_MAX - -FLT_MAX -> INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff7f7fffff,
+                  0xffffffffff7fffff, 0x00, fa0, fa1, fa2);
+   /* -FLT_MAX - FLT_MAX -> -INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffffff7fffff,
+                  0xffffffff7f7fffff, 0x00, fa0, fa1, fa2);
+   /* nextafterf(FLT_MIN) - FLT_MIN -> FLT_TRUE_MIN (no UF because exact) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff00800001,
+                  0xffffffff00800000, 0x00, fa0, fa1, fa2);
+   /* INFINITY - INFINITY -> qNAN (NV) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff7f800000,
+                  0xffffffff7f800000, 0x00, fa0, fa1, fa2);
+
+   /* nextafterf(1.0) - FLT_EPSILON/2 (RNE) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rne", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* 2nextafterf(1.0) - FLT_EPSILON/2 (RNE) -> 2nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rne", 0xffffffff3f800002,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (RTZ) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rtz", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (RTZ) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rtz", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (RDN) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rdn", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (RDN) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rdn", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rup", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (RUP) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rup", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rmm", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (RMM) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2, rmm", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+
+   /* nextafterf(1.0) - FLT_EPSILON/2 (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* 2nextafterf(1.0) - FLT_EPSILON/2 (DYN-RNE) -> 2nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800002,
+                  0xffffffff33800000, 0x00, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x20, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x20, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x40, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (DYN-RDN) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x40, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (DYN-RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x60, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (DYN-RUP) -> -1.0 (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x60, fa0, fa1, fa2);
+   /* nextafterf(1.0) - FLT_EPSILON/2 (DYN-RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffff3f800001,
+                  0xffffffff33800000, 0x80, fa0, fa1, fa2);
+   /* -1.0 - FLT_EPSILON/2 (DYN-RMM) -> -nextafterf(1.0) (NX) */
+   TESTINST_1_2_F(4, "fsub.s fa0, fa1, fa2", 0xffffffffbf800000,
+                  0xffffffff33800000, 0x80, fa0, fa1, fa2);
 
    /* --------------- fmul.s rd, rs1, rs2, rm --------------- */
-   /* TODO Implement. */
+   /* 2.0 * 1.0 -> 2.0 */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff40000000,
+                  0xffffffff3f800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 * 0.0 -> 0.0 */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff00000000, 0x00, fa0, fa1, fa2);
+   /* 2**-74 * 2**-75 -> 2**-149 aka FLT_TRUE_MIN (no UF because exact) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff1a800000,
+                  0xffffffff1a000000, 0x00, fa0, fa1, fa2);
+   /* FLT_MAX * FLT_MAX -> INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff7f7fffff,
+                  0xffffffff7f7fffff, 0x00, fa0, fa1, fa2);
+   /* FLT_MAX * -FLT_MAX -> -INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff7f7fffff,
+                  0xffffffffff7fffff, 0x00, fa0, fa1, fa2);
+   /* 1.0 * INFINITY -> INFINITY */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff7f800000, 0x00, fa0, fa1, fa2);
+   /* 0.0 * INFINITY -> qNAN (NV) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000000,
+                  0xffffffff7f800000, 0x00, fa0, fa1, fa2);
+
+   /* FLT_TRUE_MIN * 0.5 (RNE) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rne", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* 3*FLT_TRUE_MIN * 0.5 (RNE) -> 2*FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rne", 0xffffffff00000003,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (RTZ) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rtz", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (RTZ) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rtz", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (RDN) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rdn", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (RDN) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rdn", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (RUP) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rup", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (RUP) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rup", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (RMM) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rmm", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (RMM) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2, rmm", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+
+   /* FLT_TRUE_MIN * 0.5 (DYN-RNE) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* 3*FLT_TRUE_MIN * 0.5 (DYN-RNE) -> 2*FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000003,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (DYN-RTZ) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x20, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (DYN-RTZ) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x20, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (DYN-RDN) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x40, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (DYN-RDN) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x40, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (DYN-RUP) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x60, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (DYN-RUP) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x60, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN * 0.5 (DYN-RMM) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff3f000000, 0x80, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN * 0.5 (DYN-RMM) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fmul.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff3f000000, 0x80, fa0, fa1, fa2);
 
    /* --------------- fdiv.s rd, rs1, rs2, rm --------------- */
-   /* TODO Implement. */
+   /* 2.0 / 1.0 -> 2.0 */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff40000000,
+                  0xffffffff3f800000, 0x00, fa0, fa1, fa2);
+   /* 0.0 / 1.0 -> 0.0 */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000000,
+                  0xffffffff3f800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 / 2**127 -> 1**-127 (no UF because exact) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff7f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_MAX / 0.5 -> INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff7f7fffff,
+                  0xffffffff3f000000, 0x00, fa0, fa1, fa2);
+   /* FLT_MAX / -0.5 -> -INFINITY (OF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff7f7fffff,
+                  0xffffffffbf000000, 0x00, fa0, fa1, fa2);
+   /* 1.0 / INFINITY -> 0.0 */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff7f800000, 0x00, fa0, fa1, fa2);
+   /* 1.0 / 0.0 -> INFINITY (DZ) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff3f800000,
+                  0xffffffff00000000, 0x00, fa0, fa1, fa2);
+   /* 0.0 / 0.0 -> qNAN (NV) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000000,
+                  0xffffffff00000000, 0x00, fa0, fa1, fa2);
+
+   /* FLT_TRUE_MIN / 2.0 (RNE) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rne", 0xffffffff00000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* 3*FLT_TRUE_MIN / 2.0 (RNE) -> 2*FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rne", 0xffffffff00000003,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (RTZ) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rtz", 0xffffffff00000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (RTZ) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rtz", 0xffffffff80000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (RDN) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rdn", 0xffffffff00000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (RDN) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rdn", 0xffffffff80000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (RUP) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rup", 0xffffffff00000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (RUP) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rup", 0xffffffff80000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (RMM) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rmm", 0xffffffff00000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (RMM) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2, rmm", 0xffffffff80000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+
+   /* FLT_TRUE_MIN / 2.0 (DYN-RNE) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* 3*FLT_TRUE_MIN / 2.0 (DYN-RNE) -> 2*FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000003,
+                  0xffffffff40000000, 0x00, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (DYN-RTZ) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff40000000, 0x20, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (DYN-RTZ) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff40000000, 0x20, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (DYN-RDN) -> 0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff40000000, 0x40, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (DYN-RDN) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff40000000, 0x40, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (DYN-RUP) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff40000000, 0x60, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (DYN-RUP) -> -0.0 (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff40000000, 0x60, fa0, fa1, fa2);
+   /* FLT_TRUE_MIN / 2.0 (DYN-RMM) -> FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff00000001,
+                  0xffffffff40000000, 0x80, fa0, fa1, fa2);
+   /* -FLT_TRUE_MIN / 2.0 (DYN-RMM) -> -FLT_TRUE_MIN (UF, NX) */
+   TESTINST_1_2_F(4, "fdiv.s fa0, fa1, fa2", 0xffffffff80000001,
+                  0xffffffff40000000, 0x80, fa0, fa1, fa2);
 
    /* ----------------- fsqrt.s rd, rs1, rm ----------------- */
    /* TODO Implement. */
