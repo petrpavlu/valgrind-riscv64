@@ -829,7 +829,68 @@ static void test_float32_shared(void)
                   0xffffffff40000000, 0x80, fa0, fa1, fa2);
 
    /* ----------------- fsqrt.s rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* sqrt(0.0) -> 0.0 */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff00000000, 0x00, fa0, fa1);
+   /* sqrt(INFINITY) -> INFINITY */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff7f800000, 0x00, fa0, fa1);
+   /* sqrt(2*FLT_TRUE_MIN) -> 2**-74 */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff00000002, 0x00, fa0, fa1);
+   /* sqrt(qNAN) -> qNAN */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff7fc00000, 0x00, fa0, fa1);
+   /* sqrt(-1.0) -> qNAN (NV) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffffbf800000, 0x00, fa0, fa1);
+
+   /* sqrt(nextafterf(1.0)) (RNE) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rne", 0xffffffff3f800001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafterf(1.0)) (RNE) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rne", 0xffffffff3f800002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafterf(1.0)) (RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rtz", 0xffffffff3f800001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafterf(1.0)) (RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rtz", 0xffffffff3f800002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafterf(1.0)) (RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rdn", 0xffffffff3f800001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafterf(1.0)) (RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rdn", 0xffffffff3f800002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafterf(1.0)) (RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rup", 0xffffffff3f800001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafterf(1.0)) (RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rup", 0xffffffff3f800002, 0x00, fa0,
+                  fa1);
+   /* sqrt(nextafterf(1.0)) (RMM) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rmm", 0xffffffff3f800001, 0x00, fa0,
+                  fa1);
+   /* sqrt(2nextafterf(1.0)) (RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1, rmm", 0xffffffff3f800002, 0x00, fa0,
+                  fa1);
+
+   /* sqrt(nextafterf(1.0)) (DYN-RNE) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800001, 0x00, fa0, fa1);
+   /* sqrt(2nextafterf(1.0)) (DYN-RNE) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800002, 0x00, fa0, fa1);
+   /* sqrt(nextafterf(1.0)) (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800001, 0x20, fa0, fa1);
+   /* sqrt(2nextafterf(1.0)) (DYN-RTZ) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800002, 0x20, fa0, fa1);
+   /* sqrt(nextafterf(1.0)) (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800001, 0x40, fa0, fa1);
+   /* sqrt(2nextafterf(1.0)) (DYN-RDN) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800002, 0x40, fa0, fa1);
+   /* sqrt(nextafterf(1.0)) (DYN-RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800001, 0x60, fa0, fa1);
+   /* sqrt(2nextafterf(1.0)) (DYN-RUP) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800002, 0x60, fa0, fa1);
+   /* sqrt(nextafterf(1.0)) (DYN-RMM) -> 1.0 (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800001, 0x80, fa0, fa1);
+   /* sqrt(2nextafterf(1.0)) (DYN-RMM) -> nextafterf(1.0) (NX) */
+   TESTINST_1_1_F(4, "fsqrt.s fa0, fa1", 0xffffffff3f800002, 0x80, fa0, fa1);
 
    /* ---------------- fsgnj.s rd, rs1, rs2 ----------------- */
    /* TODO Implement. */

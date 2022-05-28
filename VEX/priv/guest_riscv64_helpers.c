@@ -112,6 +112,10 @@
 #endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPERS */
+UInt riscv64g_calculate_fflags_fsqrt_s(Float a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_F("fsqrt.s");
+}
 UInt riscv64g_calculate_fflags_fsqrt_d(Double a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_F("fsqrt.d");

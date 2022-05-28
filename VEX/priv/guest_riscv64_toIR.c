@@ -2264,6 +2264,27 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ----------------- fsqrt.s rd, rs1, rm ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 20) == 0b00000 &&
+       INSN(31, 25) == 0b0101100) {
+      UInt   rd  = INSN(11, 7);
+      UInt   rm  = INSN(14, 12);
+      UInt   rs1 = INSN(19, 15);
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
+      IRTemp a1 = newTemp(irsb, Ity_F32);
+      assign(irsb, a1, getFReg32(rs1));
+      putFReg32(irsb, rd, binop(Iop_SqrtF32, mkexpr(rm_IR), mkexpr(a1)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(
+                             Ity_I32, 0 /*regparms*/,
+                             "riscv64g_calculate_fflags_fsqrt_s",
+                             riscv64g_calculate_fflags_fsqrt_s,
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+      DIP("fsqrt.s %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameRMOperand(rm));
+      return True;
+   }
+
    return False;
 }
 
