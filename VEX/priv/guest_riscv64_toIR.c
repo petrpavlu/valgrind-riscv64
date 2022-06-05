@@ -2497,8 +2497,8 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
 
    /* ------------ f{add,sub}.d rd, rs1, rs2, rm ------------ */
    /* ------------ f{mul,div}.d rd, rs1, rs2, rm ------------ */
-   if (INSN(6, 0) == 0b1010011 && INSN(31, 29) == 0b000 &&
-       INSN(26, 25) == 0b01) {
+   if (INSN(6, 0) == 0b1010011 && INSN(26, 25) == 0b01 &&
+       INSN(31, 29) == 0b000) {
       UInt   rd     = INSN(11, 7);
       UInt   rm     = INSN(14, 12);
       UInt   rs1    = INSN(19, 15);
