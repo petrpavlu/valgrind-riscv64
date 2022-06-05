@@ -2359,6 +2359,51 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* -------------- f{min,max}.s rd, rs1, rs2 -------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b0010100) {
+      UInt rd  = INSN(11, 7);
+      UInt rm  = INSN(14, 12);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rm != 0b000 && rm != 0b001) {
+         /* Invalid F{MIN,MAX}.S, fall through. */
+      } else {
+         const HChar* name;
+         IROp         op;
+         const HChar* helper_name;
+         void*        helper_addr;
+         switch (rm) {
+         case 0b000:
+            name        = "fmin";
+            op          = Iop_MinNumF32;
+            helper_name = "riscv64g_calculate_fflags_fmin_s";
+            helper_addr = riscv64g_calculate_fflags_fmin_s;
+            break;
+         case 0b001:
+            name        = "fmax";
+            op          = Iop_MaxNumF32;
+            helper_name = "riscv64g_calculate_fflags_fmax_s";
+            helper_addr = riscv64g_calculate_fflags_fmax_s;
+            break;
+         default:
+            vassert(0);
+         }
+         IRTemp a1 = newTemp(irsb, Ity_F32);
+         IRTemp a2 = newTemp(irsb, Ity_F32);
+         assign(irsb, a1, getFReg32(rs1));
+         assign(irsb, a2, getFReg32(rs2));
+         putFReg32(irsb, rd, binop(op, mkexpr(a1), mkexpr(a2)));
+         putFCSR(irsb,
+                 binop(Iop_Or32, getFCSR(),
+                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                     helper_addr,
+                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
+         DIP("%s.s %s, %s, %s\n", name, nameFReg(rd), nameFReg(rs1),
+             nameFReg(rs2));
+         return True;
+      }
+   }
+
    return False;
 }
 

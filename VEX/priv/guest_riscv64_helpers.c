@@ -219,6 +219,16 @@ UInt riscv64g_calculate_fflags_fdiv_d(Double a1, Double a2, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_BINARY64("fdiv.d");
 }
+UInt riscv64g_calculate_fflags_fmin_s(Float a1, Float a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64("fmin.s");
+}
+UInt riscv64g_calculate_fflags_fmax_s(Float a1, Float a2)
+{
+   UInt rm_RISCV = 0; /* unused */
+   CALCULATE_FFLAGS_BINARY64("fmax.s");
+}
 UInt riscv64g_calculate_fflags_fmin_d(Double a1, Double a2)
 {
    UInt rm_RISCV = 0; /* unused */
