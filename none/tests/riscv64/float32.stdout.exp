@@ -811,5 +811,59 @@ fsqrt.s fa0, fa1 ::
 fsqrt.s fa0, fa1 ::
   inputs: fa1=0xffffffff3f800002, fcsr=0x00000080
   output: fa0=0xffffffff3f800001, fcsr=0x00000081
+fsgnj.s fa0, fa1, fa1 ::
+  inputs: fa1=0xffffffff3f800000, fa1=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnj.s fa0, fa1, fa1 ::
+  inputs: fa1=0xffffffffbf800000, fa1=0xffffffffbf800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnj.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff7fffffff, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnj.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff80000000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnj.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff7fffffff, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnj.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff80000000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnjn.s fa0, fa1, fa1 ::
+  inputs: fa1=0xffffffff3f800000, fa1=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnjn.s fa0, fa1, fa1 ::
+  inputs: fa1=0xffffffffbf800000, fa1=0xffffffffbf800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnjn.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff7fffffff, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnjn.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff80000000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnjn.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff7fffffff, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnjn.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff80000000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnjx.s fa0, fa1, fa1 ::
+  inputs: fa1=0xffffffff3f800000, fa1=0xffffffff3f800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnjx.s fa0, fa1, fa1 ::
+  inputs: fa1=0xffffffffbf800000, fa1=0xffffffffbf800000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnjx.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff7fffffff, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
+fsgnjx.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffff3f800000, fa2=0xffffffff80000000, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnjx.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff7fffffff, fcsr=0x00000000
+  output: fa0=0xffffffffbf800000, fcsr=0x00000000
+fsgnjx.s fa0, fa1, fa2 ::
+  inputs: fa1=0xffffffffbf800000, fa2=0xffffffff80000000, fcsr=0x00000000
+  output: fa0=0xffffffff3f800000, fcsr=0x00000000
 
 RV64F single-precision FP instruction set, additions

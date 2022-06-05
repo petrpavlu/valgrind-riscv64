@@ -2285,6 +2285,80 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ---------------- fsgnj.s rd, rs1, rs2 ----------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
+       INSN(31, 25) == 0b0010000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rs1 == rs2) {
+         putFReg32(irsb, rd, getFReg32(rs1));
+         DIP("fmv.s %s, %s\n", nameFReg(rd), nameIReg(rs1));
+      } else {
+         putFReg32(
+            irsb, rd,
+            unop(Iop_ReinterpI32asF32,
+                 binop(
+                    Iop_Or32,
+                    binop(Iop_And32, unop(Iop_ReinterpF32asI32, getFReg32(rs1)),
+                          mkU32(0x7fffffff)),
+                    binop(Iop_And32, unop(Iop_ReinterpF32asI32, getFReg32(rs2)),
+                          mkU32(0x80000000)))));
+         DIP("fsgnj.s %s, %s, %s\n", nameFReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
+      }
+      return True;
+   }
+
+   /* ---------------- fsgnjn.s rd, rs1, rs2 ---------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b001 &&
+       INSN(31, 25) == 0b0010000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rs1 == rs2) {
+         putFReg32(irsb, rd, unop(Iop_NegF32, getFReg32(rs1)));
+         DIP("fneg.s %s, %s\n", nameFReg(rd), nameIReg(rs1));
+      } else {
+         putFReg32(irsb, rd,
+                   unop(Iop_ReinterpI32asF32,
+                        binop(Iop_Or32,
+                              binop(Iop_And32,
+                                    unop(Iop_ReinterpF32asI32, getFReg32(rs1)),
+                                    mkU32(0x7fffffff)),
+                              binop(Iop_And32,
+                                    unop(Iop_ReinterpF32asI32,
+                                         unop(Iop_NegF32, getFReg32(rs2))),
+                                    mkU32(0x80000000)))));
+         DIP("fsgnjn.s %s, %s, %s\n", nameFReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
+      }
+      return True;
+   }
+
+   /* ---------------- fsgnjx.s rd, rs1, rs2 ---------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b010 &&
+       INSN(31, 25) == 0b0010000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rs1 == rs2) {
+         putFReg32(irsb, rd, unop(Iop_AbsF32, getFReg32(rs1)));
+         DIP("fabs.s %s, %s\n", nameFReg(rd), nameIReg(rs1));
+      } else {
+         putFReg32(
+            irsb, rd,
+            unop(Iop_ReinterpI32asF32,
+                 binop(Iop_Xor32, unop(Iop_ReinterpF32asI32, getFReg32(rs1)),
+                       binop(Iop_And32,
+                             unop(Iop_ReinterpF32asI32, getFReg32(rs2)),
+                             mkU32(0x80000000)))));
+         DIP("fsgnjx.s %s, %s, %s\n", nameFReg(rd), nameIReg(rs1),
+             nameIReg(rs2));
+      }
+      return True;
+   }
+
    return False;
 }
 

@@ -1022,6 +1022,12 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_SRAI(dst, src, 32));
          return dst;
       }
+      case Iop_ReinterpF32asI32: {
+         HReg dst = newVRegI(env);
+         HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FMV_X_W(dst, src));
+         return dst;
+      }
       case Iop_ReinterpF64asI64: {
          HReg dst = newVRegI(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
@@ -1461,6 +1467,12 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_FSGNJN_D(dst, src, src));
          return dst;
       }
+      case Iop_AbsF32: {
+         HReg dst = newVRegF(env);
+         HReg src = iselFltExpr(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FSGNJX_S(dst, src, src));
+         return dst;
+      }
       case Iop_AbsF64: {
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
@@ -1483,6 +1495,12 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
          addInstr(env, RISCV64Instr_FCVT_D_S(dst, src));
+         return dst;
+      }
+      case Iop_ReinterpI32asF32: {
+         HReg dst = newVRegF(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+         addInstr(env, RISCV64Instr_FMV_W_X(dst, src));
          return dst;
       }
       case Iop_ReinterpI64asF64: {
