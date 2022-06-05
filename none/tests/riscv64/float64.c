@@ -656,7 +656,7 @@ static void test_float64_shared(void)
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x4000000000000000,
                   0x3ff0000000000000, 0x00, fa0, fa1, fa2);
    /* 1.0 * 0.0 -> 0.0 */
-   TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x4000000000000000,
+   TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x3ff0000000000000,
                   0x0000000000000000, 0x00, fa0, fa1, fa2);
    /* 2**-537 * 2**-537 -> 2**-1074 aka DBL_TRUE_MIN (no UF because exact) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x1e60000000000000,
@@ -686,10 +686,10 @@ static void test_float64_shared(void)
    /* -DBL_TRUE_MIN * 0.5 (RTZ) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rtz", 0x8000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 0.5 (RND) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (RDN) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rdn", 0x0000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 0.5 (RND) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (RDN) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2, rdn", 0x8000000000000001,
                   0x3fe0000000000000, 0x00, fa0, fa1, fa2);
    /* DBL_TRUE_MIN * 0.5 (RUP) -> DBL_TRUE_MIN (UF, NX) */
@@ -717,10 +717,10 @@ static void test_float64_shared(void)
    /* -DBL_TRUE_MIN * 0.5 (DYN-RTZ) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x8000000000000001,
                   0x3fe0000000000000, 0x20, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN * 0.5 (DYN-RND) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN * 0.5 (DYN-RDN) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x0000000000000001,
                   0x3fe0000000000000, 0x40, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN * 0.5 (DYN-RND) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN * 0.5 (DYN-RDN) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fmul.d fa0, fa1, fa2", 0x8000000000000001,
                   0x3fe0000000000000, 0x40, fa0, fa1, fa2);
    /* DBL_TRUE_MIN * 0.5 (DYN-RUP) -> DBL_TRUE_MIN (UF, NX) */
@@ -742,7 +742,7 @@ static void test_float64_shared(void)
                   0x3ff0000000000000, 0x00, fa0, fa1, fa2);
    /* 0.0 / 1.0 -> 0.0 */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x0000000000000000,
-                  0x4000000000000000, 0x00, fa0, fa1, fa2);
+                  0x3ff0000000000000, 0x00, fa0, fa1, fa2);
    /* 1.0 / 2**1023 -> 1**-1023 (no UF because exact) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x3ff0000000000000,
                   0x7fe0000000000000, 0x00, fa0, fa1, fa2);
@@ -774,10 +774,10 @@ static void test_float64_shared(void)
    /* -DBL_TRUE_MIN / 2.0 (RTZ) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2, rtz", 0x8000000000000001,
                   0x4000000000000000, 0x00, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN / 2.0 (RND) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN / 2.0 (RDN) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2, rdn", 0x0000000000000001,
                   0x4000000000000000, 0x00, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN / 2.0 (RND) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN / 2.0 (RDN) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2, rdn", 0x8000000000000001,
                   0x4000000000000000, 0x00, fa0, fa1, fa2);
    /* DBL_TRUE_MIN / 2.0 (RUP) -> DBL_TRUE_MIN (UF, NX) */
@@ -805,10 +805,10 @@ static void test_float64_shared(void)
    /* -DBL_TRUE_MIN / 2.0 (DYN-RTZ) -> -0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x8000000000000001,
                   0x4000000000000000, 0x20, fa0, fa1, fa2);
-   /* DBL_TRUE_MIN / 2.0 (DYN-RND) -> 0.0 (UF, NX) */
+   /* DBL_TRUE_MIN / 2.0 (DYN-RDN) -> 0.0 (UF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x0000000000000001,
                   0x4000000000000000, 0x40, fa0, fa1, fa2);
-   /* -DBL_TRUE_MIN / 2.0 (DYN-RND) -> -DBL_TRUE_MIN (UF, NX) */
+   /* -DBL_TRUE_MIN / 2.0 (DYN-RDN) -> -DBL_TRUE_MIN (UF, NX) */
    TESTINST_1_2_F(4, "fdiv.d fa0, fa1, fa2", 0x8000000000000001,
                   0x4000000000000000, 0x40, fa0, fa1, fa2);
    /* DBL_TRUE_MIN / 2.0 (DYN-RUP) -> DBL_TRUE_MIN (UF, NX) */
@@ -868,35 +868,25 @@ static void test_float64_shared(void)
                   fa1);
 
    /* sqrt(nextafter(1.0)) (DYN-RNE) -> 1.0 (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rne", 0x3ff0000000000001, 0x00, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000001, 0x00, fa0, fa1);
    /* sqrt(2nextafter(1.0)) (DYN-RNE) -> nextafter(1.0) (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rne", 0x3ff0000000000002, 0x00, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000002, 0x00, fa0, fa1);
    /* sqrt(nextafter(1.0)) (DYN-RTZ) -> 1.0 (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rtz", 0x3ff0000000000001, 0x20, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000001, 0x20, fa0, fa1);
    /* sqrt(2nextafter(1.0)) (DYN-RTZ) -> 1.0 (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rtz", 0x3ff0000000000002, 0x20, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000002, 0x20, fa0, fa1);
    /* sqrt(nextafter(1.0)) (DYN-RDN) -> 1.0 (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rdn", 0x3ff0000000000001, 0x40, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000001, 0x40, fa0, fa1);
    /* sqrt(2nextafter(1.0)) (DYN-RDN) -> 1.0 (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rdn", 0x3ff0000000000002, 0x40, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000002, 0x40, fa0, fa1);
    /* sqrt(nextafter(1.0)) (DYN-RUP) -> nextafter(1.0) (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rup", 0x3ff0000000000001, 0x60, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000001, 0x60, fa0, fa1);
    /* sqrt(2nextafter(1.0)) (DYN-RUP) -> nextafter(1.0) (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rup", 0x3ff0000000000002, 0x60, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000002, 0x60, fa0, fa1);
    /* sqrt(nextafter(1.0)) (DYN-RMM) -> 1.0 (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rmm", 0x3ff0000000000001, 0x80, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000001, 0x80, fa0, fa1);
    /* sqrt(2nextafter(1.0)) (DYN-RMM) -> nextafter(1.0) (NX) */
-   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1, rmm", 0x3ff0000000000002, 0x80, fa0,
-                  fa1);
+   TESTINST_1_1_F(4, "fsqrt.d fa0, fa1", 0x3ff0000000000002, 0x80, fa0, fa1);
 
    /* ---------------- fsgnj.d rd, rs1, rs2 ----------------- */
    /* fmv.d rd, rs1 */
@@ -1030,10 +1020,10 @@ static void test_float64_shared(void)
    /* -1.0 + -FLT_EPSILON/2 (RTZ) -> -1.0 (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rtz", 0xbff0000010000000, 0x00, fa0,
                   fa1);
-   /* 1.0 + FLT_EPSILON/2 (RND) -> 1.0 (NX) */
+   /* 1.0 + FLT_EPSILON/2 (RDN) -> 1.0 (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rdn", 0x3ff0000010000000, 0x00, fa0,
                   fa1);
-   /* -1.0 + -FLT_EPSILON/2 (RND) -> -nextafterf(1.0) (NX) */
+   /* -1.0 + -FLT_EPSILON/2 (RDN) -> -nextafterf(1.0) (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1, rdn", 0xbff0000010000000, 0x00, fa0,
                   fa1);
    /* 1.0 + FLT_EPSILON/2 (RUP) -> nextafterf(1.0) (NX) */
@@ -1057,9 +1047,9 @@ static void test_float64_shared(void)
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x20, fa0, fa1);
    /* -1.0 + -FLT_EPSILON/2 (DYN-RTZ) -> -1.0 (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x20, fa0, fa1);
-   /* 1.0 + FLT_EPSILON/2 (DYN-RND) -> 1.0 (NX) */
+   /* 1.0 + FLT_EPSILON/2 (DYN-RDN) -> 1.0 (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x40, fa0, fa1);
-   /* -1.0 + -FLT_EPSILON/2 (DYN-RND) -> -nextafterf(1.0) (NX) */
+   /* -1.0 + -FLT_EPSILON/2 (DYN-RDN) -> -nextafterf(1.0) (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0xbff0000010000000, 0x40, fa0, fa1);
    /* 1.0 + FLT_EPSILON/2 (DYN-RUP) -> nextafterf(1.0) (NX) */
    TESTINST_1_1_F(4, "fcvt.s.d fa0, fa1", 0x3ff0000010000000, 0x60, fa0, fa1);
