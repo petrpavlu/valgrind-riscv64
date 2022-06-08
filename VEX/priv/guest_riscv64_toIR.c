@@ -2432,6 +2432,27 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------------- fmv.x.w rd, rs1 ------------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
+       INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1110000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      if (rd != 0)
+         putIReg32(irsb, rd, unop(Iop_ReinterpF32asI32, getFReg32(rs1)));
+      DIP("fmv.x.w %s, %s\n", nameIReg(rd), nameFReg(rs1));
+      return True;
+   }
+
+   /* ------------------- fmv.w.x rd, rs1 ------------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
+       INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1111000) {
+      UInt rd  = INSN(11, 7);
+      UInt rs1 = INSN(19, 15);
+      putFReg32(irsb, rd, unop(Iop_ReinterpI32asF32, getIReg32(rs1)));
+      DIP("fmv.w.x %s, %s\n", nameFReg(rd), nameIReg(rs1));
+      return True;
+   }
+
    return False;
 }
 

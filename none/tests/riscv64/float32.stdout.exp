@@ -1048,5 +1048,20 @@ fcvt.wu.s a0, fa0 ::
 fcvt.wu.s a0, fa0 ::
   inputs: fa0=0xffffffff3f000000, fcsr=0x00000080
   output: a0=0x0000000000000001, fcsr=0x00000081
+fmv.x.w a0, fa0 ::
+  inputs: fa0=0xabcdef0123456789, fcsr=0x00000000
+  output: a0=0x0000000023456789, fcsr=0x00000000
+fmv.x.w a0, fa0 ::
+  inputs: fa0=0xffffffff7fffffff, fcsr=0x00000000
+  output: a0=0x000000007fffffff, fcsr=0x00000000
+fmv.x.w a0, fa0 ::
+  inputs: fa0=0x0000000080000000, fcsr=0x00000000
+  output: a0=0xffffffff80000000, fcsr=0x00000000
+fmv.x.w zero, fa0 ::
+  inputs: fa0=0xffffffff3f800000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000000
+fmv.w.x fa0, a0 ::
+  inputs: a0=0xabcdef0123456789, fcsr=0x00000000
+  output: fa0=0xffffffff23456789, fcsr=0x00000000
 
 RV64F single-precision FP instruction set, additions

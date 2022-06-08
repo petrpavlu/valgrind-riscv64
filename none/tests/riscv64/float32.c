@@ -1119,7 +1119,15 @@ static void test_float32_shared(void)
    TESTINST_1_1_IF(4, "fcvt.wu.s a0, fa0", 0xffffffff3f000000, 0x80, a0, fa0);
 
    /* ------------------- fmv.x.w rd, rs1 ------------------- */
-   /* TODO Implement. */
+   TESTINST_1_1_IF(4, "fmv.x.w a0, fa0", 0xabcdef0123456789, 0x00, a0, fa0);
+
+   /* "0xffffffff7fffffff" -> "0x000000007fffffff" */
+   TESTINST_1_1_IF(4, "fmv.x.w a0, fa0", 0xffffffff7fffffff, 0x00, a0, fa0);
+   /* "0x0000000080000000" -> "0xffffffff80000000" */
+   TESTINST_1_1_IF(4, "fmv.x.w a0, fa0", 0x0000000080000000, 0x00, a0, fa0);
+
+   /* 1.0 (rd=zero) -> 0 */
+   TESTINST_1_1_IF(4, "fmv.x.w zero, fa0", 0xffffffff3f800000, 0x00, zero, fa0);
 
    /* ----------------- feq.s rd, rs1, rs2 ------------------ */
    /* TODO Implement. */
@@ -1140,7 +1148,7 @@ static void test_float32_shared(void)
    /* TODO Implement. */
 
    /* ------------------- fmv.w.x rd, rs1 ------------------- */
-   /* TODO Implement. */
+   TESTINST_1_1_FI(4, "fmv.w.x fa0, a0", 0xabcdef0123456789, 0x00, fa0, a0);
 
    printf("\n");
 }
