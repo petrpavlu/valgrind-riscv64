@@ -2404,6 +2404,34 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* -------------- fcvt.{w,wu}.s rd, rs1, rm -------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(24, 21) == 0b0000 &&
+       INSN(31, 25) == 0b1100000) {
+      UInt   rd        = INSN(11, 7);
+      UInt   rm        = INSN(14, 12);
+      UInt   rs1       = INSN(19, 15);
+      Bool   is_signed = INSN(20, 20) == 0b0;
+      IRTemp rm_RISCV, rm_IR;
+      mk_get_rounding_mode(irsb, &rm_RISCV, &rm_IR, rm);
+      IRTemp a1 = newTemp(irsb, Ity_F32);
+      assign(irsb, a1, getFReg32(rs1));
+      if (rd != 0)
+         putIReg32(irsb, rd,
+                   binop(is_signed ? Iop_F32toI32S : Iop_F32toI32U,
+                         mkexpr(rm_IR), mkexpr(a1)));
+      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
+                          mkIRExprCCall(
+                             Ity_I32, 0 /*regparms*/,
+                             is_signed ? "riscv64g_calculate_fflags_fcvt_w_s"
+                                       : "riscv64g_calculate_fflags_fcvt_wu_s",
+                             is_signed ? riscv64g_calculate_fflags_fcvt_w_s
+                                       : riscv64g_calculate_fflags_fcvt_wu_s,
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+      DIP("fcvt.w%s.s %s, %s%s\n", is_signed ? "" : "u", nameIReg(rd),
+          nameFReg(rs1), nameRMOperand(rm));
+      return True;
+   }
+
    return False;
 }
 
