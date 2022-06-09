@@ -897,16 +897,23 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_FCVT_WU_S(dst, src));
          return dst;
       }
+      case Iop_CmpF32:
       case Iop_CmpF64: {
          HReg argL = iselFltExpr(env, e->Iex.Binop.arg1);
          HReg argR = iselFltExpr(env, e->Iex.Binop.arg2);
 
          HReg lt = newVRegI(env);
-         addInstr(env, RISCV64Instr_FLT_D(lt, argL, argR));
          HReg gt = newVRegI(env);
-         addInstr(env, RISCV64Instr_FLT_D(gt, argR, argL));
          HReg eq = newVRegI(env);
-         addInstr(env, RISCV64Instr_FEQ_D(eq, argL, argR));
+         if (e->Iex.Binop.op == Iop_CmpF32) {
+            addInstr(env, RISCV64Instr_FLT_S(lt, argL, argR));
+            addInstr(env, RISCV64Instr_FLT_S(gt, argR, argL));
+            addInstr(env, RISCV64Instr_FEQ_S(eq, argL, argR));
+         } else {
+            addInstr(env, RISCV64Instr_FLT_D(lt, argL, argR));
+            addInstr(env, RISCV64Instr_FLT_D(gt, argR, argL));
+            addInstr(env, RISCV64Instr_FEQ_D(eq, argL, argR));
+         }
 
          /*
             t0 = Ircr_UN

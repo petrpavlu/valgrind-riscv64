@@ -1130,13 +1130,88 @@ static void test_float32_shared(void)
    TESTINST_1_1_IF(4, "fmv.x.w zero, fa0", 0xffffffff3f800000, 0x00, zero, fa0);
 
    /* ----------------- feq.s rd, rs1, rs2 ------------------ */
-   /* TODO Implement. */
+   /* 0.0 == 1.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff3f800000, 0x00, a0, fa0, fa1);
+   /* 0.0 == 0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* 0.0 == -0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff80000000, 0x00, a0, fa0, fa1);
+   /* -0.0 == 0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff80000000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* INFINITY == INFINITY -> 1 */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff7f800000,
+                     0xffffffff7f800000, 0x00, a0, fa0, fa1);
+   /* 0.0 == qNAN -> 0 */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff7fc00000, 0x00, a0, fa0, fa1);
+   /* 0.0 == sNAN -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "feq.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff7fa00000, 0x00, a0, fa0, fa1);
+
+   /* sNAN == sNAN (rd=zero) -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "feq.s zero, fa0, fa1", 0xffffffff7fa00000,
+                     0xffffffff7fa00000, 0x00, zero, fa0, fa1);
 
    /* ----------------- flt.s rd, rs1, rs2 ------------------ */
-   /* TODO Implement. */
+   /* 0.0 < 0.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* 0.0 < 1.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff3f800000, 0x00, a0, fa0, fa1);
+   /* 0.0 < -0.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff80000000, 0x00, a0, fa0, fa1);
+   /* -0.0 < 0.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff80000000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* INFINITY < INFINITY -> 0 */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff7f800000,
+                     0xffffffff7f800000, 0x00, a0, fa0, fa1);
+   /* 0.0 < qNAN -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff7fc00000, 0x00, a0, fa0, fa1);
+   /* 0.0 < sNAN -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "flt.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff7fa00000, 0x00, a0, fa0, fa1);
+
+   /* sNAN < sNAN (rd=zero) -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "flt.s zero, fa0, fa1", 0xffffffff7fa00000,
+                     0xffffffff7fa00000, 0x00, zero, fa0, fa1);
 
    /* ----------------- fle.s rd, rs1, rs2 ------------------ */
-   /* TODO Implement. */
+   /* 1.0 < 0.0 -> 0 */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff3f800000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* 0.0 <= 0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* 0.0 <= 1.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff3f800000, 0x00, a0, fa0, fa1);
+   /* 0.0 <= -0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff80000000, 0x00, a0, fa0, fa1);
+   /* -0.0 <= 0.0 -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff80000000,
+                     0xffffffff00000000, 0x00, a0, fa0, fa1);
+   /* INFINITY <= INFINITY -> 1 */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff7f800000,
+                     0xffffffff7f800000, 0x00, a0, fa0, fa1);
+   /* 0.0 <= qNAN -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff00000000,
+                     0xffffffff7fc00000, 0x00, a0, fa0, fa1);
+   /* 0.0 <= sNAN -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "fle.s a0, fa0, fa1", 0xffffffff7fa00000,
+                     0x7ff4000000000000, 0x00, a0, fa0, fa1);
+
+   /* sNAN <= sNAN (rd=zero) -> 0 (NV) */
+   TESTINST_1_2_FCMP(4, "fle.s zero, fa0, fa1", 0xffffffff7fa00000,
+                     0xffffffff7fa00000, 0x00, zero, fa0, fa1);
 
    /* ------------------ fclass.s rd, rs1 ------------------- */
    /* TODO Implement. */

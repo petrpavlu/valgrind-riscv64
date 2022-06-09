@@ -1060,6 +1060,81 @@ fmv.x.w a0, fa0 ::
 fmv.x.w zero, fa0 ::
   inputs: fa0=0xffffffff3f800000, fcsr=0x00000000
   output: zero=0x0000000000000000, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff3f800000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff80000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff80000000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff7f800000, fa1=0xffffffff7f800000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff7fc00000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+feq.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff7fa00000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000010
+feq.s zero, fa0, fa1 ::
+  inputs: fa0=0xffffffff7fa00000, fa1=0xffffffff7fa00000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000010
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff3f800000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff80000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff80000000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff7f800000, fa1=0xffffffff7f800000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff7fc00000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000010
+flt.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff7fa00000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000010
+flt.s zero, fa0, fa1 ::
+  inputs: fa0=0xffffffff7fa00000, fa1=0xffffffff7fa00000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000010
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff3f800000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000000
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff3f800000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff80000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff80000000, fa1=0xffffffff00000000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff7f800000, fa1=0xffffffff7f800000, fcsr=0x00000000
+  output: a0=0x0000000000000001, fcsr=0x00000000
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff00000000, fa1=0xffffffff7fc00000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000010
+fle.s a0, fa0, fa1 ::
+  inputs: fa0=0xffffffff7fa00000, fa1=0x7ff4000000000000, fcsr=0x00000000
+  output: a0=0x0000000000000000, fcsr=0x00000010
+fle.s zero, fa0, fa1 ::
+  inputs: fa0=0xffffffff7fa00000, fa1=0xffffffff7fa00000, fcsr=0x00000000
+  output: zero=0x0000000000000000, fcsr=0x00000010
 fmv.w.x fa0, a0 ::
   inputs: a0=0xabcdef0123456789, fcsr=0x00000000
   output: fa0=0xffffffff23456789, fcsr=0x00000000

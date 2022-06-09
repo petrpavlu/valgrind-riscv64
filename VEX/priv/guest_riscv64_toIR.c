@@ -2443,6 +2443,76 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       return True;
    }
 
+   /* ------------- f{eq,lt,le}.s rd, rs1, rs2 -------------- */
+   if (INSN(6, 0) == 0b1010011 && INSN(31, 25) == 0b1010000) {
+      UInt rd  = INSN(11, 7);
+      UInt rm  = INSN(14, 12);
+      UInt rs1 = INSN(19, 15);
+      UInt rs2 = INSN(24, 20);
+      if (rm != 0b010 && rm != 0b001 && rm != 0b000) {
+         /* Invalid F{EQ,LT,LE}.S, fall through. */
+      } else {
+         IRTemp a1 = newTemp(irsb, Ity_F32);
+         IRTemp a2 = newTemp(irsb, Ity_F32);
+         assign(irsb, a1, getFReg32(rs1));
+         assign(irsb, a2, getFReg32(rs2));
+         if (rd != 0) {
+            IRTemp cmp = newTemp(irsb, Ity_I32);
+            assign(irsb, cmp, binop(Iop_CmpF32, mkexpr(a1), mkexpr(a2)));
+            IRTemp res = newTemp(irsb, Ity_I1);
+            switch (rm) {
+            case 0b010:
+               assign(irsb, res,
+                      binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ)));
+               break;
+            case 0b001:
+               assign(irsb, res,
+                      binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)));
+               break;
+            case 0b000:
+               assign(irsb, res,
+                      binop(Iop_Or1,
+                            binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_LT)),
+                            binop(Iop_CmpEQ32, mkexpr(cmp), mkU32(Ircr_EQ))));
+               break;
+            default:
+               vassert(0);
+            }
+            putIReg64(irsb, rd, unop(Iop_1Uto64, mkexpr(res)));
+         }
+         const HChar* name;
+         const HChar* helper_name;
+         void*        helper_addr;
+         switch (rm) {
+         case 0b010:
+            name        = "feq";
+            helper_name = "riscv64g_calculate_fflags_feq_s";
+            helper_addr = riscv64g_calculate_fflags_feq_s;
+            break;
+         case 0b001:
+            name        = "flt";
+            helper_name = "riscv64g_calculate_fflags_flt_s";
+            helper_addr = riscv64g_calculate_fflags_flt_s;
+            break;
+         case 0b000:
+            name        = "fle";
+            helper_name = "riscv64g_calculate_fflags_fle_s";
+            helper_addr = riscv64g_calculate_fflags_fle_s;
+            break;
+         default:
+            vassert(0);
+         }
+         putFCSR(irsb,
+                 binop(Iop_Or32, getFCSR(),
+                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                     helper_addr,
+                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
+         DIP("%s.s %s, %s, %s\n", name, nameIReg(rd), nameFReg(rs1),
+             nameFReg(rs2));
+         return True;
+      }
+   }
+
    /* ------------------- fmv.w.x rd, rs1 ------------------- */
    if (INSN(6, 0) == 0b1010011 && INSN(14, 12) == 0b000 &&
        INSN(24, 20) == 0b00000 && INSN(31, 25) == 0b1111000) {
