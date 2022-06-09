@@ -340,7 +340,8 @@ UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
    } while (0)
 #endif
 
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* CALLED FROM GENERATED CODE: CLEAN HELPERS */
+ULong riscv64g_calculate_fclass_s(Float a1) { CALCULATE_FCLASS("fclass.s"); }
 ULong riscv64g_calculate_fclass_d(Double a1) { CALCULATE_FCLASS("fclass.d"); }
 
 /*------------------------------------------------------------*/

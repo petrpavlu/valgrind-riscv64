@@ -120,6 +120,7 @@ UInt riscv64g_calculate_fflags_fmadd_d(Double a1,
 /* Calculate floating-point class. Returns a 64-bit value where bits 9:0
    contains the properties in the RISC-V FCLASS-instruction format and remaining
    upper bits are zero. */
+ULong riscv64g_calculate_fclass_s(Float a1);
 ULong riscv64g_calculate_fclass_d(Double a1);
 
 #endif /* ndef __VEX_GUEST_RISCV64_DEFS_H */
