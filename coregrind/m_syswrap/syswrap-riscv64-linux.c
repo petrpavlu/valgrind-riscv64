@@ -282,6 +282,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_openat, sys_openat),                         /* 56 */
    GENXY(__NR_close, sys_close),                           /* 57 */
    LINXY(__NR_pipe2, sys_pipe2),                           /* 59 */
+   GENXY(__NR_getdents64, sys_getdents64),                 /* 61 */
    LINX_(__NR_lseek, sys_lseek),                           /* 62 */
    GENXY(__NR_read, sys_read),                             /* 63 */
    GENX_(__NR_write, sys_write),                           /* 64 */
