@@ -1143,10 +1143,10 @@ typedef
 #define __SPECIAL_INSTRUCTION_PREAMBLE                            \
             ".option push\n\t"                                    \
             ".option norvc\n\t"                                   \
-            "srli a2, a2, 3\n\t"                                  \
-            "srli a2, a2, 13\n\t"                                 \
-            "srli a2, a2, 51\n\t"                                 \
-            "srli a2, a2, 61\n\t"
+            "srli zero, zero, 3\n\t"                              \
+            "srli zero, zero, 13\n\t"                             \
+            "srli zero, zero, 51\n\t"                             \
+            "srli zero, zero, 61\n\t"
 
 #define __SPECIAL_INSTRUCTION_POSTAMBLE                           \
             ".option pop\n\t"                                     \
