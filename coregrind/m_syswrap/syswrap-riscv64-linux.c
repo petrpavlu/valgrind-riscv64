@@ -28,28 +28,27 @@
 
 #if defined(VGP_riscv64_linux)
 
-#include "pub_core_basics.h"
-#include "pub_core_vki.h"
-#include "pub_core_vkiscnums.h"
-#include "pub_core_threadstate.h"
 #include "pub_core_aspacemgr.h"
-#include "pub_core_libcbase.h"
+#include "pub_core_basics.h"
 #include "pub_core_libcassert.h"
+#include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
 #include "pub_core_libcsignal.h"
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
-#include "pub_core_sigframe.h"      // For VG_(sigframe_destroy)()
+#include "pub_core_sigframe.h" // For VG_(sigframe_destroy)()
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
+#include "pub_core_threadstate.h"
 #include "pub_core_tooliface.h"
-#include "pub_core_transtab.h"      // VG_(discard_translations)
+#include "pub_core_transtab.h" // VG_(discard_translations)
+#include "pub_core_vki.h"
+#include "pub_core_vkiscnums.h"
 
+#include "priv_syswrap-generic.h" /* for decls of generic wrappers */
+#include "priv_syswrap-linux.h"   /* for decls of linux-ish wrappers */
 #include "priv_types_n_macros.h"
-#include "priv_syswrap-generic.h"   /* for decls of generic wrappers */
-#include "priv_syswrap-linux.h"     /* for decls of linux-ish wrappers */
 /* TODO Review includes. */
-
 
 /* ---------------------------------------------------------------------
    clone() handling
@@ -58,52 +57,49 @@
 /* Call f(arg1), but first switch stacks, using 'stack' as the new
    stack, and use 'retaddr' as f's return-to address.  Also, clear all
    the integer registers before entering f.*/
-__attribute__((noreturn))
-void ML_(call_on_new_stack_0_1) ( Addr stack,
-                                  Addr retaddr,
-                                  void (*f)(Word),
-                                  Word arg1 );
+__attribute__((noreturn)) void ML_(call_on_new_stack_0_1)(Addr stack,
+                                                          Addr retaddr,
+                                                          void (*f)(Word),
+                                                          Word arg1);
 //    a0 = stack
 //    a1 = retaddr
 //    a2 = f
 //    a3 = arg1
-asm(
-".text\n"
-".globl vgModuleLocal_call_on_new_stack_0_1\n"
-"vgModuleLocal_call_on_new_stack_0_1:\n"
-"   mv    sp, a0\n\t" /* Stack pointer */
-"   mv    ra, a1\n\t" /* Return address */
-"   mv    a0, a3\n\t" /* First argument */
-"   li    t0, 0\n\t"  /* Clear our GPRs */
-"   li    t1, 0\n\t"
-"   li    t2, 0\n\t"
-"   li    s0, 0\n\t"
-"   li    s1, 0\n\t"
-/* don't zero out a0, already set to the first argument */
-"   li    a1, 0\n\t"
-/* don't zero out a2, holds the target function f() */
-"   li    a3, 0\n\t"
-"   li    a4, 0\n\t"
-"   li    a5, 0\n\t"
-"   li    a6, 0\n\t"
-"   li    a7, 0\n\t"
-"   li    s2, 0\n\t"
-"   li    s3, 0\n\t"
-"   li    s4, 0\n\t"
-"   li    s5, 0\n\t"
-"   li    s6, 0\n\t"
-"   li    s7, 0\n\t"
-"   li    s8, 0\n\t"
-"   li    s9, 0\n\t"
-"   li    s10, 0\n\t"
-"   li    s11, 0\n\t"
-"   li    t3, 0\n\t"
-"   li    t4, 0\n\t"
-"   li    t5, 0\n\t"
-"   li    t6, 0\n\t"
-"   jr    a2\n\t"
-".previous\n"
-);
+asm(".text\n"
+    ".globl vgModuleLocal_call_on_new_stack_0_1\n"
+    "vgModuleLocal_call_on_new_stack_0_1:\n"
+    "   mv    sp, a0\n\t" /* Stack pointer */
+    "   mv    ra, a1\n\t" /* Return address */
+    "   mv    a0, a3\n\t" /* First argument */
+    "   li    t0, 0\n\t"  /* Clear our GPRs */
+    "   li    t1, 0\n\t"
+    "   li    t2, 0\n\t"
+    "   li    s0, 0\n\t"
+    "   li    s1, 0\n\t"
+    /* don't zero out a0, already set to the first argument */
+    "   li    a1, 0\n\t"
+    /* don't zero out a2, holds the target function f() */
+    "   li    a3, 0\n\t"
+    "   li    a4, 0\n\t"
+    "   li    a5, 0\n\t"
+    "   li    a6, 0\n\t"
+    "   li    a7, 0\n\t"
+    "   li    s2, 0\n\t"
+    "   li    s3, 0\n\t"
+    "   li    s4, 0\n\t"
+    "   li    s5, 0\n\t"
+    "   li    s6, 0\n\t"
+    "   li    s7, 0\n\t"
+    "   li    s8, 0\n\t"
+    "   li    s9, 0\n\t"
+    "   li    s10, 0\n\t"
+    "   li    s11, 0\n\t"
+    "   li    t3, 0\n\t"
+    "   li    t4, 0\n\t"
+    "   li    t5, 0\n\t"
+    "   li    t6, 0\n\t"
+    "   jr    a2\n\t"
+    ".previous\n");
 
 /* Perform a clone system call. Clone is strange because it has fork()-like
    return-twice semantics, so it needs special handling here.
@@ -133,46 +129,46 @@ asm(
 #define __NR_EXIT  VG_STRINGIFY(__NR_exit)
 
 /* See priv_syswrap-linux.h for arg profile. */
-asm(
-".text\n"
-".globl do_syscall_clone_riscv64_linux\n"
-"do_syscall_clone_riscv64_linux:\n"
-        // set up child stack, temporarily preserving fn and arg
-"       addi   a1, a1, -16\n"       // make space on stack
-"       sd     a3, 8(a1)\n"         // save arg
-"       sd     a0, 0(a1)\n"         // save fn
+asm(".text\n"
+    ".globl do_syscall_clone_riscv64_linux\n"
+    "do_syscall_clone_riscv64_linux:\n"
+    // set up child stack, temporarily preserving fn and arg
+    "       addi   a1, a1, -16\n" // make space on stack
+    "       sd     a3, 8(a1)\n"   // save arg
+    "       sd     a0, 0(a1)\n"   // save fn
 
-        // setup syscall
-"       li     a7, "__NR_CLONE"\n"  // syscall number
-"       mv     a0, a2\n"            // syscall arg1: flags
-"       mv     a1, a1\n"            // syscall arg2: child_stack
-"       mv     a2, a5\n"            // syscall arg3: parent_tid
-"       mv     a3, a6\n"            // syscall arg4: tls_ptr
-"       mv     a4, a4\n"            // syscall arg5: child_tid
+    // setup syscall
+    "       li     a7, "__NR_CLONE
+    "\n"                     // syscall number
+    "       mv     a0, a2\n" // syscall arg1: flags
+    "       mv     a1, a1\n" // syscall arg2: child_stack
+    "       mv     a2, a5\n" // syscall arg3: parent_tid
+    "       mv     a3, a6\n" // syscall arg4: tls_ptr
+    "       mv     a4, a4\n" // syscall arg5: child_tid
 
-"       ecall\n"                    // clone()
+    "       ecall\n" // clone()
 
-"       bnez   a0, 1f\n"            // child if retval == 0
+    "       bnez   a0, 1f\n" // child if retval == 0
 
-        // CHILD - call thread function
-"       ld     a1, 0(sp)\n"         // pop fn
-"       ld     a0, 8(sp)\n"         // pop fn arg1: arg
-"       addi   sp, sp, 16\n"
-"       jalr   a1\n"                // call fn
+    // CHILD - call thread function
+    "       ld     a1, 0(sp)\n" // pop fn
+    "       ld     a0, 8(sp)\n" // pop fn arg1: arg
+    "       addi   sp, sp, 16\n"
+    "       jalr   a1\n" // call fn
 
-        // exit with result
-"       mv     a0, a0\n"            // arg1: return value from fn
-"       li     a7, "__NR_EXIT"\n"
+    // exit with result
+    "       mv     a0, a0\n" // arg1: return value from fn
+    "       li     a7, "__NR_EXIT
+    "\n"
 
-"       ecall\n"
+    "       ecall\n"
 
-        // Exit returned?!
-"       unimp\n"
+    // Exit returned?!
+    "       unimp\n"
 
-"1:\n"  // PARENT or ERROR.  a0 holds return value from the clone syscall.
-"       ret\n"
-".previous\n"
-);
+    "1:\n" // PARENT or ERROR.  a0 holds return value from the clone syscall.
+    "       ret\n"
+    ".previous\n");
 
 #undef __NR_CLONE
 #undef __NR_EXIT
@@ -183,9 +179,7 @@ asm(
 
 /* riscv64 doesn't have any architecture specific thread stuff that needs to be
    cleaned up. */
-void VG_(cleanup_thread) ( ThreadArchState* arch )
-{
-}
+void VG_(cleanup_thread)(ThreadArchState* arch) {}
 
 /* ---------------------------------------------------------------------
    PRE/POST wrappers for riscv64/Linux-specific syscalls
