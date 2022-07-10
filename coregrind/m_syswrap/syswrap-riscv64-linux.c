@@ -314,6 +314,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_rt_sigqueueinfo, sys_rt_sigqueueinfo),       /* 138 */
    PLAX_(__NR_rt_sigreturn, sys_rt_sigreturn),             /* 139 */
    GENX_(__NR_getpgid, sys_getpgid),                       /* 155 */
+   GENX_(__NR_setsid, sys_setsid),                         /* 157 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
    GENX_(__NR_umask, sys_umask),                           /* 166 */
    LINXY(__NR_prctl, sys_prctl),                           /* 167 */

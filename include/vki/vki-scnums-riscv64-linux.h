@@ -94,6 +94,7 @@
 #define __NR_rt_sigqueueinfo       138
 #define __NR_rt_sigreturn          139
 #define __NR_getpgid               155
+#define __NR_setsid                157
 #define __NR_getgroups             158
 #define __NR_uname                 160
 #define __NR_getrusage             165
