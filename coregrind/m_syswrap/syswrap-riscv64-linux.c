@@ -279,6 +279,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_faccessat, sys_faccessat),                   /* 48 */
    GENX_(__NR_chdir, sys_chdir),                           /* 49 */
    LINX_(__NR_fchmodat, sys_fchmodat),                     /* 53 */
+   LINX_(__NR_fchownat, sys_fchownat),                     /* 54 */
    LINXY(__NR_openat, sys_openat),                         /* 56 */
    GENXY(__NR_close, sys_close),                           /* 57 */
    LINXY(__NR_pipe2, sys_pipe2),                           /* 59 */
@@ -320,6 +321,7 @@ static SyscallTableEntry syscall_main_table[] = {
    PLAX_(__NR_rt_sigreturn, sys_rt_sigreturn),             /* 139 */
    GENX_(__NR_getpgid, sys_getpgid),                       /* 155 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
+   GENX_(__NR_umask, sys_umask),                           /* 166 */
    LINXY(__NR_prctl, sys_prctl),                           /* 167 */
    GENX_(__NR_getpid, sys_getpid),                         /* 172 */
    GENX_(__NR_getppid, sys_getppid),                       /* 173 */
@@ -366,6 +368,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_prlimit64, sys_prlimit64),                   /* 261 */
    LINXY(__NR_process_vm_readv, sys_process_vm_readv),     /* 270 */
    LINX_(__NR_process_vm_writev, sys_process_vm_writev),   /* 271 */
+   LINX_(__NR_renameat2, sys_renameat2),                   /* 276 */
    LINXY(__NR_getrandom, sys_getrandom),                   /* 278 */
    LINXY(__NR_memfd_create, sys_memfd_create),             /* 279 */
    LINX_(__NR_execveat, sys_execveat),                     /* 281 */
