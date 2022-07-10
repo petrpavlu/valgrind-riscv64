@@ -35,9 +35,9 @@
    meaning for supporting Valgrind. A special instruction is flagged by
    a 16-byte preamble:
 
-      00365613 00d65613 03365613 03d65613
-      (srli a2, a2, 3;   srli a2, a2, 13
-       srli a2, a2, 51;  srli a2, a2, 61)
+      00305013 00d05013 03305013 03d05013
+      (srli zero, zero, 3;   srli zero, zero, 13
+       srli zero, zero, 51;  srli zero, zero, 61)
 
    Following that, one of the following 4 are allowed (standard interpretation
    in parentheses):
@@ -3124,15 +3124,15 @@ static Bool disInstr_RISCV64_WRK(/*MB_OUT*/ DisResult* dres,
    {
       const UChar* code = guest_instr;
       /* Spot the 16-byte preamble:
-            00365613   srli a2, a2, 3
-            00d65613   srli a2, a2, 13
-            03365613   srli a2, a2, 51
-            03d65613   srli a2, a2, 61
+            00305013   srli zero, zero, 3
+            00d05013   srli zero, zero, 13
+            03305013   srli zero, zero, 51
+            03d05013   srli zero, zero, 61
       */
-      UInt word1 = 0x00365613;
-      UInt word2 = 0x00d65613;
-      UInt word3 = 0x03365613;
-      UInt word4 = 0x03d65613;
+      UInt word1 = 0x00305013;
+      UInt word2 = 0x00d05013;
+      UInt word3 = 0x03305013;
+      UInt word4 = 0x03d05013;
       if (getUIntLittleEndianly(code + 0) == word1 &&
           getUIntLittleEndianly(code + 4) == word2 &&
           getUIntLittleEndianly(code + 8) == word3 &&
