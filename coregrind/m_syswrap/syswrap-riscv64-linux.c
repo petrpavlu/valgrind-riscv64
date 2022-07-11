@@ -245,6 +245,70 @@ PRE(sys_riscv_flush_icache)
    SET_STATUS_Success(0);
 }
 
+// ARG3 is only used for pointers into the traced process's address
+// space and for offsets into the traced process's struct
+// user_regs_struct. It is never a pointer into this process's memory
+// space, and we should therefore not check anything it points to.
+PRE(sys_ptrace)
+{
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", (Word)ARG1, (Word)ARG2, ARG3,
+         ARG4);
+   PRE_REG_READ4(int, "ptrace", long, request, long, pid, long, addr, long,
+                 data);
+   switch (ARG1) {
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      PRE_MEM_WRITE("ptrace(peek)", ARG4, sizeof(long));
+      break;
+   case VKI_PTRACE_GETEVENTMSG:
+      PRE_MEM_WRITE("ptrace(geteventmsg)", ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      PRE_MEM_WRITE("ptrace(getsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_SETSIGINFO:
+      PRE_MEM_READ("ptrace(setsiginfo)", ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_PRE_getregset)(tid, ARG3, ARG4);
+      break;
+   case VKI_PTRACE_SETREGSET:
+      ML_(linux_PRE_setregset)(tid, ARG3, ARG4);
+      break;
+   default:
+      break;
+   }
+}
+
+POST(sys_ptrace)
+{
+   switch (ARG1) {
+   case VKI_PTRACE_TRACEME:
+      ML_(linux_POST_traceme)(tid);
+      break;
+   case VKI_PTRACE_PEEKTEXT:
+   case VKI_PTRACE_PEEKDATA:
+   case VKI_PTRACE_PEEKUSR:
+      POST_MEM_WRITE(ARG4, sizeof(long));
+      break;
+   case VKI_PTRACE_GETEVENTMSG:
+      POST_MEM_WRITE(ARG4, sizeof(unsigned long));
+      break;
+   case VKI_PTRACE_GETSIGINFO:
+      /* XXX: This is a simplification. Different parts of the
+       * siginfo_t are valid depending on the type of signal.
+       */
+      POST_MEM_WRITE(ARG4, sizeof(vki_siginfo_t));
+      break;
+   case VKI_PTRACE_GETREGSET:
+      ML_(linux_POST_getregset)(tid, ARG3, ARG4);
+      break;
+   default:
+      break;
+   }
+}
+
 #undef PRE
 #undef POST
 
@@ -283,6 +347,8 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_write, sys_write),                           /* 64 */
    GENXY(__NR_readv, sys_readv),                           /* 65 */
    GENX_(__NR_writev, sys_writev),                         /* 66 */
+   GENXY(__NR_pread64, sys_pread64),                       /* 67 */
+   GENX_(__NR_pwrite64, sys_pwrite64),                     /* 68 */
    LINXY(__NR_preadv, sys_preadv),                         /* 69 */
    LINX_(__NR_pwritev, sys_pwritev),                       /* 70 */
    LINXY(__NR_pselect6, sys_pselect6),                     /* 72 */
@@ -290,6 +356,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_signalfd4, sys_signalfd4),                   /* 74 */
    LINX_(__NR_readlinkat, sys_readlinkat),                 /* 78 */
    LINXY(__NR_newfstatat, sys_newfstatat),                 /* 79 */
+   GENXY(__NR_fstat, sys_newfstat),                        /* 80 */
    LINXY(__NR_timerfd_create, sys_timerfd_create),         /* 85 */
    LINXY(__NR_timerfd_settime, sys_timerfd_settime),       /* 86 */
    LINX_(__NR_utimensat, sys_utimensat),                   /* 88 */
@@ -299,10 +366,12 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_set_tid_address, sys_set_tid_address),       /* 96 */
    LINXY(__NR_futex, sys_futex),                           /* 98 */
    LINX_(__NR_set_robust_list, sys_set_robust_list),       /* 99 */
+   GENXY(__NR_getitimer, sys_getitimer),                   /* 102 */
    GENXY(__NR_setitimer, sys_setitimer),                   /* 103 */
    LINXY(__NR_clock_gettime, sys_clock_gettime),           /* 113 */
    LINXY(__NR_clock_nanosleep, sys_clock_nanosleep),       /* 115 */
    LINXY(__NR_syslog, sys_syslog),                         /* 116 */
+   PLAXY(__NR_ptrace, sys_ptrace),                         /* 117 */
    LINX_(__NR_sched_yield, sys_sched_yield),               /* 124 */
    GENX_(__NR_kill, sys_kill),                             /* 129 */
    LINX_(__NR_tgkill, sys_tgkill),                         /* 131 */
@@ -313,8 +382,22 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_rt_sigtimedwait, sys_rt_sigtimedwait),       /* 137 */
    LINXY(__NR_rt_sigqueueinfo, sys_rt_sigqueueinfo),       /* 138 */
    PLAX_(__NR_rt_sigreturn, sys_rt_sigreturn),             /* 139 */
+   GENX_(__NR_setregid, sys_setregid),                     /* 143 */
+   GENX_(__NR_setgid, sys_setgid),                         /* 144 */
+   GENX_(__NR_setreuid, sys_setreuid),                     /* 145 */
+   GENX_(__NR_setuid, sys_setuid),                         /* 146 */
+   LINX_(__NR_setresuid, sys_setresuid),                   /* 147 */
+   LINXY(__NR_getresuid, sys_getresuid),                   /* 148 */
+   LINX_(__NR_setresgid, sys_setresgid),                   /* 149 */
+   LINXY(__NR_getresgid, sys_getresgid),                   /* 150 */
+   LINX_(__NR_setfsuid, sys_setfsuid),                     /* 151 */
+   LINX_(__NR_setfsgid, sys_setfsgid),                     /* 152 */
+   GENXY(__NR_times, sys_times),                           /* 153 */
+   GENX_(__NR_setpgid, sys_setpgid),                       /* 154 */
    GENX_(__NR_getpgid, sys_getpgid),                       /* 155 */
    GENX_(__NR_setsid, sys_setsid),                         /* 157 */
+   GENXY(__NR_getgroups, sys_getgroups),                   /* 158 */
+   GENX_(__NR_setgroups, sys_setgroups),                   /* 159 */
    GENXY(__NR_uname, sys_newuname),                        /* 160 */
    GENX_(__NR_umask, sys_umask),                           /* 166 */
    LINXY(__NR_prctl, sys_prctl),                           /* 167 */
@@ -357,6 +440,8 @@ static SyscallTableEntry syscall_main_table[] = {
    GENX_(__NR_execve, sys_execve),                         /* 221 */
    PLAX_(__NR_mmap, sys_mmap),                             /* 222 */
    GENXY(__NR_mprotect, sys_mprotect),                     /* 226 */
+   GENX_(__NR_msync, sys_msync),                           /* 227 */
+   GENXY(__NR_mincore, sys_mincore),                       /* 232 */
    GENX_(__NR_madvise, sys_madvise),                       /* 233 */
    PLAX_(__NR_riscv_flush_icache, sys_riscv_flush_icache), /* 259 */
    GENXY(__NR_wait4, sys_wait4),                           /* 260 */
