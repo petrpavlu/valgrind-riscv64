@@ -1240,10 +1240,106 @@ static void test_float32_shared(void)
                    fa0);
 
    /* ---------------- fcvt.s.w rd, rs1, rm ----------------- */
-   /* TODO Implement. */
+   /* 0 -> 0.0 */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000000000000, 0x00, fa0, a0);
+   /* 2**31-128 -> nextafterf(2**31, 0.0) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x000000007fffff80, 0x00, fa0, a0);
+   /* 2**31-1 aka INT_MAX -> 2**31 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x000000007fffffff, 0x00, fa0, a0);
+   /* -2**31 aka INT_MIN -> -2**31 */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000080000000, 0x00, fa0, a0);
+
+   /* 2**24+1 (RNE) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rne", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* 2**24+3 (RNE) -> 2**24+4 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rne", 0x0000000001000003, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RTZ) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rtz", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* -2**24-1 (RTZ) -> -2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rtz", 0xfffffffffeffffff, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RDN) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rdn", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* -2**24-1 (RDN) -> -2**24-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rdn", 0xfffffffffeffffff, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RUP) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rup", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* -2**24-1 (RUP) -> -2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rup", 0xfffffffffeffffff, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RMM) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rmm", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* -2**24-1 (RMM) -> -2**24-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0, rmm", 0xfffffffffeffffff, 0x00, fa0,
+                   a0);
+
+   /* 2**24+1 (DYN-RNE) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000001000001, 0x00, fa0, a0);
+   /* 2**24+3 (DYN-RNE) -> 2**24+4 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000001000003, 0x00, fa0, a0);
+   /* 2**24+1 (DYN-RTZ) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000001000001, 0x20, fa0, a0);
+   /* -2**24-1 (DYN-RTZ) -> -2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0xfffffffffeffffff, 0x20, fa0, a0);
+   /* 2**24+1 (DYN-RDN) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000001000001, 0x40, fa0, a0);
+   /* -2**24-1 (DYN-RDN) -> -2**24-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0xfffffffffeffffff, 0x40, fa0, a0);
+   /* 2**24+1 (DYN-RUP) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000001000001, 0x60, fa0, a0);
+   /* -2**24-1 (DYN-RUP) -> -2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0xfffffffffeffffff, 0x60, fa0, a0);
+   /* 2**24+1 (DYN-RMM) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0x0000000001000001, 0x80, fa0, a0);
+   /* -2**24-1 (DYN-RMM) -> -2**24-2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.w fa0, a0", 0xfffffffffeffffff, 0x80, fa0, a0);
 
    /* ---------------- fcvt.s.wu rd, rs1, rm ---------------- */
-   /* TODO Implement. */
+   /* 0 -> 0.0 */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000000000000, 0x00, fa0, a0);
+   /* 2**32-256 -> nextafterf(2**32, 0.0) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x00000000ffffff00, 0x00, fa0, a0);
+   /* 2**32-1 aka UINT_MAX -> 2**32 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x00000000ffffffff, 0x00, fa0, a0);
+
+   /* 2**24+1 (RNE) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0, rne", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* 2**24+3 (RNE) -> 2**24+4 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0, rne", 0x0000000001000003, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RTZ) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0, rtz", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RDN) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0, rdn", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RUP) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0, rup", 0x0000000001000001, 0x00, fa0,
+                   a0);
+   /* 2**24+1 (RMM) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0, rmm", 0x0000000001000001, 0x00, fa0,
+                   a0);
+
+   /* 2**24+1 (DYN-RNE) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000001000001, 0x00, fa0, a0);
+   /* 2**24+3 (DYN-RNE) -> 2**24+4 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000001000003, 0x00, fa0, a0);
+   /* 2**24+1 (DYN-RTZ) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000001000001, 0x20, fa0, a0);
+   /* 2**24+1 (DYN-RDN) -> 2**24 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000001000001, 0x40, fa0, a0);
+   /* 2**24+1 (DYN-RUP) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000001000001, 0x60, fa0, a0);
+   /* 2**24+1 (DYN-RMM) -> 2**24+2 (NX) */
+   TESTINST_1_1_FI(4, "fcvt.s.wu fa0, a0", 0x0000000001000001, 0x80, fa0, a0);
 
    /* ------------------- fmv.w.x rd, rs1 ------------------- */
    TESTINST_1_1_FI(4, "fmv.w.x fa0, a0", 0xabcdef0123456789, 0x00, fa0, a0);

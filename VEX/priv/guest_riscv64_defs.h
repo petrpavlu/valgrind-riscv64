@@ -81,6 +81,8 @@ extern VexGuestLayout riscv64guest_layout;
 UInt riscv64g_calculate_fflags_fsqrt_s(Float a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_w_s(Float a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_wu_s(Float a1, UInt rm_RISCV);
+UInt riscv64g_calculate_fflags_fcvt_s_w(UInt a1, UInt rm_RISCV);
+UInt riscv64g_calculate_fflags_fcvt_s_wu(UInt a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fsqrt_d(Double a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_s_d(Double a1, UInt rm_RISCV);
 UInt riscv64g_calculate_fflags_fcvt_w_d(Double a1, UInt rm_RISCV);
