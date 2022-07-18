@@ -132,6 +132,14 @@ UInt riscv64g_calculate_fflags_fcvt_s_wu(UInt a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_FI("fcvt.s.wu");
 }
+UInt riscv64g_calculate_fflags_fcvt_l_s(Float a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_IF("fcvt.l.s");
+}
+UInt riscv64g_calculate_fflags_fcvt_lu_s(Float a1, UInt rm_RISCV)
+{
+   CALCULATE_FFLAGS_UNARY64_IF("fcvt.lu.s");
+}
 UInt riscv64g_calculate_fflags_fsqrt_d(Double a1, UInt rm_RISCV)
 {
    CALCULATE_FFLAGS_UNARY64_F("fsqrt.d");
