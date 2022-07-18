@@ -1459,6 +1459,20 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_FCVT_S_WU(dst, src));
          return dst;
       }
+      case Iop_I64StoF32: {
+         HReg dst = newVRegF(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
+         addInstr(env, RISCV64Instr_FCVT_S_L(dst, src));
+         return dst;
+      }
+      case Iop_I64UtoF32: {
+         HReg dst = newVRegF(env);
+         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
+         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
+         addInstr(env, RISCV64Instr_FCVT_S_LU(dst, src));
+         return dst;
+      }
       case Iop_I64StoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
