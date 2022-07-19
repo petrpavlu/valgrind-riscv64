@@ -50,6 +50,7 @@
 #define __NR_faccessat 48
 #define __NR_chdir 49
 #define __NR_fchmodat 53
+#define __NR_fchownat 54
 #define __NR_openat 56
 #define __NR_close 57
 #define __NR_pipe2 59
@@ -60,6 +61,7 @@
 #define __NR_readv 65
 #define __NR_writev 66
 #define __NR_pread64 67
+#define __NR_pwrite64 68
 #define __NR_preadv 69
 #define __NR_pwritev 70
 #define __NR_pselect6 72
@@ -67,6 +69,7 @@
 #define __NR_signalfd4 74
 #define __NR_readlinkat 78
 #define __NR3264_fstatat 79
+#define __NR3264_fstat 80
 #define __NR_timerfd_create 85
 #define __NR_timerfd_settime 86
 #define __NR_utimensat 88
@@ -76,6 +79,7 @@
 #define __NR_set_tid_address 96
 #define __NR_futex 98
 #define __NR_set_robust_list 99
+#define __NR_getitimer 102
 #define __NR_setitimer 103
 #define __NR_clock_gettime 113
 #define __NR_clock_nanosleep 115
@@ -92,10 +96,25 @@
 #define __NR_rt_sigtimedwait 137
 #define __NR_rt_sigqueueinfo 138
 #define __NR_rt_sigreturn 139
+#define __NR_setregid 143
+#define __NR_setgid 144
+#define __NR_setreuid 145
+#define __NR_setuid 146
+#define __NR_setresuid 147
+#define __NR_getresuid 148
+#define __NR_setresgid 149
+#define __NR_getresgid 150
+#define __NR_setfsuid 151
+#define __NR_setfsgid 152
+#define __NR_times 153
+#define __NR_setpgid 154
 #define __NR_getpgid 155
+#define __NR_setsid 157
 #define __NR_getgroups 158
+#define __NR_setgroups 159
 #define __NR_uname 160
 #define __NR_getrusage 165
+#define __NR_umask 166
 #define __NR_prctl 167
 #define __NR_gettimeofday 169
 #define __NR_getpid 172
@@ -139,6 +158,8 @@
 #define __NR_execve 221
 #define __NR3264_mmap 222
 #define __NR_mprotect 226
+#define __NR_msync 227
+#define __NR_mincore 232
 #define __NR_madvise 233
 #define __NR_arch_specific_syscall 244
 #define __NR_wait4 260
@@ -158,6 +179,7 @@
 #define __NR_fcntl __NR3264_fcntl
 #define __NR_lseek __NR3264_lseek
 #define __NR_newfstatat __NR3264_fstatat
+#define __NR_fstat __NR3264_fstat
 #define __NR_mmap __NR3264_mmap
 
 #define __NR_riscv_flush_icache (__NR_arch_specific_syscall + 15)
