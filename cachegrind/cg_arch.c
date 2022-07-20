@@ -477,11 +477,10 @@ configure_caches(cache_t *I1c, cache_t *D1c, cache_t *LLc,
 
 #elif defined(VGA_riscv64)
 
-   /* TODO Implement. */
-   *I1c = (cache_t) {  16384, 4, 64 };
-   *D1c = (cache_t) {  16384, 4, 64 };
-   *LLc = (cache_t) { 262144, 8, 64 };
-   tl_assert(0);
+   // Default cache configuration is SiFive FU740-C000 (HiFive Unmatched)
+   *I1c = (cache_t) {   32768,  4, 64 };
+   *D1c = (cache_t) {   32768,  8, 64 };
+   *LLc = (cache_t) { 2097152, 16, 64 };
 
 #else
 
