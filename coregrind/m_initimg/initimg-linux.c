@@ -1317,10 +1317,15 @@ void VG_(ii_finalise_image)( IIFinaliseImageInfo iifii )
    /* Mark all registers as undefined ... */
    VG_(memset)(&arch->vex_shadow1, 0xFF, sizeof(VexGuestRISCV64State));
    VG_(memset)(&arch->vex_shadow2, 0x00, sizeof(VexGuestRISCV64State));
+   /* ... except x2 (sp), pc and fcsr. */
+   arch->vex_shadow1.guest_x2 = 0;
+   arch->vex_shadow1.guest_pc = 0;
+   arch->vex_shadow1.guest_fcsr = 0;
 
+   /* Put essential stuff into the new state. */
    arch->vex.guest_x2 = iifii.initial_client_SP;
    arch->vex.guest_pc = iifii.initial_client_IP;
-   /* Initialize FCSR in the same way as done by the Linux kernel:
+   /* Initialize fcsr in the same way as done by the Linux kernel:
       accrued exception flags cleared; round to nearest, ties to even. */
    arch->vex.guest_fcsr = 0;
 
