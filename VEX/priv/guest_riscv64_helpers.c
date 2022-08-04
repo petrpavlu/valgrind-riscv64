@@ -328,7 +328,7 @@ UInt riscv64g_calculate_fflags_fle_d(Double a1, Double a2)
    } while (0)
 #endif
 
-/* CALLED FROM GENERATED CODE: CLEAN HELPER */
+/* CALLED FROM GENERATED CODE: CLEAN HELPERS */
 UInt riscv64g_calculate_fflags_fmadd_s(Float a1,
                                        Float a2,
                                        Float a3,

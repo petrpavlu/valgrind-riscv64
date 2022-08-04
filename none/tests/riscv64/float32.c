@@ -1075,7 +1075,7 @@ static void test_float32_shared(void)
    TESTINST_1_1_IF(4, "fcvt.wu.s a0, fa0", 0xffffffff7f800000, 0x00, a0, fa0);
    /* qNAN -> 2**32-1 aka UINT_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.wu.s a0, fa0", 0xffffffff7fc00000, 0x00, a0, fa0);
-   /* nextafter(2**32, 0.0) -> 2**32-256 */
+   /* nextafterf(2**32, 0.0) -> 2**32-256 */
    TESTINST_1_1_IF(4, "fcvt.wu.s a0, fa0", 0xffffffff4f7fffff, 0x00, a0, fa0);
    /* 2**32 -> 2**32-1 aka UINT_MAX (NV) */
    TESTINST_1_1_IF(4, "fcvt.wu.s a0, fa0", 0xffffffff4f800000, 0x00, a0, fa0);
