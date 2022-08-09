@@ -1212,6 +1212,7 @@ Bool VG_(is_soname_ld_so) (const HChar *soname)
    if (VG_STREQ(soname, VG_U_LD_LINUX_AARCH64_SO_1)) return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_ARMHF_SO_3))   return True;
    if (VG_STREQ(soname, VG_U_LD_LINUX_MIPSN8_S0_1))  return True;
+   if (VG_STREQ(soname, VG_U_LD_LINUX_RISCV64_SO_1)) return True;
 #  elif defined(VGO_freebsd)
    if (VG_STREQ(soname, VG_U_LD_ELF_SO_1))   return True;
    if (VG_STREQ(soname, VG_U_LD_ELF32_SO_1))   return True;
