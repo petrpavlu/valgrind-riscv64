@@ -1,15 +1,16 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = \
-	filter_stderr
+dist_noinst_SCRIPTS = filter_stderr
 
 noinst_HEADERS = scalar.h
 
 EXTRA_DIST = \
+	context_integer.stdout.exp context_integer.stderr.exp context_integer.vgtest \
 	scalar.stderr.exp scalar.vgtest
 
 check_PROGRAMS = \
+	context_integer \
 	scalar
 
 AM_CFLAGS    += @FLAG_M64@

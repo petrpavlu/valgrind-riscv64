@@ -1061,6 +1061,7 @@
 /memcheck/tests/riscv64-linux/.deps
 /memcheck/tests/riscv64-linux/Makefile
 /memcheck/tests/riscv64-linux/Makefile.in
+/memcheck/tests/riscv64-linux/context_integer
 /memcheck/tests/riscv64-linux/scalar
 
 # /memcheck/tests/common/
