@@ -134,7 +134,45 @@ static void synth_ucontext(ThreadState*         tst,
    IREG_TO_CTX(t6, x31);
 #undef IREG_TO_CTX
 
-   /* TODO Save floating point registers. */
+   /* Save floating point registers. */
+#define FREG_TO_CTX(ureg, vreg, type)                                          \
+   sc->sc_fpregs.d.ureg = tst->arch.vex.guest_##vreg;                          \
+   VG_TRACK(copy_reg_to_mem, Vg_CoreSignal, tst->tid, OFFSET_riscv64_##vreg,   \
+            (Addr)&sc->sc_fpregs.d.ureg, sizeof(type));
+   FREG_TO_CTX(f[0], f0, UWord);
+   FREG_TO_CTX(f[1], f1, UWord);
+   FREG_TO_CTX(f[2], f2, UWord);
+   FREG_TO_CTX(f[3], f3, UWord);
+   FREG_TO_CTX(f[4], f4, UWord);
+   FREG_TO_CTX(f[5], f5, UWord);
+   FREG_TO_CTX(f[6], f6, UWord);
+   FREG_TO_CTX(f[7], f7, UWord);
+   FREG_TO_CTX(f[8], f8, UWord);
+   FREG_TO_CTX(f[9], f9, UWord);
+   FREG_TO_CTX(f[10], f10, UWord);
+   FREG_TO_CTX(f[11], f11, UWord);
+   FREG_TO_CTX(f[12], f12, UWord);
+   FREG_TO_CTX(f[13], f13, UWord);
+   FREG_TO_CTX(f[14], f14, UWord);
+   FREG_TO_CTX(f[15], f15, UWord);
+   FREG_TO_CTX(f[16], f16, UWord);
+   FREG_TO_CTX(f[17], f17, UWord);
+   FREG_TO_CTX(f[18], f18, UWord);
+   FREG_TO_CTX(f[19], f19, UWord);
+   FREG_TO_CTX(f[20], f20, UWord);
+   FREG_TO_CTX(f[21], f21, UWord);
+   FREG_TO_CTX(f[22], f22, UWord);
+   FREG_TO_CTX(f[23], f23, UWord);
+   FREG_TO_CTX(f[24], f24, UWord);
+   FREG_TO_CTX(f[25], f25, UWord);
+   FREG_TO_CTX(f[26], f26, UWord);
+   FREG_TO_CTX(f[27], f27, UWord);
+   FREG_TO_CTX(f[28], f28, UWord);
+   FREG_TO_CTX(f[29], f29, UWord);
+   FREG_TO_CTX(f[30], f30, UWord);
+   FREG_TO_CTX(f[31], f31, UWord);
+   FREG_TO_CTX(fcsr, fcsr, UInt);
+#undef FREG_TO_CTX
 }
 
 /* Build the Valgrind-specific part of a signal frame. */
@@ -302,7 +340,45 @@ static void restore_ucontext(ThreadState* tst, struct vki_ucontext* uc)
    IREG_FROM_CTX(t6, x31);
 #undef IREG_FROM_CTX
 
-   /* TODO Restore floating point registers. */
+   /* Restore floating point registers. */
+#define FREG_FROM_CTX(ureg, vreg, type)                                           \
+   tst->arch.vex.guest_##vreg = sc->sc_fpregs.d.ureg;                             \
+   VG_TRACK(copy_mem_to_reg, Vg_CoreSignal, tst->tid, (Addr)&sc->sc_fpregs.d.ureg,\
+            OFFSET_riscv64_##vreg, sizeof(type));
+   FREG_FROM_CTX(f[0], f0, UWord);
+   FREG_FROM_CTX(f[1], f1, UWord);
+   FREG_FROM_CTX(f[2], f2, UWord);
+   FREG_FROM_CTX(f[3], f3, UWord);
+   FREG_FROM_CTX(f[4], f4, UWord);
+   FREG_FROM_CTX(f[5], f5, UWord);
+   FREG_FROM_CTX(f[6], f6, UWord);
+   FREG_FROM_CTX(f[7], f7, UWord);
+   FREG_FROM_CTX(f[8], f8, UWord);
+   FREG_FROM_CTX(f[9], f9, UWord);
+   FREG_FROM_CTX(f[10], f10, UWord);
+   FREG_FROM_CTX(f[11], f11, UWord);
+   FREG_FROM_CTX(f[12], f12, UWord);
+   FREG_FROM_CTX(f[13], f13, UWord);
+   FREG_FROM_CTX(f[14], f14, UWord);
+   FREG_FROM_CTX(f[15], f15, UWord);
+   FREG_FROM_CTX(f[16], f16, UWord);
+   FREG_FROM_CTX(f[17], f17, UWord);
+   FREG_FROM_CTX(f[18], f18, UWord);
+   FREG_FROM_CTX(f[19], f19, UWord);
+   FREG_FROM_CTX(f[20], f20, UWord);
+   FREG_FROM_CTX(f[21], f21, UWord);
+   FREG_FROM_CTX(f[22], f22, UWord);
+   FREG_FROM_CTX(f[23], f23, UWord);
+   FREG_FROM_CTX(f[24], f24, UWord);
+   FREG_FROM_CTX(f[25], f25, UWord);
+   FREG_FROM_CTX(f[26], f26, UWord);
+   FREG_FROM_CTX(f[27], f27, UWord);
+   FREG_FROM_CTX(f[28], f28, UWord);
+   FREG_FROM_CTX(f[29], f29, UWord);
+   FREG_FROM_CTX(f[30], f30, UWord);
+   FREG_FROM_CTX(f[31], f31, UWord);
+   FREG_FROM_CTX(fcsr, fcsr, UInt);
+#undef FREG_FROM_CTX
 }
 
 static void
