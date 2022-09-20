@@ -63,9 +63,9 @@ struct vg_sigframe {
 
 /* Complete signal frame. */
 struct rt_sigframe {
-   struct vki_siginfo info;
+   struct vki_siginfo  info;
    struct vki_ucontext uc;
-   struct vg_sigframe vg;
+   struct vg_sigframe  vg;
 };
 
 /*------------------------------------------------------------*/
@@ -279,9 +279,10 @@ static Bool
 restore_vg_sigframe(ThreadState* tst, struct vg_sigframe* frame, Int* sigNo)
 {
    if (frame->magicPI != 0x31415927 || frame->magicE != 0x27182818) {
-      VG_(message)(Vg_UserMsg, "Thread %u return signal frame "
-                               "corrupted.  Killing process.\n",
-                   tst->tid);
+      VG_(message)(
+         Vg_UserMsg,
+         "Thread %u return signal frame corrupted. Killing process.\n",
+         tst->tid);
       VG_(set_default_handler)(VKI_SIGSEGV);
       VG_(synth_fault)(tst->tid);
       *sigNo = VKI_SIGSEGV;
@@ -341,10 +342,10 @@ static void restore_ucontext(ThreadState* tst, struct vki_ucontext* uc)
 #undef IREG_FROM_CTX
 
    /* Restore floating point registers. */
-#define FREG_FROM_CTX(ureg, vreg, type)                                           \
-   tst->arch.vex.guest_##vreg = sc->sc_fpregs.d.ureg;                             \
-   VG_TRACK(copy_mem_to_reg, Vg_CoreSignal, tst->tid, (Addr)&sc->sc_fpregs.d.ureg,\
-            OFFSET_riscv64_##vreg, sizeof(type));
+#define FREG_FROM_CTX(ureg, vreg, type)                                        \
+   tst->arch.vex.guest_##vreg = sc->sc_fpregs.d.ureg;                          \
+   VG_TRACK(copy_mem_to_reg, Vg_CoreSignal, tst->tid,                          \
+            (Addr)&sc->sc_fpregs.d.ureg, OFFSET_riscv64_##vreg, sizeof(type));
    FREG_FROM_CTX(f[0], f0, UWord);
    FREG_FROM_CTX(f[1], f1, UWord);
    FREG_FROM_CTX(f[2], f2, UWord);
@@ -407,9 +408,8 @@ void VG_(sigframe_destroy)(ThreadId tid, Bool isRT)
 
    /* Returning from a signal handler. */
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg,
-                   "sigframe_return (thread %u): pc=%#lx\n",
-                   tid, VG_(get_IP)(tid));
+      VG_(message)(Vg_DebugMsg, "sigframe_return (thread %u): pc=%#lx\n", tid,
+                   VG_(get_IP)(tid));
 
    /* Tell the tools. */
    VG_TRACK(post_deliver_signal, tid, sigNo);

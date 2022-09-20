@@ -1401,8 +1401,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
 
 #  define GOF(_fieldname) \
       (offsetof(VexGuestRISCV64State,guest_##_fieldname))
-#  define SZB(_fieldname) \
-      (sizeof(((VexGuestRISCV64State*)0)->guest_##_fieldname))
 
    Int o  = offset;
    Int sz = szB;
@@ -1491,7 +1489,6 @@ static Int get_otrack_shadow_offset_wrk ( Int offset, Int szB )
                offset,szB);
    tl_assert(0);
 #  undef GOF
-#  undef SZB
 
 #  else
 #    error "FIXME: not implemented for this architecture"
