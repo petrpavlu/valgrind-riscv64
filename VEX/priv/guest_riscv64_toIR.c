@@ -552,6 +552,13 @@ static void putFCSR(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
    stmt(irsb, IRStmt_Put(OFFB_FCSR, e));
 }
 
+/* Accumulate exception flags in fcsr. */
+static void accumulateFFLAGS(/*OUT*/ IRSB* irsb, /*IN*/ IRExpr* e)
+{
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_I32);
+   putFCSR(irsb, binop(Iop_Or32, getFCSR(), binop(Iop_And32, e, mkU32(0x1f))));
+}
+
 /* Generate IR to get hold of the rounding mode in both RISC-V and IR
    formats. A floating-point operation can use either a static rounding mode
    encoded in the instruction, or a dynamic rounding mode held in fcsr. Bind the
@@ -2188,13 +2195,12 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       putFReg32(
          irsb, rd,
          qop(Iop_MAddF32, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2), mkexpr(a3)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(Ity_I32, 0 /*regparms*/,
-                                        "riscv64g_calculate_fflags_fmadd_s",
-                                        riscv64g_calculate_fflags_fmadd_s,
-                                        mkIRExprVec_4(mkexpr(a1), mkexpr(a2),
-                                                      mkexpr(a3),
-                                                      mkexpr(rm_RISCV)))));
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
+                             "riscv64g_calculate_fflags_fmadd_s",
+                             riscv64g_calculate_fflags_fmadd_s,
+                             mkIRExprVec_4(mkexpr(a1), mkexpr(a2), mkexpr(a3),
+                                           mkexpr(rm_RISCV))));
       DIP("%s.s %s, %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
           nameFReg(rs2), nameFReg(rs3), nameRMOperand(rm));
       return True;
@@ -2254,11 +2260,10 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
          vassert(0);
       }
       putFReg32(irsb, rd, triop(op, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
-                                        helper_addr,
-                                        mkIRExprVec_3(mkexpr(a1), mkexpr(a2),
-                                                      mkexpr(rm_RISCV)))));
+      accumulateFFLAGS(irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                           helper_addr,
+                                           mkIRExprVec_3(mkexpr(a1), mkexpr(a2),
+                                                         mkexpr(rm_RISCV))));
       DIP("%s.s %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
           nameFReg(rs2), nameRMOperand(rm));
       return True;
@@ -2275,12 +2280,11 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       IRTemp a1 = newTemp(irsb, Ity_F32);
       assign(irsb, a1, getFReg32(rs1));
       putFReg32(irsb, rd, binop(Iop_SqrtF32, mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              "riscv64g_calculate_fflags_fsqrt_s",
                              riscv64g_calculate_fflags_fsqrt_s,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fsqrt.s %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameRMOperand(rm));
       return True;
    }
@@ -2393,11 +2397,10 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
          assign(irsb, a1, getFReg32(rs1));
          assign(irsb, a2, getFReg32(rs2));
          putFReg32(irsb, rd, binop(op, mkexpr(a1), mkexpr(a2)));
-         putFCSR(irsb,
-                 binop(Iop_Or32, getFCSR(),
-                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
-                                     helper_addr,
-                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
+         accumulateFFLAGS(irsb,
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                        helper_addr,
+                                        mkIRExprVec_2(mkexpr(a1), mkexpr(a2))));
          DIP("%s.s %s, %s, %s\n", name, nameFReg(rd), nameFReg(rs1),
              nameFReg(rs2));
          return True;
@@ -2419,14 +2422,13 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
          putIReg32(irsb, rd,
                    binop(is_signed ? Iop_F32toI32S : Iop_F32toI32U,
                          mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_w_s"
                                        : "riscv64g_calculate_fflags_fcvt_wu_s",
                              is_signed ? riscv64g_calculate_fflags_fcvt_w_s
                                        : riscv64g_calculate_fflags_fcvt_wu_s,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.w%s.s %s, %s%s\n", is_signed ? "" : "u", nameIReg(rd),
           nameFReg(rs1), nameRMOperand(rm));
       return True;
@@ -2502,11 +2504,10 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
          default:
             vassert(0);
          }
-         putFCSR(irsb,
-                 binop(Iop_Or32, getFCSR(),
-                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
-                                     helper_addr,
-                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
+         accumulateFFLAGS(irsb,
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                        helper_addr,
+                                        mkIRExprVec_2(mkexpr(a1), mkexpr(a2))));
          DIP("%s.s %s, %s, %s\n", name, nameIReg(rd), nameFReg(rs1),
              nameFReg(rs2));
          return True;
@@ -2552,14 +2553,13 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       putFReg32(irsb, rd,
                 binop(is_signed ? Iop_I32StoF32 : Iop_I32UtoF32, mkexpr(rm_IR),
                       mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_s_w"
                                        : "riscv64g_calculate_fflags_fcvt_s_wu",
                              is_signed ? riscv64g_calculate_fflags_fcvt_s_w
                                        : riscv64g_calculate_fflags_fcvt_s_wu,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.s.w%s %s, %s%s\n", is_signed ? "" : "u", nameFReg(rd),
           nameIReg(rs1), nameRMOperand(rm));
       return True;
@@ -2580,14 +2580,13 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd,
                    binop(is_signed ? Iop_F32toI64S : Iop_F32toI64U,
                          mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_l_s"
                                        : "riscv64g_calculate_fflags_fcvt_lu_s",
                              is_signed ? riscv64g_calculate_fflags_fcvt_l_s
                                        : riscv64g_calculate_fflags_fcvt_lu_s,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.l%s.s %s, %s%s\n", is_signed ? "" : "u", nameIReg(rd),
           nameFReg(rs1), nameRMOperand(rm));
       return True;
@@ -2607,14 +2606,13 @@ static Bool dis_RV64F(/*MB_OUT*/ DisResult* dres,
       putFReg32(irsb, rd,
                 binop(is_signed ? Iop_I64StoF32 : Iop_I64UtoF32, mkexpr(rm_IR),
                       mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_s_l"
                                        : "riscv64g_calculate_fflags_fcvt_s_lu",
                              is_signed ? riscv64g_calculate_fflags_fcvt_s_l
                                        : riscv64g_calculate_fflags_fcvt_s_lu,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.s.l%s %s, %s%s\n", is_signed ? "" : "u", nameFReg(rd),
           nameIReg(rs1), nameRMOperand(rm));
       return True;
@@ -2699,13 +2697,12 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
       putFReg64(
          irsb, rd,
          qop(Iop_MAddF64, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2), mkexpr(a3)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(Ity_I32, 0 /*regparms*/,
-                                        "riscv64g_calculate_fflags_fmadd_d",
-                                        riscv64g_calculate_fflags_fmadd_d,
-                                        mkIRExprVec_4(mkexpr(a1), mkexpr(a2),
-                                                      mkexpr(a3),
-                                                      mkexpr(rm_RISCV)))));
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
+                             "riscv64g_calculate_fflags_fmadd_d",
+                             riscv64g_calculate_fflags_fmadd_d,
+                             mkIRExprVec_4(mkexpr(a1), mkexpr(a2), mkexpr(a3),
+                                           mkexpr(rm_RISCV))));
       DIP("%s.d %s, %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
           nameFReg(rs2), nameFReg(rs3), nameRMOperand(rm));
       return True;
@@ -2765,11 +2762,10 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
          vassert(0);
       }
       putFReg64(irsb, rd, triop(op, mkexpr(rm_IR), mkexpr(a1), mkexpr(a2)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
-                                        helper_addr,
-                                        mkIRExprVec_3(mkexpr(a1), mkexpr(a2),
-                                                      mkexpr(rm_RISCV)))));
+      accumulateFFLAGS(irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                           helper_addr,
+                                           mkIRExprVec_3(mkexpr(a1), mkexpr(a2),
+                                                         mkexpr(rm_RISCV))));
       DIP("%s.d %s, %s, %s%s\n", name, nameFReg(rd), nameFReg(rs1),
           nameFReg(rs2), nameRMOperand(rm));
       return True;
@@ -2786,12 +2782,11 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
       IRTemp a1 = newTemp(irsb, Ity_F64);
       assign(irsb, a1, getFReg64(rs1));
       putFReg64(irsb, rd, binop(Iop_SqrtF64, mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              "riscv64g_calculate_fflags_fsqrt_d",
                              riscv64g_calculate_fflags_fsqrt_d,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fsqrt.d %s, %s%s\n", nameFReg(rd), nameFReg(rs1), nameRMOperand(rm));
       return True;
    }
@@ -2904,11 +2899,10 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
          assign(irsb, a1, getFReg64(rs1));
          assign(irsb, a2, getFReg64(rs2));
          putFReg64(irsb, rd, binop(op, mkexpr(a1), mkexpr(a2)));
-         putFCSR(irsb,
-                 binop(Iop_Or32, getFCSR(),
-                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
-                                     helper_addr,
-                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
+         accumulateFFLAGS(irsb,
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                        helper_addr,
+                                        mkIRExprVec_2(mkexpr(a1), mkexpr(a2))));
          DIP("%s.d %s, %s, %s\n", name, nameFReg(rd), nameFReg(rs1),
              nameFReg(rs2));
          return True;
@@ -2926,12 +2920,11 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
       IRTemp a1 = newTemp(irsb, Ity_F64);
       assign(irsb, a1, getFReg64(rs1));
       putFReg32(irsb, rd, binop(Iop_F64toF32, mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              "riscv64g_calculate_fflags_fcvt_s_d",
                              riscv64g_calculate_fflags_fcvt_s_d,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.s.d %s, %s%s\n", nameFReg(rd), nameFReg(rs1),
           nameRMOperand(rm));
       return True;
@@ -3008,11 +3001,10 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
          default:
             vassert(0);
          }
-         putFCSR(irsb,
-                 binop(Iop_Or32, getFCSR(),
-                       mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
-                                     helper_addr,
-                                     mkIRExprVec_2(mkexpr(a1), mkexpr(a2)))));
+         accumulateFFLAGS(irsb,
+                          mkIRExprCCall(Ity_I32, 0 /*regparms*/, helper_name,
+                                        helper_addr,
+                                        mkIRExprVec_2(mkexpr(a1), mkexpr(a2))));
          DIP("%s.d %s, %s, %s\n", name, nameIReg(rd), nameFReg(rs1),
              nameFReg(rs2));
          return True;
@@ -3049,14 +3041,13 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
          putIReg32(irsb, rd,
                    binop(is_signed ? Iop_F64toI32S : Iop_F64toI32U,
                          mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_w_d"
                                        : "riscv64g_calculate_fflags_fcvt_wu_d",
                              is_signed ? riscv64g_calculate_fflags_fcvt_w_d
                                        : riscv64g_calculate_fflags_fcvt_wu_d,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.w%s.d %s, %s%s\n", is_signed ? "" : "u", nameIReg(rd),
           nameFReg(rs1), nameRMOperand(rm));
       return True;
@@ -3092,14 +3083,13 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
          putIReg64(irsb, rd,
                    binop(is_signed ? Iop_F64toI64S : Iop_F64toI64U,
                          mkexpr(rm_IR), mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_l_d"
                                        : "riscv64g_calculate_fflags_fcvt_lu_d",
                              is_signed ? riscv64g_calculate_fflags_fcvt_l_d
                                        : riscv64g_calculate_fflags_fcvt_lu_d,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.l%s.d %s, %s%s\n", is_signed ? "" : "u", nameIReg(rd),
           nameFReg(rs1), nameRMOperand(rm));
       return True;
@@ -3130,14 +3120,13 @@ static Bool dis_RV64D(/*MB_OUT*/ DisResult* dres,
       putFReg64(irsb, rd,
                 binop(is_signed ? Iop_I64StoF64 : Iop_I64UtoF64, mkexpr(rm_IR),
                       mkexpr(a1)));
-      putFCSR(irsb, binop(Iop_Or32, getFCSR(),
-                          mkIRExprCCall(
-                             Ity_I32, 0 /*regparms*/,
+      accumulateFFLAGS(
+         irsb, mkIRExprCCall(Ity_I32, 0 /*regparms*/,
                              is_signed ? "riscv64g_calculate_fflags_fcvt_d_l"
                                        : "riscv64g_calculate_fflags_fcvt_d_lu",
                              is_signed ? riscv64g_calculate_fflags_fcvt_d_l
                                        : riscv64g_calculate_fflags_fcvt_d_lu,
-                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV)))));
+                             mkIRExprVec_2(mkexpr(a1), mkexpr(rm_RISCV))));
       DIP("fcvt.d.l%s %s, %s%s\n", is_signed ? "" : "u", nameFReg(rd),
           nameIReg(rs1), nameRMOperand(rm));
       return True;
