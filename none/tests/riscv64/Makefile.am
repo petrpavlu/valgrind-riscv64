@@ -3,6 +3,8 @@ include $(top_srcdir)/Makefile.tool-tests.am
 
 dist_noinst_SCRIPTS = filter_stderr
 
+noinst_HEADERS = testinst.h
+
 EXTRA_DIST = \
 	atomic.stdout.exp atomic.stderr.exp atomic.vgtest \
 	compressed.stdout.exp compressed.stderr.exp compressed.vgtest \
