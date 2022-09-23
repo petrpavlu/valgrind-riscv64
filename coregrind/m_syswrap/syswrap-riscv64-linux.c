@@ -333,6 +333,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_ioctl, sys_ioctl),                           /* 29 */
    LINX_(__NR_mkdirat, sys_mkdirat),                       /* 34 */
    LINX_(__NR_unlinkat, sys_unlinkat),                     /* 35 */
+   LINX_(__NR_linkat, sys_linkat),                         /* 37 */
    GENX_(__NR_ftruncate, sys_ftruncate),                   /* 46 */
    LINX_(__NR_faccessat, sys_faccessat),                   /* 48 */
    GENX_(__NR_chdir, sys_chdir),                           /* 49 */
@@ -359,6 +360,7 @@ static SyscallTableEntry syscall_main_table[] = {
    GENXY(__NR_fstat, sys_newfstat),                        /* 80 */
    LINXY(__NR_timerfd_create, sys_timerfd_create),         /* 85 */
    LINXY(__NR_timerfd_settime, sys_timerfd_settime),       /* 86 */
+   LINXY(__NR_timerfd_gettime, sys_timerfd_gettime),       /* 87 */
    LINX_(__NR_utimensat, sys_utimensat),                   /* 88 */
    LINXY(__NR_capget, sys_capget),                         /* 90 */
    GENX_(__NR_exit, sys_exit),                             /* 93 */

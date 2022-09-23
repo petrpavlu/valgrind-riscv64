@@ -46,6 +46,7 @@
 #define __NR_mknodat 33
 #define __NR_mkdirat 34
 #define __NR_unlinkat 35
+#define __NR_linkat 37
 #define __NR_ftruncate 46
 #define __NR_faccessat 48
 #define __NR_chdir 49
@@ -72,6 +73,7 @@
 #define __NR3264_fstat 80
 #define __NR_timerfd_create 85
 #define __NR_timerfd_settime 86
+#define __NR_timerfd_gettime 87
 #define __NR_utimensat 88
 #define __NR_capget 90
 #define __NR_exit 93
