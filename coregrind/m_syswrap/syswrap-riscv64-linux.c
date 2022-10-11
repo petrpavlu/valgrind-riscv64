@@ -372,6 +372,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_clock_nanosleep, sys_clock_nanosleep),       /* 115 */
    LINXY(__NR_syslog, sys_syslog),                         /* 116 */
    PLAXY(__NR_ptrace, sys_ptrace),                         /* 117 */
+   LINX_(__NR_sched_setaffinity, sys_sched_setaffinity),   /* 122 */
    LINX_(__NR_sched_yield, sys_sched_yield),               /* 124 */
    GENX_(__NR_kill, sys_kill),                             /* 129 */
    LINX_(__NR_tgkill, sys_tgkill),                         /* 131 */

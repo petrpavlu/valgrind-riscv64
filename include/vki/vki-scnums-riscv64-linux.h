@@ -85,6 +85,7 @@
 #define __NR_clock_nanosleep 115
 #define __NR_syslog 116
 #define __NR_ptrace 117
+#define __NR_sched_setaffinity 122
 #define __NR_sched_yield 124
 #define __NR_kill 129
 #define __NR_tkill 130
