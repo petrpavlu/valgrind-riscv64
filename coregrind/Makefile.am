@@ -769,7 +769,15 @@ GDBSERVER_XML_FILES = \
 	m_gdbserver/mips64-linux-valgrind.xml \
 	m_gdbserver/mips64-fpu-valgrind-s1.xml \
 	m_gdbserver/mips64-fpu-valgrind-s2.xml \
-	m_gdbserver/mips64-fpu.xml
+	m_gdbserver/mips64-fpu.xml \
+	m_gdbserver/riscv64-cpu-valgrind-s1.xml \
+	m_gdbserver/riscv64-cpu-valgrind-s2.xml \
+	m_gdbserver/riscv64-cpu.xml \
+	m_gdbserver/riscv64-linux.xml \
+	m_gdbserver/riscv64-linux-valgrind.xml \
+	m_gdbserver/riscv64-fpu-valgrind-s1.xml \
+	m_gdbserver/riscv64-fpu-valgrind-s2.xml \
+	m_gdbserver/riscv64-fpu.xml
 
 # so as to make sure these get copied into the install tree
 vglibdir = $(pkglibexecdir)
