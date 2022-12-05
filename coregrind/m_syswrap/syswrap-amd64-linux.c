@@ -862,6 +862,8 @@ static SyscallTableEntry syscall_table[] = {
 
    LINXY(__NR_statx,             sys_statx),             // 332
 
+   GENX_(__NR_rseq,              sys_ni_syscall),        // 334
+
    LINX_(__NR_membarrier,        sys_membarrier),        // 324
 
    LINX_(__NR_copy_file_range,   sys_copy_file_range),   // 326
@@ -878,6 +880,8 @@ static SyscallTableEntry syscall_table[] = {
    LINXY(__NR_close_range,       sys_close_range),       // 436
 
    LINX_(__NR_faccessat2,	 sys_faccessat2),        // 439
+
+   LINXY(__NR_memfd_secret,      sys_memfd_secret),      // 447
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry) ( UInt sysno )

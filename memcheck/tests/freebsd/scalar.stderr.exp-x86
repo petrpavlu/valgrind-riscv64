@@ -541,6 +541,10 @@ Syscall param execve(filename) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
+Syscall param execve(argv) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
 ---------------------------------------------------------
  60:               SYS_umask 1s 0m
 ---------------------------------------------------------
@@ -1891,6 +1895,22 @@ Syscall param clock_nanosleep(rmtp) points to unaddressable byte(s)
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
+247:SYS_clock_getcpuclockid2 3s 1m
+---------------------------------------------------------
+Syscall param clock_getcpuclockid2(offset_low) contains uninitialised byte(s)
+   ...
+
+Syscall param clock_getcpuclockid2(offset_high) contains uninitialised byte(s)
+   ...
+
+Syscall param clock_getcpuclockid2(len) contains uninitialised byte(s)
+   ...
+
+Syscall param clock_getcpuclockid2(clock_id) points to unaddressable byte(s)
+   ...
+ Address 0x........ is not stack'd, malloc'd or (recently) free'd
+
+---------------------------------------------------------
 250:            SYS_minherit @todo
 ---------------------------------------------------------
 ---------------------------------------------------------
@@ -3197,10 +3217,10 @@ Warning: bad act handler address 0x........ in sigaction()
 ---------------------------------------------------------
 417:           SYS_sigreturn 1s 1m
 ---------------------------------------------------------
-Syscall param sigreturn(ucp) contains uninitialised byte(s)
+Syscall param sigreturn(scp) contains uninitialised byte(s)
    ...
 
-Syscall param sigreturn(ucp) points to unaddressable byte(s)
+Syscall param sigreturn(scp) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
@@ -3971,14 +3991,6 @@ Syscall param fexecve(argv) contains uninitialised byte(s)
 
 Syscall param fexecve(envp) contains uninitialised byte(s)
    ...
-
-Syscall param fexecve(argv) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
-
-Syscall param fexecve(envp) points to unaddressable byte(s)
-   ...
- Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
 ---------------------------------------------------------
 493:   SYS_freebsd11_fstatat 4s 2m
@@ -5339,7 +5351,7 @@ Syscall param __sysctlbyname(oldlenp) points to unaddressable byte(s)
    ...
  Address 0x........ is not stack'd, malloc'd or (recently) free'd
 
-Warning: Bad oldlenp address 0x........ in sysctl
+Warning: Bad oldlenp address 0x........ in sysctlbyname
 ---------------------------------------------------------
 570:      SYS___sysctlbyname (putnew) 4s 2m
 ---------------------------------------------------------

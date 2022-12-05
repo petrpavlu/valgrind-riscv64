@@ -103,6 +103,7 @@
    20430 WMEMCHR
    20440 WCSNLEN
    20450 WSTRNCMP
+   20460 MEMMEM
 */
 
 #if defined(VGO_solaris)
@@ -461,6 +462,10 @@ static inline void my_exit ( int x )
  STRNLEN(VG_Z_LIBC_SONAME, strnlen)
  STRNLEN(VG_Z_LIBC_SONAME, __GI_strnlen)
 
+#elif defined(VGO_freebsd)
+
+ STRNLEN(VG_Z_LIBC_SONAME, srtnlen)
+
 #elif defined(VGO_darwin)
 # if DARWIN_VERS == DARWIN_10_9
   STRNLEN(libsystemZucZddylib, strnlen)
@@ -710,6 +715,8 @@ static inline void my_exit ( int x )
  STRNCMP(VG_Z_LIBC_SONAME, __GI_strncmp)
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse2)
  STRNCMP(VG_Z_LIBC_SONAME, __strncmp_sse42)
+ STRNCMP(VG_Z_LD_LINUX_SO_2, strncmp)
+ STRNCMP(VG_Z_LD_LINUX_X86_64_SO_2, strncmp)
 
 #elif defined(VGO_freebsd)
  STRNCMP(VG_Z_LIBC_SONAME, strncmp)
@@ -851,6 +858,9 @@ static inline void my_exit ( int x )
  STRCASECMP_L(VG_Z_LIBC_SONAME, __GI_strcasecmp_l)
  STRCASECMP_L(VG_Z_LIBC_SONAME, __GI___strcasecmp_l)
 
+#elif defined(VGO_freebsd)
+ STRCASECMP_L(VG_Z_LIBC_SONAME, strcasecmp_l)
+
 #elif defined(VGO_darwin)
  //STRCASECMP_L(VG_Z_LIBC_SONAME, strcasecmp_l)
 
@@ -888,6 +898,9 @@ static inline void my_exit ( int x )
  STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI_strncasecmp_l)
  STRNCASECMP_L(VG_Z_LIBC_SONAME, __GI___strncasecmp_l)
+
+#elif defined(VGO_freebsd)
+ STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
 
 #elif defined(VGO_darwin)
  //STRNCASECMP_L(VG_Z_LIBC_SONAME, strncasecmp_l)
@@ -969,6 +982,9 @@ static inline void my_exit ( int x )
 #if defined(VGO_linux)
  MEMCHR(VG_Z_LIBC_SONAME, memchr)
  MEMCHR(VG_Z_LIBC_SONAME, __GI_memchr)
+
+#elif defined(VGO_freebsd)
+ MEMCHR(VG_Z_LIBC_SONAME, memchr)
 
 #elif defined(VGO_darwin)
 # if DARWIN_VERS == DARWIN_10_9
@@ -1671,6 +1687,8 @@ static inline void my_exit ( int x )
  GLIBC25_MEMPCPY(VG_Z_LD_LINUX_SO_3, mempcpy) /* ld-linux.so.3 */
  GLIBC25_MEMPCPY(VG_Z_LD_LINUX_X86_64_SO_2, mempcpy) /* ld-linux-x86-64.so.2 */
 
+#elif defined(VGO_freebsd)
+ GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)
 #elif defined(VGO_darwin)
  //GLIBC25_MEMPCPY(VG_Z_LIBC_SONAME, mempcpy)
 
@@ -1781,6 +1799,41 @@ static inline void my_exit ( int x )
 #elif defined(VGO_solaris)
  STRSTR(VG_Z_LIBC_SONAME,          strstr)
 
+#endif
+
+/*---------------------- memmem ----------------------*/
+
+#define MEMMEM(soname, fnname) \
+   void* VG_REPLACE_FUNCTION_EZU(20460,soname,fnname) \
+         (const void* haystack, SizeT hlen, const void* needle, SizeT nlen); \
+   void* VG_REPLACE_FUNCTION_EZU(20460,soname,fnname) \
+         (const void* haystack, SizeT hlen, const void* needle, SizeT nlen) \
+   { \
+      const HChar* h = haystack; \
+      const HChar* n = needle; \
+      \
+      /* If the needle is the empty string, match immediately. */ \
+      if (nlen == 0) return CONST_CAST(void *,h); \
+      \
+      HChar n0 = n[0]; \
+      \
+      for (; hlen >= nlen; hlen--, h++) { \
+         if (h[0] != n0) continue; \
+         \
+         UWord i; \
+         for (i = 1; i < nlen; i++) { \
+            if (n[i] != h[i]) \
+               break; \
+         } \
+         if (i == nlen) \
+           return CONST_CAST(HChar *,h); \
+         \
+      } \
+      return NULL; \
+   }
+
+#if defined(VGP_s390x_linux)
+ MEMMEM(VG_Z_LIBC_SONAME,          memmem)
 #endif
 
 

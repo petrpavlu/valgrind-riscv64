@@ -1,5 +1,9 @@
 # Suppressions for FreeBSD / Memcheck
-#This is a workaround for a bug in rtld
+
+# This is a workaround for a bug in rtld / sysctl hw.pagesizes
+# it was fixed in May 2020 in the kernel
+# removing it means either waiting for 12-RELEASE EOL
+# or some tricky kernel detection in configure.ac
 {
    MEMCHECK-RTLD-32ON64
    Memcheck:Addr4
@@ -16,17 +20,6 @@
    Memcheck:Addr4
    obj:/libexec/ld-elf32.so.1
    obj:/libexec/ld-elf32.so.1
-}
-
-{
-   MEMCHECK-LIBSTDC++-REACHABLE
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   obj:/usr/local/lib*/gcc*/libstdc++.so.*
-   obj:/libexec/ld-elf*.so.1
-   obj:/libexec/ld-elf*.so.1
-   obj:/libexec/ld-elf*.so.1
 }
 {
    MEMCHECK-LIBC-REACHABLE-1

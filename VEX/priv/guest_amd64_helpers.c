@@ -768,6 +768,25 @@ ULong amd64g_calculate_rflags_all_WRK ( ULong cc_op,
    }
 }
 
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+
+/* This dummy function is just used to have an address just after
+   amd64g_calculate_rflags_all_WRK */
+
+static
+void _______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ (void)
+{
+}
+
+/* Export addresses of amd64g_calculate_rflags_all_WRK and
+   _______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______
+   Used in syswrap-main.c / VG_(post_syscall) in the case where
+   the above function was interrupted and we need to work out
+   what needs to be done for the resumption */
+
+Addr addr_amd64g_calculate_rflags_all_WRK = (Addr)amd64g_calculate_rflags_all_WRK;
+Addr addr________VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______ = (Addr)_______VVVVVVVV_amd64g_calculate_rflags_all_WRK_VVVVVVVV_______;
+#endif
 
 /* CALLED FROM GENERATED CODE: CLEAN HELPER */
 /* Calculate all the 6 flags from the supplied thunk parameters. */
@@ -994,6 +1013,15 @@ LibVEX_GuestAMD64_put_rflag_c ( ULong new_carry_flag,
    vex_state->guest_CC_NDEP = 0;
 }
 
+#if defined(VGO_freebsd) || defined(VGO_darwin)
+/* Used in syswrap-main.c / VG_(post_syscall) in the case where
+   the above function was interrupted and we need to work out
+   what needs to be done for the resumption. These functions
+   are extern so no need for 'addr' global variables */
+void _______VVVVVVVV_after_GuestAMD64_put_rflag_c_VVVVVVVV_______ (void)
+{
+}
+#endif
 
 /*---------------------------------------------------------------*/
 /*--- %rflags translation-time function specialisers.         ---*/
@@ -1823,15 +1851,25 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       /*---------------- SHRQ ----------------*/
 
       if (isU64(cc_op, AMD64G_CC_OP_SHRQ) && isU64(cond, AMD64CondZ)) {
-         /* SHRQ, then Z --> test dep1 == 0 */
+         /* SHRQ, then Z --> test result[63:0] == 0 */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
       }
       if (isU64(cc_op, AMD64G_CC_OP_SHRQ) && isU64(cond, AMD64CondNZ)) {
-         /* SHRQ, then NZ --> test dep1 != 0 */
+         /* SHRQ, then NZ --> test result[63:0] != 0 */
          return unop(Iop_1Uto64,
                      binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
       }
+
+      if (isU64(cc_op, AMD64G_CC_OP_SHRQ) && isU64(cond, AMD64CondS)) {
+         /* SHRQ, then S --> (ULong)result[63] (result is in dep1) */
+         return binop(Iop_Shr64, cc_dep1, mkU8(63));
+      }
+      // No known test case for this, hence disabled:
+      //if (isU64(cc_op, AMD64G_CC_OP_SHRQ) && isU64(cond, AMD64CondNS)) {
+      //   /* SHRQ, then NS --> (ULong) ~ result[63] */
+      //   vassert(0);
+      //}
 
       /*---------------- SHRL ----------------*/
 
@@ -1879,6 +1917,52 @@ IRExpr* guest_amd64_spechelper ( const HChar* function_name,
       //               binop(Iop_CmpNE32,
       //                     unop(Iop_16Uto32, unop(Iop_64to16, cc_dep1)),
       //                     mkU32(0)));
+      //}
+
+      /*---------------- SHLQ ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondZ)) {
+         /* SHLQ, then Z --> test dep1 == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ64, cc_dep1, mkU64(0)));
+      }
+      if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondNZ)) {
+         /* SHLQ, then NZ --> test dep1 != 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
+      }
+
+      //if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondS)) {
+      //   /* SHLQ, then S --> (ULong)result[63] */
+      //   vassert(0);
+      //}
+      //if (isU64(cc_op, AMD64G_CC_OP_SHLQ) && isU64(cond, AMD64CondNS)) {
+      //   /* SHLQ, then NS --> (ULong) ~ result[63] */
+      //   vassert(0);
+      //}
+
+      /*---------------- SHLL ----------------*/
+
+      if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondZ)) {
+         /* SHLL, then Z --> test result[31:0] == 0 */
+         return unop(Iop_1Uto64,
+                     binop(Iop_CmpEQ32, unop(Iop_64to32, cc_dep1),
+                           mkU32(0)));
+      }
+      //if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondNZ)) {
+      //   /* SHLL, then NZ --> test dep1 != 0 */
+      //   vassert(0);
+      //}
+
+      if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondS)) {
+         /* SHLL, then S --> (ULong)result[31] */
+         return binop(Iop_And64,
+                      binop(Iop_Shr64, cc_dep1, mkU8(31)),
+                      mkU64(1));
+      }
+      //if (isU64(cc_op, AMD64G_CC_OP_SHLL) && isU64(cond, AMD64CondNS)) {
+      //   /* SHLL, then NS --> (ULong) ~ result[31] */
+      //   vassert(0);
       //}
 
       /*---------------- COPY ----------------*/

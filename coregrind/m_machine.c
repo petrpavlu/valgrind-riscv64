@@ -1284,10 +1284,12 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_0 = False;
      } else {
-        __asm__ __volatile__(".long 0x7d205434"); /* cnttzw RT, RB */
+        __asm__ __volatile__(".long 0x7f140434":::"r20"); /* cnttzw r20,r24 */
      }
 
      // ISA 3.1 not supported on 32-bit systems
+
+     // scv instruction not supported on 32-bit systems.
 
      /* determine dcbz/dcbzl sizes while we still have the signal
       * handlers registered */
@@ -1327,6 +1329,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_isa_2_07) vai.hwcaps |= VEX_HWCAPS_PPC32_ISA2_07;
      if (have_isa_3_0) vai.hwcaps |= VEX_HWCAPS_PPC32_ISA3_0;
      /* ISA 3.1 not supported on 32-bit systems.  */
+     /* SCV not supported on PPC32 */
 
      VG_(machine_get_cache_info)(&vai);
 
@@ -1344,7 +1347,6 @@ Bool VG_(machine_get_hwcaps)( void )
 
      volatile Bool have_F, have_V, have_FX, have_GX, have_VX, have_DFP;
      volatile Bool have_isa_2_07, have_isa_3_0, have_isa_3_1;
-     volatile Bool have_scv_support;
      Int r;
 
      /* This is a kludge.  Really we ought to back-convert saved_act
@@ -1396,7 +1398,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_V = False;
      } else {
-        __asm__ __volatile__(".long 0x10000484"); /*vor 0,0,0*/
+        __asm__ __volatile__(".long 0x10000484"); /* vor v0,v0,v0 */
      }
 
      /* General-Purpose optional (fsqrt, fsqrts) */
@@ -1404,7 +1406,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_FX = False;
      } else {
-        __asm__ __volatile__(".long 0xFC00002C"); /*fsqrt 0,0*/
+        __asm__ __volatile__(".long 0xFC00002C"); /* fsqrt f0,f0 */
      }
 
      /* Graphics optional (stfiwx, fres, frsqrte, fsel) */
@@ -1412,7 +1414,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_GX = False;
      } else {
-        __asm__ __volatile__(".long 0xFC000034"); /*frsqrte 0,0*/
+        __asm__ __volatile__(".long 0xFC000034"); /* frsqrte f0,f0 */
      }
 
      /* VSX support implies Power ISA 2.06 */
@@ -1420,7 +1422,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_VX = False;
      } else {
-        __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp XT,XB */
+        __asm__ __volatile__(".long 0xf0000564"); /* xsabsdp vs0,vs0 */
      }
 
      /* Check for Decimal Floating Point (DFP) support. */
@@ -1428,7 +1430,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_DFP = False;
      } else {
-        __asm__ __volatile__(".long 0xee4e8005"); /* dadd  FRT,FRA, FRB */
+        __asm__ __volatile__(".long 0xec0e8005"); /* dadd f0,f14,f16 */
      }
 
      /* Check for ISA 2.07 support. */
@@ -1436,7 +1438,7 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_2_07 = False;
      } else {
-        __asm__ __volatile__(".long 0x7c000166"); /* mtvsrd XT,RA */
+        __asm__ __volatile__(".long 0x7c000166"); /* mtvsrd f0,r0 */
      }
 
      /* Check for ISA 3.0 support. */
@@ -1444,27 +1446,28 @@ Bool VG_(machine_get_hwcaps)( void )
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_0 = False;
      } else {
-        __asm__ __volatile__(".long  0x7d205434"); /* cnttzw RT, RB */
+        __asm__ __volatile__(".long 0x7f140434":::"r20"); /* cnttzw r20,r24 */
      }
+
+     /* Check if Host supports scv instruction.
+        Note, can not use the usual method of issuing the scv instruction and
+        checking if it is supported or not.  Issuing scv on a system that does
+        not have scv support in the HWCAPS generates a message in dmesg,
+        "Facility 'SCV' unavailable (12), exception".  It is considered bad
+        form to issue and scv on systems that do not support it.
+
+        The function VG_(machine_ppc64_set_scv_support), is called in
+        initimg-linux.c to set the flag ppc_scv_supported based on HWCAPS2
+        value.  The flag ppc_scv_supported is defined struct VexArchInfo,
+        in file libvex.h  The setting of ppc_scv_supported in VexArchInfo
+        is checked in disInstr_PPC_WRK() to set the allow_scv flag.  */
 
      /* Check for ISA 3.1 support. */
      have_isa_3_1 = True;
      if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
         have_isa_3_1 = False;
      } else {
-        __asm__ __volatile__(".long 0x7f1401b6"); /* brh  RA, RS */
-     }
-
-     /* Check if Host supports scv instruction */
-     have_scv_support = True;
-     if (VG_MINIMAL_SETJMP(env_unsup_insn)) {
-        have_scv_support = False;
-     } else {
-        /* Set r0 to 13 for the system time call.  Don't want to make a random
-           system call.  */
-        __asm__ __volatile__(".long 0x7c000278"); /* clear r0 */
-        __asm__ __volatile__(".long 0x6009000d"); /* set r0 to 13 */
-        __asm__ __volatile__(".long 0x44000001"); /* scv */
+        __asm__ __volatile__(".long 0x7f1401b6":::"r20"); /* brh r20,r24 */
      }
 
      /* determine dcbz/dcbzl sizes while we still have the signal
@@ -1502,12 +1505,12 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_isa_2_07) vai.hwcaps |= VEX_HWCAPS_PPC64_ISA2_07;
      if (have_isa_3_0) vai.hwcaps |= VEX_HWCAPS_PPC64_ISA3_0;
      if (have_isa_3_1) vai.hwcaps |= VEX_HWCAPS_PPC64_ISA3_1;
-     if (have_scv_support) vai.hwcaps |= VEX_HWCAPS_PPC64_SCV;
 
      VG_(machine_get_cache_info)(&vai);
 
-     /* But we're not done yet: VG_(machine_ppc64_set_clszB) must be
-        called before we're ready to go. */
+     /* But we're not done yet: VG_(machine_ppc64_set_clszB) and
+        VG_(machine_ppc64_set_scv_support) must be called before we're
+        ready to go. */
      return True;
    }
 
@@ -2316,6 +2319,13 @@ void VG_(machine_ppc64_set_clszB)( Int szB )
    vg_assert(szB == 16 || szB == 32 || szB == 64 || szB == 128);
    vai.ppc_icache_line_szB = szB;
 }
+
+void VG_(machine_ppc64_set_scv_support)( Int is_supported )
+{
+   vg_assert(hwcaps_done);
+   vai.ppc_scv_supported = is_supported;
+}
+
 #endif
 
 

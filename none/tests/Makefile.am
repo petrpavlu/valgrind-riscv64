@@ -73,10 +73,14 @@ endif
 if VGCONF_PLATFORMS_INCLUDE_X86_SOLARIS
 SUBDIRS += x86-solaris
 endif
+if VGCONF_PLATFORMS_INCLUDE_X86_FREEBSD
+SUBDIRS += x86-freebsd
+endif
 
 DIST_SUBDIRS = x86 amd64 ppc32 ppc64 arm arm64 s390x mips32 mips64 nanomips \
                riscv64 linux darwin solaris freebsd amd64-linux x86-linux \
-               amd64-darwin x86-darwin amd64-solaris x86-solaris scripts .
+               amd64-darwin x86-darwin amd64-solaris x86-solaris x86-freebsd \
+               scripts .
 
 dist_noinst_SCRIPTS = \
 	filter_cmdline0 \
@@ -104,11 +108,18 @@ EXTRA_DIST = \
 	closeall.stderr.exp closeall.vgtest \
 	cmdline0.stderr.exp cmdline0.stdout.exp cmdline0.vgtest \
 	cmdline1.stderr.exp cmdline1.stdout.exp cmdline1.vgtest \
+		cmdline1.stdout.exp-non-linux \
 	cmdline2.stderr.exp cmdline2.stdout.exp cmdline2.vgtest \
+		cmdline2.stdout.exp-non-linux \
 	cmdline3.stderr.exp cmdline3.vgtest \
 	cmdline4.stderr.exp cmdline4.vgtest \
 	cmdline5.stderr.exp cmdline5.vgtest \
 	cmdline6.stderr.exp cmdline6.vgtest \
+	cmdline7.stderr.exp cmdline7.vgtest \
+	cmdline8.stderr.exp cmdline8.vgtest \
+	cmdline9.stderr.exp cmdline9.vgtest \
+	cmdline10.stderr.exp cmdline10.vgtest \
+	cmdline11.stderr.exp cmdline11.vgtest \
 	cmd-with-special.stderr.exp cmd-with-special.vgtest \
 	coolo_sigaction.stderr.exp \
 	coolo_sigaction.stdout.exp coolo_sigaction.vgtest \
@@ -282,8 +293,8 @@ if ! VGCONF_OS_IS_DARWIN
    check_PROGRAMS += ppoll_alarm
 endif
 
-# clang does not know -ansi
-if ! COMPILER_IS_CLANG
+# older (?) clang does not know -ansi
+if HAVE_ANSI
    check_PROGRAMS += ansi
 endif
 
