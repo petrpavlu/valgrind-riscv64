@@ -197,6 +197,7 @@ void VG_(cleanup_thread)(ThreadArchState* arch) {}
 DECL_TEMPLATE(riscv64_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(riscv64_linux, sys_mmap);
 DECL_TEMPLATE(riscv64_linux, sys_riscv_flush_icache);
+DECL_TEMPLATE(riscv64_linux, sys_ptrace);
 
 PRE(sys_rt_sigreturn)
 {
