@@ -194,57 +194,10 @@ void VG_(cleanup_thread)(ThreadArchState* arch) {}
    aren't visible outside this file, but that requires even more macro
    magic. */
 
+DECL_TEMPLATE(riscv64_linux, sys_ptrace);
 DECL_TEMPLATE(riscv64_linux, sys_rt_sigreturn);
 DECL_TEMPLATE(riscv64_linux, sys_mmap);
 DECL_TEMPLATE(riscv64_linux, sys_riscv_flush_icache);
-DECL_TEMPLATE(riscv64_linux, sys_ptrace);
-
-PRE(sys_rt_sigreturn)
-{
-   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
-      an explanation of what follows. */
-
-   PRINT("rt_sigreturn ( )");
-
-   vg_assert(VG_(is_valid_tid)(tid));
-   vg_assert(tid >= 1 && tid < VG_N_THREADS);
-   vg_assert(VG_(is_running_thread)(tid));
-
-   /* Restore register state from frame and remove it. */
-   VG_(sigframe_destroy)(tid, True);
-
-   /* Tell the driver not to update the guest state with the "result", and set
-      a bogus result to keep it happy. */
-   *flags |= SfNoWriteResult;
-   SET_STATUS_Success(0);
-
-   /* Check to see if any signals arose as a result of this. */
-   *flags |= SfPollAfter;
-}
-
-PRE(sys_mmap)
-{
-   PRINT("sys_mmap ( %#lx, %lu, %lu, %#lx, %lu, %lu )", ARG1, ARG2, ARG3, ARG4,
-         ARG5, ARG6);
-   PRE_REG_READ6(long, "mmap", unsigned long, start, unsigned long, length,
-                 unsigned long, prot, unsigned long, flags, unsigned long, fd,
-                 unsigned long, offset);
-
-   SysRes r =
-      ML_(generic_PRE_sys_mmap)(tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
-   SET_STATUS_from_SysRes(r);
-}
-
-PRE(sys_riscv_flush_icache)
-{
-   PRINT("sys_riscv_flush_icache ( %#lx, %lx, %#lx )", ARG1, ARG2, ARG3);
-   PRE_REG_READ3(long, "riscv_flush_icache", unsigned long, start,
-                 unsigned long, end, unsigned long, flags);
-
-   VG_(discard_translations)
-   ((Addr)ARG1, (ULong)ARG2 - (ULong)ARG1, "PRE(sys_riscv_flush_icache)");
-   SET_STATUS_Success(0);
-}
 
 // ARG3 is only used for pointers into the traced process's address
 // space and for offsets into the traced process's struct
@@ -308,6 +261,53 @@ POST(sys_ptrace)
    default:
       break;
    }
+}
+
+PRE(sys_rt_sigreturn)
+{
+   /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
+      an explanation of what follows. */
+
+   PRINT("rt_sigreturn ( )");
+
+   vg_assert(VG_(is_valid_tid)(tid));
+   vg_assert(tid >= 1 && tid < VG_N_THREADS);
+   vg_assert(VG_(is_running_thread)(tid));
+
+   /* Restore register state from frame and remove it. */
+   VG_(sigframe_destroy)(tid, True);
+
+   /* Tell the driver not to update the guest state with the "result", and set
+      a bogus result to keep it happy. */
+   *flags |= SfNoWriteResult;
+   SET_STATUS_Success(0);
+
+   /* Check to see if any signals arose as a result of this. */
+   *flags |= SfPollAfter;
+}
+
+PRE(sys_mmap)
+{
+   PRINT("sys_mmap ( %#lx, %lu, %lu, %#lx, %lu, %lu )", ARG1, ARG2, ARG3, ARG4,
+         ARG5, ARG6);
+   PRE_REG_READ6(long, "mmap", unsigned long, start, unsigned long, length,
+                 unsigned long, prot, unsigned long, flags, unsigned long, fd,
+                 unsigned long, offset);
+
+   SysRes r =
+      ML_(generic_PRE_sys_mmap)(tid, ARG1, ARG2, ARG3, ARG4, ARG5, ARG6);
+   SET_STATUS_from_SysRes(r);
+}
+
+PRE(sys_riscv_flush_icache)
+{
+   PRINT("sys_riscv_flush_icache ( %#lx, %lx, %#lx )", ARG1, ARG2, ARG3);
+   PRE_REG_READ3(long, "riscv_flush_icache", unsigned long, start,
+                 unsigned long, end, unsigned long, flags);
+
+   VG_(discard_translations)((Addr)ARG1, (ULong)ARG2 - (ULong)ARG1,
+                             "PRE(sys_riscv_flush_icache)");
+   SET_STATUS_Success(0);
 }
 
 #undef PRE
