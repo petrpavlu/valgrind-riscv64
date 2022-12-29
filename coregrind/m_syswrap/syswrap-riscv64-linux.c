@@ -188,22 +188,11 @@ void VG_(cleanup_thread)(ThreadArchState* arch) {}
 #define PRE(name)  DEFN_PRE_TEMPLATE(riscv64_linux, name)
 #define POST(name) DEFN_POST_TEMPLATE(riscv64_linux, name)
 
-/* Add prototypes for the wrappers declared here, so that gcc doesn't
-   harass us for not having prototypes.  Really this is a kludge --
-   the right thing to do is to make these wrappers 'static' since they
-   aren't visible outside this file, but that requires even more macro
-   magic. */
-
-DECL_TEMPLATE(riscv64_linux, sys_ptrace);
-DECL_TEMPLATE(riscv64_linux, sys_rt_sigreturn);
-DECL_TEMPLATE(riscv64_linux, sys_mmap);
-DECL_TEMPLATE(riscv64_linux, sys_riscv_flush_icache);
-
 // ARG3 is only used for pointers into the traced process's address
 // space and for offsets into the traced process's struct
 // user_regs_struct. It is never a pointer into this process's memory
 // space, and we should therefore not check anything it points to.
-PRE(sys_ptrace)
+static PRE(sys_ptrace)
 {
    PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", (Word)ARG1, (Word)ARG2, ARG3,
          ARG4);
@@ -235,7 +224,7 @@ PRE(sys_ptrace)
    }
 }
 
-POST(sys_ptrace)
+static POST(sys_ptrace)
 {
    switch (ARG1) {
    case VKI_PTRACE_TRACEME:
@@ -263,7 +252,7 @@ POST(sys_ptrace)
    }
 }
 
-PRE(sys_rt_sigreturn)
+static PRE(sys_rt_sigreturn)
 {
    /* See comments on PRE(sys_rt_sigreturn) in syswrap-amd64-linux.c for
       an explanation of what follows. */
@@ -286,7 +275,7 @@ PRE(sys_rt_sigreturn)
    *flags |= SfPollAfter;
 }
 
-PRE(sys_mmap)
+static PRE(sys_mmap)
 {
    PRINT("sys_mmap ( %#lx, %lu, %lu, %#lx, %lu, %lu )", ARG1, ARG2, ARG3, ARG4,
          ARG5, ARG6);
@@ -299,7 +288,7 @@ PRE(sys_mmap)
    SET_STATUS_from_SysRes(r);
 }
 
-PRE(sys_riscv_flush_icache)
+static PRE(sys_riscv_flush_icache)
 {
    PRINT("sys_riscv_flush_icache ( %#lx, %lx, %#lx )", ARG1, ARG2, ARG3);
    PRE_REG_READ3(long, "riscv_flush_icache", unsigned long, start,
