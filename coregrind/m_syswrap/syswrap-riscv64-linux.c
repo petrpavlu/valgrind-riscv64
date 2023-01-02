@@ -37,6 +37,7 @@
 #include "pub_core_options.h"
 #include "pub_core_scheduler.h"
 #include "pub_core_sigframe.h" // For VG_(sigframe_destroy)()
+#include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_threadstate.h"
@@ -188,17 +189,18 @@ void VG_(cleanup_thread)(ThreadArchState* arch) {}
 #define PRE(name)  DEFN_PRE_TEMPLATE(riscv64_linux, name)
 #define POST(name) DEFN_POST_TEMPLATE(riscv64_linux, name)
 
-// ARG3 is only used for pointers into the traced process's address
-// space and for offsets into the traced process's struct
-// user_regs_struct. It is never a pointer into this process's memory
-// space, and we should therefore not check anything it points to.
+/* ARG3 is only used for pointers into the traced process's address space and
+   for offsets into the traced process's struct user_regs_struct. It is never
+   a pointer into this process's memory space, and we should therefore not check
+   anything it points to. */
 static PRE(sys_ptrace)
 {
-   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", (Word)ARG1, (Word)ARG2, ARG3,
-         ARG4);
+   PRINT("sys_ptrace ( %ld, %ld, %#lx, %#lx )", SARG1, SARG2, ARG3, ARG4);
    PRE_REG_READ4(int, "ptrace", long, request, long, pid, long, addr, long,
                  data);
    switch (ARG1) {
+   case VKI_PTRACE_TRACEME:
+      break;
    case VKI_PTRACE_PEEKTEXT:
    case VKI_PTRACE_PEEKDATA:
    case VKI_PTRACE_PEEKUSR:
@@ -220,6 +222,9 @@ static PRE(sys_ptrace)
       ML_(linux_PRE_setregset)(tid, ARG3, ARG4);
       break;
    default:
+      VG_(umsg)("WARNING: unhandled ptrace request %ld.\n", SARG1);
+      if (VG_(clo_verbosity) > 1)
+         VG_(get_and_pp_StackTrace)(tid, VG_(clo_backtrace_size));
       break;
    }
 }
@@ -239,9 +244,8 @@ static POST(sys_ptrace)
       POST_MEM_WRITE(ARG4, sizeof(unsigned long));
       break;
    case VKI_PTRACE_GETSIGINFO:
-      /* XXX: This is a simplification. Different parts of the
-       * siginfo_t are valid depending on the type of signal.
-       */
+      /* XXX: This is a simplification. Different parts of the siginfo_t are
+         valid depending on the type of signal. */
       POST_MEM_WRITE(ARG4, sizeof(vki_siginfo_t));
       break;
    case VKI_PTRACE_GETREGSET:
