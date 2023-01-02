@@ -28,28 +28,23 @@
 
 #if defined(VGP_riscv64_linux)
 
-#include "pub_core_aspacemgr.h"
 #include "pub_core_basics.h"
 #include "pub_core_libcassert.h"
-#include "pub_core_libcbase.h"
 #include "pub_core_libcprint.h"
-#include "pub_core_libcsignal.h"
 #include "pub_core_options.h"
-#include "pub_core_scheduler.h"
-#include "pub_core_sigframe.h" // For VG_(sigframe_destroy)()
+#include "pub_core_sigframe.h"
 #include "pub_core_stacktrace.h"
 #include "pub_core_syscall.h"
 #include "pub_core_syswrap.h"
 #include "pub_core_threadstate.h"
 #include "pub_core_tooliface.h"
-#include "pub_core_transtab.h" // VG_(discard_translations)
+#include "pub_core_transtab.h"
 #include "pub_core_vki.h"
 #include "pub_core_vkiscnums.h"
 
-#include "priv_syswrap-generic.h" /* for decls of generic wrappers */
-#include "priv_syswrap-linux.h"   /* for decls of linux-ish wrappers */
+#include "priv_syswrap-generic.h"
+#include "priv_syswrap-linux.h"
 #include "priv_types_n_macros.h"
-/* TODO Review includes. */
 
 /* ---------------------------------------------------------------------
    clone() handling
