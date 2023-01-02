@@ -55,51 +55,51 @@
    clone() handling
    ------------------------------------------------------------------ */
 
-/* Call f(arg1), but first switch stacks, using 'stack' as the new
-   stack, and use 'retaddr' as f's return-to address.  Also, clear all
-   the integer registers before entering f.*/
+/* Call f(arg1), but first switch stacks, using 'stack' as the new stack, and
+   use 'retaddr' as f's return-to address. Also, clear all the integer registers
+   before entering f.*/
 __attribute__((noreturn)) void ML_(call_on_new_stack_0_1)(Addr stack,
                                                           Addr retaddr,
                                                           void (*f)(Word),
                                                           Word arg1);
-//    a0 = stack
-//    a1 = retaddr
-//    a2 = f
-//    a3 = arg1
+/* a0 = stack
+   a1 = retaddr
+   a2 = f
+   a3 = arg1 */
 asm(".text\n"
     ".globl vgModuleLocal_call_on_new_stack_0_1\n"
     "vgModuleLocal_call_on_new_stack_0_1:\n"
-    "   mv    sp, a0\n\t" /* Stack pointer */
-    "   mv    ra, a1\n\t" /* Return address */
-    "   mv    a0, a3\n\t" /* First argument */
-    "   li    t0, 0\n\t"  /* Clear our GPRs */
-    "   li    t1, 0\n\t"
-    "   li    t2, 0\n\t"
-    "   li    s0, 0\n\t"
-    "   li    s1, 0\n\t"
-    /* don't zero out a0, already set to the first argument */
-    "   li    a1, 0\n\t"
-    /* don't zero out a2, holds the target function f() */
-    "   li    a3, 0\n\t"
-    "   li    a4, 0\n\t"
-    "   li    a5, 0\n\t"
-    "   li    a6, 0\n\t"
-    "   li    a7, 0\n\t"
-    "   li    s2, 0\n\t"
-    "   li    s3, 0\n\t"
-    "   li    s4, 0\n\t"
-    "   li    s5, 0\n\t"
-    "   li    s6, 0\n\t"
-    "   li    s7, 0\n\t"
-    "   li    s8, 0\n\t"
-    "   li    s9, 0\n\t"
-    "   li    s10, 0\n\t"
-    "   li    s11, 0\n\t"
-    "   li    t3, 0\n\t"
-    "   li    t4, 0\n\t"
-    "   li    t5, 0\n\t"
-    "   li    t6, 0\n\t"
-    "   jr    a2\n\t"
+    "mv sp, a0\n" /* Set the stack pointer. */
+    "mv ra, a1\n" /* Set the return address. */
+    "mv a0, a3\n" /* Set the first argument. */
+    "li t0, 0\n"  /* Clear our GPRs. */
+    "li t1, 0\n"
+    "li t2, 0\n"
+    "li s0, 0\n"
+    "li s1, 0\n"
+    /* Don't zero out a0, already set to the first argument. */
+    "li a1, 0\n"
+    /* Don't zero out a2, holds the target function f(). */
+    "li a3, 0\n"
+    "li a4, 0\n"
+    "li a5, 0\n"
+    "li a6, 0\n"
+    "li a7, 0\n"
+    "li s2, 0\n"
+    "li s3, 0\n"
+    "li s4, 0\n"
+    "li s5, 0\n"
+    "li s6, 0\n"
+    "li s7, 0\n"
+    "li s8, 0\n"
+    "li s9, 0\n"
+    "li s10, 0\n"
+    "li s11, 0\n"
+    "li t3, 0\n"
+    "li t4, 0\n"
+    "li t5, 0\n"
+    "li t6, 0\n"
+    "jr a2\n"
     ".previous\n");
 
 /* Perform a clone system call. Clone is strange because it has fork()-like
@@ -133,42 +133,40 @@ asm(".text\n"
 asm(".text\n"
     ".globl do_syscall_clone_riscv64_linux\n"
     "do_syscall_clone_riscv64_linux:\n"
-    // set up child stack, temporarily preserving fn and arg
-    "       addi   a1, a1, -16\n" // make space on stack
-    "       sd     a3, 8(a1)\n"   // save arg
-    "       sd     a0, 0(a1)\n"   // save fn
+    /* Set up the child stack, temporarily preserving fn and arg. */
+    "addi a1, a1, -16\n" /* Make space on the stack. */
+    "sd a3, 8(a1)\n"     /* Save arg. */
+    "sd a0, 0(a1)\n"     /* Save fn. */
 
-    // setup syscall
-    "       li     a7, "__NR_CLONE
-    "\n"                     // syscall number
-    "       mv     a0, a2\n" // syscall arg1: flags
-    "       mv     a1, a1\n" // syscall arg2: child_stack
-    "       mv     a2, a5\n" // syscall arg3: parent_tid
-    "       mv     a3, a6\n" // syscall arg4: tls_ptr
-    "       mv     a4, a4\n" // syscall arg5: child_tid
+    /* Setup the syscall. */
+    "li a7, " __NR_CLONE "\n" /* Load the syscall number. */
+    "mv a0, a2\n"             /* Load syscall arg1: flags. */
+    "mv a1, a1\n"             /* Load syscall arg2: child_stack. */
+    "mv a2, a5\n"             /* Load syscall arg3: parent_tid. */
+    "mv a3, a6\n"             /* Load syscall arg4: tls_ptr. */
+    "mv a4, a4\n"             /* Load syscall arg5: child_tid. */
 
-    "       ecall\n" // clone()
+    "ecall\n" /* clone() */
 
-    "       bnez   a0, 1f\n" // child if retval == 0
+    "bnez a0, 1f\n" /* Child if retval == 0. */
 
-    // CHILD - call thread function
-    "       ld     a1, 0(sp)\n" // pop fn
-    "       ld     a0, 8(sp)\n" // pop fn arg1: arg
-    "       addi   sp, sp, 16\n"
-    "       jalr   a1\n" // call fn
+    /* CHILD - call the thread function. */
+    "ld a1, 0(sp)\n" /* Pop fn. */
+    "ld a0, 8(sp)\n" /* Pop fn arg1: arg. */
+    "addi sp, sp, 16\n"
+    "jalr a1\n" /* Call fn. */
 
-    // exit with result
-    "       mv     a0, a0\n" // arg1: return value from fn
-    "       li     a7, "__NR_EXIT
-    "\n"
+    /* Exit with result. */
+    "mv a0, a0\n" /* arg1: return value from fn. */
+    "li a7, " __NR_EXIT "\n"
 
-    "       ecall\n"
+    "ecall\n"
 
-    // Exit returned?!
-    "       unimp\n"
+    /* Exit returned?! */
+    "unimp\n"
 
-    "1:\n" // PARENT or ERROR.  a0 holds return value from the clone syscall.
-    "       ret\n"
+    "1:\n" /* PARENT or ERROR. a0 holds return value from the clone syscall. */
+    "ret\n"
     ".previous\n");
 
 #undef __NR_CLONE
