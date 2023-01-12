@@ -95,6 +95,44 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 40); }
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
 
+/* RISCV64in_FpBinary sub-types. */
+typedef enum {
+   RISCV64fpb_FADD_S = 0x200, /* Addition of two 32-bit floating-point
+                                 registers. */
+   RISCV64fpb_FMUL_S,         /* Multiplication of two 32-bit floating-point
+                                 registers. */
+   RISCV64fpb_FDIV_S,         /* Division of a 32-bit floating-point register by
+                                 another. */
+   RISCV64fpb_FSGNJN_S,       /* Copy of a 32-bit floating-point register to
+                                 another with the sign bit taken from the second
+                                 input and negated. */
+   RISCV64fpb_FSGNJX_S,       /* Copy of a 32-bit floating-point register to
+                                 another with the sign bit XOR'ed from the
+                                 second input. */
+   RISCV64fpb_FMIN_S,         /* Select minimum-number of two 32-bit
+                                 floating-point registers. */
+   RISCV64fpb_FMAX_S,         /* Select maximum-number of two 32-bit
+                                 floating-point registers. */
+   RISCV64fpb_FADD_D,         /* Addition of two 64-bit floating-point
+                                 registers. */
+   RISCV64fpb_FSUB_D,         /* Subtraction of one 64-bit floating-point
+                                 register from another. */
+   RISCV64fpb_FMUL_D,         /* Multiplication of two 64-bit floating-point
+                                 registers. */
+   RISCV64fpb_FDIV_D,         /* Division of a 64-bit floating-point register by
+                                 another. */
+   RISCV64fpb_FSGNJN_D,       /* Copy of a 64-bit floating-point register to
+                                 another with the sign bit taken from the second
+                                 input and negated. */
+   RISCV64fpb_FSGNJX_D,       /* Copy of a 64-bit floating-point register to
+                                 another with the sign bit XOR'ed from the
+                                 second input. */
+   RISCV64fpb_FMIN_D,         /* Select minimum-number of two 64-bit
+                                 floating-point registers. */
+   RISCV64fpb_FMAX_D,         /* Select maximum-number of two 64-bit
+                                 floating-point registers. */
+} RISCV64FpBinaryOp;
+
 /* The kind of instructions. */
 typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
@@ -166,26 +204,11 @@ typedef enum {
    RISCV64in_SB,              /* 8-bit store. */
    RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
+   RISCV64in_FpBinary,        /* Floating-point binary instruction. */
    RISCV64in_FMADD_S,         /* Fused multiply-add of 32-bit floating-point
                                  registers. */
-   RISCV64in_FADD_S,          /* Addition of two 32-bit floating-point
-                                 registers. */
-   RISCV64in_FMUL_S,          /* Multiplication of two 32-bit floating-point
-                                 registers. */
-   RISCV64in_FDIV_S,          /* Division of a 32-bit floating-point register by
-                                 another. */
    RISCV64in_FSQRT_S,         /* Square root of a 32-bit floating-point
                                  register. */
-   RISCV64in_FSGNJN_S,        /* Copy of a 32-bit floating-point register to
-                                 another with the sign bit taken from the second
-                                 input and negated. */
-   RISCV64in_FSGNJX_S,        /* Copy of a 32-bit floating-point register to
-                                 another with the sign bit XOR'ed from the
-                                 second input. */
-   RISCV64in_FMIN_S,          /* Select minimum-number of two 32-bit
-                                 floating-point registers. */
-   RISCV64in_FMAX_S,          /* Select maximum-number of two 32-bit
-                                 floating-point registers. */
    RISCV64in_FEQ_S,           /* Equality comparison of two 32-bit
                                  floating-point registers. */
    RISCV64in_FLT_S,           /* Less-than comparison of two 32-bit
@@ -214,26 +237,8 @@ typedef enum {
                                  another. */
    RISCV64in_FMADD_D,         /* Fused multiply-add of 64-bit floating-point
                                  registers. */
-   RISCV64in_FADD_D,          /* Addition of two 64-bit floating-point
-                                 registers. */
-   RISCV64in_FSUB_D,          /* Subtraction of one 64-bit floating-point
-                                 register from another. */
-   RISCV64in_FMUL_D,          /* Multiplication of two 64-bit floating-point
-                                 registers. */
-   RISCV64in_FDIV_D,          /* Division of a 64-bit floating-point register by
-                                 another. */
    RISCV64in_FSQRT_D,         /* Square root of a 64-bit floating-point
                                  register. */
-   RISCV64in_FSGNJN_D,        /* Copy of a 64-bit floating-point register to
-                                 another with the sign bit taken from the second
-                                 input and negated. */
-   RISCV64in_FSGNJX_D,        /* Copy of a 64-bit floating-point register to
-                                 another with the sign bit XOR'ed from the
-                                 second input. */
-   RISCV64in_FMIN_D,          /* Select minimum-number of two 64-bit
-                                 floating-point registers. */
-   RISCV64in_FMAX_D,          /* Select maximum-number of two 64-bit
-                                 floating-point registers. */
    RISCV64in_FEQ_D,           /* Equality comparison of two 64-bit
                                  floating-point registers. */
    RISCV64in_FLT_D,           /* Less-than comparison of two 64-bit
@@ -566,6 +571,13 @@ typedef struct {
          HReg src;
          HReg addr;
       } SC_W;
+      /* Floating-point binary instruction. */
+      struct {
+         RISCV64FpBinaryOp op;
+         HReg              dst;
+         HReg              src1;
+         HReg              src2;
+      } FpBinary;
       /* Fused multiply-add of 32-bit floating-point registers. */
       struct {
          HReg dst;
@@ -573,55 +585,11 @@ typedef struct {
          HReg src2;
          HReg src3;
       } FMADD_S;
-      /* Addition of two 32-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FADD_S;
-      /* Multiplication of two 32-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FMUL_S;
-      /* Division of a 32-bit floating-point register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FDIV_S;
       /* Square root of a 32-bit floating-point register. */
       struct {
          HReg dst;
          HReg src1;
       } FSQRT_S;
-      /* Copy of a 32-bit floating-point register to another with the sign bit
-         taken from the second input and negated. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FSGNJN_S;
-      /* Copy of a 32-bit floating-point register to another with the sign bit
-         XOR'ed from the second input. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FSGNJX_S;
-      /* Select minimum-number of two 32-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FMIN_S;
-      /* Select maximum-number of two 32-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FMAX_S;
       /* Equality comparison of two 32-bit floating-point registers. */
       struct {
          HReg dst;
@@ -698,61 +666,11 @@ typedef struct {
          HReg src2;
          HReg src3;
       } FMADD_D;
-      /* Addition of two 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FADD_D;
-      /* Subtraction of one 64-bit floating-point register from another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FSUB_D;
-      /* Multiplication of two 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FMUL_D;
-      /* Division of a 64-bit floating-point register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FDIV_D;
       /* Square root of a 64-bit floating-point register. */
       struct {
          HReg dst;
          HReg src1;
       } FSQRT_D;
-      /* Copy of a 64-bit floating-point register to another with the sign bit
-         taken from the second input and negated. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FSGNJN_D;
-      /* Copy of a 64-bit floating-point register to another with the sign bit
-         XOR'ed from the second input. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FSGNJX_D;
-      /* Select minimum-number of two 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FMIN_D;
-      /* Select maximum-number of two 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FMAX_D;
       /* Equality comparison of two 64-bit floating-point registers. */
       struct {
          HReg dst;
@@ -973,15 +891,10 @@ RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
+RISCV64Instr*
+RISCV64Instr_FpBinary(RISCV64FpBinaryOp op, HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FMADD_S(HReg dst, HReg src1, HReg src2, HReg src3);
-RISCV64Instr* RISCV64Instr_FADD_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMUL_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FDIV_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSQRT_S(HReg dst, HReg src1);
-RISCV64Instr* RISCV64Instr_FSGNJN_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FSGNJX_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMIN_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMAX_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FEQ_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FLT_S(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FCVT_W_S(HReg dst, HReg src);
@@ -996,15 +909,7 @@ RISCV64Instr* RISCV64Instr_FMV_X_W(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_W_X(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FMADD_D(HReg dst, HReg src1, HReg src2, HReg src3);
-RISCV64Instr* RISCV64Instr_FADD_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FSUB_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMUL_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FDIV_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FSQRT_D(HReg dst, HReg src1);
-RISCV64Instr* RISCV64Instr_FSGNJN_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FSGNJX_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMIN_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMAX_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FEQ_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_FCVT_S_D(HReg dst, HReg src);
