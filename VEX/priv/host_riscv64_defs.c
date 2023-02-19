@@ -102,9 +102,8 @@ static const HChar* showRISCV64CSR(UInt csr)
       return "frm";
    case 0x003:
       return "fcsr";
-   default:
-      vpanic("showRISCV64CSR");
    }
+   vpanic("showRISCV64CSR");
 }
 
 static const HChar* showRISCV64FpBinaryOp(RISCV64FpBinaryOp op)
