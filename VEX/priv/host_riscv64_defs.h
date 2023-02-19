@@ -95,6 +95,14 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 40); }
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
 
+/* RISCV64in_FpUnary sub-types. */
+typedef enum {
+   RISCV64fpu_FSQRT_S = 0x100, /* Square root of a 32-bit floating-point
+                                  register. */
+   RISCV64fpu_FSQRT_D,         /* Square root of a 64-bit floating-point
+                                  register. */
+} RISCV64FpUnaryOp;
+
 /* RISCV64in_FpBinary sub-types. */
 typedef enum {
    RISCV64fpb_FADD_S = 0x200, /* Addition of two 32-bit floating-point
@@ -132,6 +140,30 @@ typedef enum {
    RISCV64fpb_FMAX_D,         /* Select maximum-number of two 64-bit
                                  floating-point registers. */
 } RISCV64FpBinaryOp;
+
+/* RISCV64in_FpTernary sub-types. */
+typedef enum {
+   RISCV64fpt_FMADD_S = 0x300, /* Fused multiply-add of 32-bit floating-point
+                                  registers. */
+   RISCV64fpt_FMADD_D,         /* Fused multiply-add of 64-bit floating-point
+                                  registers. */
+} RISCV64FpTernaryOp;
+
+/* RISCV64in_FpMove sub-types. */
+typedef enum {
+   RISCV64fpm_FMV_X_W = 0x400, /* Move as-is a 32-bit value from
+                                  a floating-point register to an integer
+                                  register. */
+   RISCV64fpm_FMV_W_X,         /* Move as-is a 32-bit value from an integer
+                                  register to a floating-point register. */
+   RISCV64fpm_FMV_D,           /* Copy one 64-bit floating-point register to
+                                  another. */
+   RISCV64fpm_FMV_X_D,         /* Move as-is a 64-bit value from
+                                  a floating-point register to an integer
+                                  register. */
+   RISCV64fpm_FMV_D_X,         /* Move as-is a 64-bit value from an integer
+                                  register to a floating-point register. */
+} RISCV64FpMoveOp;
 
 /* RISCV64in_FpConvert sub-types. */
 typedef enum {
@@ -172,6 +204,26 @@ typedef enum {
    RISCV64fpc_FCVT_D_LU,        /* Convert a 64-bit unsigned integer to a 64-bit
                                    floating-point number. */
 } RISCV64FpConvertOp;
+
+/* RISCV64in_FpCompare sub-types. */
+typedef enum {
+   RISCV64fpc_FEQ_S = 0x600, /* Equality comparison of two 32-bit floating-point
+                                registers. */
+   RISCV64fpc_FLT_S,         /* Less-than comparison of two 32-bit
+                                floating-point registers. */
+   RISCV64fpc_FEQ_D,         /* Equality comparison of two 64-bit floating-point
+                                registers. */
+   RISCV64fpc_FLT_D,         /* Less-than comparison of two 64-bit
+                                floating-point registers. */
+} RISCV64FpCompareOp;
+
+/* RISCV64in_FpLdSt sub-types. */
+typedef enum {
+   RISCV64fpm_FLW = 0x700, /* 32-bit floating-point load. */
+   RISCV64fpm_FLD,         /* 64-bit floating-point load. */
+   RISCV64fpm_FSW,         /* 32-bit floating-point store. */
+   RISCV64fpm_FSD,         /* 64-bit floating-point store. */
+} RISCV64FpLdStOp;
 
 /* The kind of instructions. */
 typedef enum {
@@ -244,38 +296,13 @@ typedef enum {
    RISCV64in_SB,              /* 8-bit store. */
    RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
    RISCV64in_SC_W,            /* 32-bit store-conditional. */
+   RISCV64in_FpUnary,         /* Floating-point unary instruction. */
    RISCV64in_FpBinary,        /* Floating-point binary instruction. */
+   RISCV64in_FpTernary,       /* Floating-point ternary instruction. */
+   RISCV64in_FpMove,          /* Floating-point move instruction. */
    RISCV64in_FpConvert,       /* Floating-point convert instruction. */
-   RISCV64in_FMADD_S,         /* Fused multiply-add of 32-bit floating-point
-                                 registers. */
-   RISCV64in_FSQRT_S,         /* Square root of a 32-bit floating-point
-                                 register. */
-   RISCV64in_FEQ_S,           /* Equality comparison of two 32-bit
-                                 floating-point registers. */
-   RISCV64in_FLT_S,           /* Less-than comparison of two 32-bit
-                                 floating-point registers. */
-   RISCV64in_FMV_X_W,         /* Move as-is a 32-bit value from a floating-point
-                                 register to an integer register. */
-   RISCV64in_FMV_W_X,         /* Move as-is a 32-bit value from an integer
-                                 register to a floating-point register. */
-   RISCV64in_FMV_D,           /* Copy one 64-bit floating-point register to
-                                 another. */
-   RISCV64in_FMADD_D,         /* Fused multiply-add of 64-bit floating-point
-                                 registers. */
-   RISCV64in_FSQRT_D,         /* Square root of a 64-bit floating-point
-                                 register. */
-   RISCV64in_FEQ_D,           /* Equality comparison of two 64-bit
-                                 floating-point registers. */
-   RISCV64in_FLT_D,           /* Less-than comparison of two 64-bit
-                                 floating-point registers. */
-   RISCV64in_FMV_X_D,         /* Move as-is a 64-bit value from a floating-point
-                                 register to an integer register. */
-   RISCV64in_FMV_D_X,         /* Move as-is a 64-bit value from an integer
-                                 register to a floating-point register. */
-   RISCV64in_FLW,             /* 32-bit floating-point load. */
-   RISCV64in_FLD,             /* 64-bit floating-point load. */
-   RISCV64in_FSW,             /* 32-bit floating-point store. */
-   RISCV64in_FSD,             /* 64-bit floating-point store. */
+   RISCV64in_FpCompare,       /* Floating-point compare instruction. */
+   RISCV64in_FpLdSt,          /* Floating-point load/store instruction. */
    RISCV64in_CAS_W,           /* 32-bit compare-and-swap pseudoinstruction. */
    RISCV64in_CAS_D,           /* 64-bit compare-and-swap pseudoinstruction. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
@@ -576,6 +603,12 @@ typedef struct {
          HReg src;
          HReg addr;
       } SC_W;
+      /* Floating-point unary instruction. */
+      struct {
+         RISCV64FpUnaryOp op;
+         HReg             dst;
+         HReg             src;
+      } FpUnary;
       /* Floating-point binary instruction. */
       struct {
          RISCV64FpBinaryOp op;
@@ -583,113 +616,40 @@ typedef struct {
          HReg              src1;
          HReg              src2;
       } FpBinary;
+      /* Floating-point ternary instruction. */
+      struct {
+         RISCV64FpTernaryOp op;
+         HReg               dst;
+         HReg               src1;
+         HReg               src2;
+         HReg               src3;
+      } FpTernary;
+      /* Floating-point move instruction. */
+      struct {
+         RISCV64FpMoveOp op;
+         HReg            dst;
+         HReg            src;
+      } FpMove;
       /* Floating-point convert instruction. */
       struct {
          RISCV64FpConvertOp op;
          HReg               dst;
          HReg               src;
       } FpConvert;
-      /* Fused multiply-add of 32-bit floating-point registers. */
+      /* Floating-point compare instruction. */
       struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-         HReg src3;
-      } FMADD_S;
-      /* Square root of a 32-bit floating-point register. */
+         RISCV64FpCompareOp op;
+         HReg               dst;
+         HReg               src1;
+         HReg               src2;
+      } FpCompare;
+      /* Floating-point load/store instruction. */
       struct {
-         HReg dst;
-         HReg src1;
-      } FSQRT_S;
-      /* Equality comparison of two 32-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FEQ_S;
-      /* Less-than comparison of two 32-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FLT_S;
-      /* Move as-is a 32-bit value from a floating-point register to an integer
-         register. */
-      struct {
-         HReg dst;
-         HReg src;
-      } FMV_X_W;
-      /* Move as-is a 32-bit value from an integer register to a floating-point
-         register. */
-      struct {
-         HReg dst;
-         HReg src;
-      } FMV_W_X;
-      /* Copy one 64-bit floating-point register to another. */
-      struct {
-         HReg dst;
-         HReg src;
-      } FMV_D;
-      /* Fused multiply-add of 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-         HReg src3;
-      } FMADD_D;
-      /* Square root of a 64-bit floating-point register. */
-      struct {
-         HReg dst;
-         HReg src1;
-      } FSQRT_D;
-      /* Equality comparison of two 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FEQ_D;
-      /* Less-than comparison of two 64-bit floating-point registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } FLT_D;
-      /* Move as-is a 64-bit value from a floating-point register to an integer
-         register. */
-      struct {
-         HReg dst;
-         HReg src;
-      } FMV_X_D;
-      /* Move as-is a 64-bit value from an integer register to a floating-point
-         register. */
-      struct {
-         HReg dst;
-         HReg src;
-      } FMV_D_X;
-      /* 64-bit floating-point load. */
-      struct {
-         HReg dst;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } FLD;
-      /* 32-bit floating-point load. */
-      struct {
-         HReg dst;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } FLW;
-      /* 64-bit floating-point store. */
-      struct {
-         HReg src;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } FSD;
-      /* 32-bit floating-point store. */
-      struct {
-         HReg src;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } FSW;
+         RISCV64FpLdStOp op;
+         HReg            reg; /* dst for load, src store */
+         HReg            base;
+         Int             soff12; /* -2048 .. +2047 */
+      } FpLdSt;
       /* 32-bit compare-and-swap pseudoinstruction. */
       struct {
          HReg old;
@@ -810,26 +770,17 @@ RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
+RISCV64Instr* RISCV64Instr_FpUnary(RISCV64FpUnaryOp op, HReg dst, HReg src);
 RISCV64Instr*
 RISCV64Instr_FpBinary(RISCV64FpBinaryOp op, HReg dst, HReg src1, HReg src2);
+RISCV64Instr* RISCV64Instr_FpTernary(
+   RISCV64FpTernaryOp op, HReg dst, HReg src1, HReg src2, HReg src3);
+RISCV64Instr* RISCV64Instr_FpMove(RISCV64FpMoveOp op, HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_FpConvert(RISCV64FpConvertOp op, HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_FMADD_S(HReg dst, HReg src1, HReg src2, HReg src3);
-RISCV64Instr* RISCV64Instr_FSQRT_S(HReg dst, HReg src1);
-RISCV64Instr* RISCV64Instr_FEQ_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FLT_S(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMV_X_W(HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_FMV_W_X(HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_FMV_D(HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_FMADD_D(HReg dst, HReg src1, HReg src2, HReg src3);
-RISCV64Instr* RISCV64Instr_FSQRT_D(HReg dst, HReg src1);
-RISCV64Instr* RISCV64Instr_FEQ_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_FMV_X_D(HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_FMV_D_X(HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_FLD(HReg dst, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_FLW(HReg dst, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_FSD(HReg src, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_FSW(HReg src, HReg base, Int soff12);
+RISCV64Instr*
+RISCV64Instr_FpCompare(RISCV64FpCompareOp op, HReg dst, HReg src1, HReg src2);
+RISCV64Instr*
+RISCV64Instr_FpLdSt(RISCV64FpLdStOp op, HReg reg, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_SC_W(HReg res, HReg src, HReg addr);
 RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);
