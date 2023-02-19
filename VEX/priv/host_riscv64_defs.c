@@ -143,6 +143,49 @@ static const HChar* showRISCV64FpBinaryOp(RISCV64FpBinaryOp op)
    vpanic("showRISCV64FpBinaryOp");
 }
 
+static const HChar* showRISCV64FpConvertOp(RISCV64FpConvertOp op)
+{
+   switch (op) {
+   case RISCV64fpc_FCVT_W_S:
+      return "fcvt.w.s";
+   case RISCV64fpc_FCVT_WU_S:
+      return "fcvt.wu.s";
+   case RISCV64fpc_FCVT_S_W:
+      return "fcvt.s.w";
+   case RISCV64fpc_FCVT_S_WU:
+      return "fcvt.s.wu";
+   case RISCV64fpc_FCVT_L_S:
+      return "fcvt.l.s";
+   case RISCV64fpc_FCVT_LU_S:
+      return "fcvt.lu.s";
+   case RISCV64fpc_FCVT_S_L:
+      return "fcvt.s.l";
+   case RISCV64fpc_FCVT_S_LU:
+      return "fcvt.s.lu";
+   case RISCV64fpc_FCVT_S_D:
+      return "fcvt.s.d";
+   case RISCV64fpc_FCVT_D_S:
+      return "fcvt.d.s";
+   case RISCV64fpc_FCVT_W_D:
+      return "fcvt.w.d";
+   case RISCV64fpc_FCVT_WU_D:
+      return "fcvt.wu.d";
+   case RISCV64fpc_FCVT_D_W:
+      return "fcvt.d.w";
+   case RISCV64fpc_FCVT_D_WU:
+      return "fcvt.d.wu";
+   case RISCV64fpc_FCVT_L_D:
+      return "fcvt.l.d";
+   case RISCV64fpc_FCVT_LU_D:
+      return "fcvt.lu.d";
+   case RISCV64fpc_FCVT_D_L:
+      return "fcvt.d.l";
+   case RISCV64fpc_FCVT_D_LU:
+      return "fcvt.d.lu";
+   }
+   vpanic("showRISCV64FpConvertOp");
+}
+
 RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64)
 {
    RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -632,6 +675,16 @@ RISCV64Instr_FpBinary(RISCV64FpBinaryOp op, HReg dst, HReg src1, HReg src2)
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_FpConvert(RISCV64FpConvertOp op, HReg dst, HReg src)
+{
+   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag                     = RISCV64in_FpConvert;
+   i->RISCV64in.FpConvert.op  = op;
+   i->RISCV64in.FpConvert.dst = dst;
+   i->RISCV64in.FpConvert.src = src;
+   return i;
+}
+
 RISCV64Instr* RISCV64Instr_FMADD_S(HReg dst, HReg src1, HReg src2, HReg src3)
 {
    RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
@@ -669,78 +722,6 @@ RISCV64Instr* RISCV64Instr_FLT_S(HReg dst, HReg src1, HReg src2)
    i->RISCV64in.FLT_S.dst  = dst;
    i->RISCV64in.FLT_S.src1 = src1;
    i->RISCV64in.FLT_S.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_W_S(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_W_S;
-   i->RISCV64in.FCVT_W_S.dst = dst;
-   i->RISCV64in.FCVT_W_S.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_WU_S(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_WU_S;
-   i->RISCV64in.FCVT_WU_S.dst = dst;
-   i->RISCV64in.FCVT_WU_S.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_S_W(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_S_W;
-   i->RISCV64in.FCVT_S_W.dst = dst;
-   i->RISCV64in.FCVT_S_W.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_S_WU(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_S_WU;
-   i->RISCV64in.FCVT_S_WU.dst = dst;
-   i->RISCV64in.FCVT_S_WU.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_L_S(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_L_S;
-   i->RISCV64in.FCVT_L_S.dst = dst;
-   i->RISCV64in.FCVT_L_S.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_LU_S(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_LU_S;
-   i->RISCV64in.FCVT_LU_S.dst = dst;
-   i->RISCV64in.FCVT_LU_S.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_S_L(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_S_L;
-   i->RISCV64in.FCVT_S_L.dst = dst;
-   i->RISCV64in.FCVT_S_L.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_S_LU(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_S_LU;
-   i->RISCV64in.FCVT_S_LU.dst = dst;
-   i->RISCV64in.FCVT_S_LU.src = src;
    return i;
 }
 
@@ -808,96 +789,6 @@ RISCV64Instr* RISCV64Instr_FLT_D(HReg dst, HReg src1, HReg src2)
    i->RISCV64in.FLT_D.dst  = dst;
    i->RISCV64in.FLT_D.src1 = src1;
    i->RISCV64in.FLT_D.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_S_D(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_S_D;
-   i->RISCV64in.FCVT_S_D.dst = dst;
-   i->RISCV64in.FCVT_S_D.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_D_S(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_D_S;
-   i->RISCV64in.FCVT_D_S.dst = dst;
-   i->RISCV64in.FCVT_D_S.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_W_D(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_W_D;
-   i->RISCV64in.FCVT_W_D.dst = dst;
-   i->RISCV64in.FCVT_W_D.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_WU_D(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_WU_D;
-   i->RISCV64in.FCVT_WU_D.dst = dst;
-   i->RISCV64in.FCVT_WU_D.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_D_W(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_D_W;
-   i->RISCV64in.FCVT_D_W.dst = dst;
-   i->RISCV64in.FCVT_D_W.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_D_WU(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_D_WU;
-   i->RISCV64in.FCVT_D_WU.dst = dst;
-   i->RISCV64in.FCVT_D_WU.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_L_D(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_L_D;
-   i->RISCV64in.FCVT_L_D.dst = dst;
-   i->RISCV64in.FCVT_L_D.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_LU_D(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_LU_D;
-   i->RISCV64in.FCVT_LU_D.dst = dst;
-   i->RISCV64in.FCVT_LU_D.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_D_L(HReg dst, HReg src)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_FCVT_D_L;
-   i->RISCV64in.FCVT_D_L.dst = dst;
-   i->RISCV64in.FCVT_D_L.src = src;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_FCVT_D_LU(HReg dst, HReg src)
-{
-   RISCV64Instr* i            = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                     = RISCV64in_FCVT_D_LU;
-   i->RISCV64in.FCVT_D_LU.dst = dst;
-   i->RISCV64in.FCVT_D_LU.src = src;
    return i;
 }
 
@@ -1437,6 +1328,12 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.FpBinary.src2);
       return;
+   case RISCV64in_FpConvert:
+      vex_printf("%-7s ", showRISCV64FpConvertOp(i->RISCV64in.FpConvert.op));
+      ppHRegRISCV64(i->RISCV64in.FpConvert.dst);
+      vex_printf(", ");
+      ppHRegRISCV64(i->RISCV64in.FpConvert.src);
+      return;
    case RISCV64in_FMADD_S:
       vex_printf("fmadd.s ");
       ppHRegRISCV64(i->RISCV64in.FMADD_S.dst);
@@ -1468,54 +1365,6 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.FLT_S.src1);
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.FLT_S.src2);
-      return;
-   case RISCV64in_FCVT_W_S:
-      vex_printf("fcvt.w.s ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_W_S.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_W_S.src);
-      return;
-   case RISCV64in_FCVT_WU_S:
-      vex_printf("fcvt.wu.s ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_WU_S.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_WU_S.src);
-      return;
-   case RISCV64in_FCVT_S_W:
-      vex_printf("fcvt.s.w ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_W.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_W.src);
-      return;
-   case RISCV64in_FCVT_S_WU:
-      vex_printf("fcvt.s.wu ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_WU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_WU.src);
-      return;
-   case RISCV64in_FCVT_L_S:
-      vex_printf("fcvt.l.s ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_L_S.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_L_S.src);
-      return;
-   case RISCV64in_FCVT_LU_S:
-      vex_printf("fcvt.lu.s ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_LU_S.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_LU_S.src);
-      return;
-   case RISCV64in_FCVT_S_L:
-      vex_printf("fcvt.s.l ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_L.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_L.src);
-      return;
-   case RISCV64in_FCVT_S_LU:
-      vex_printf("fcvt.s.lu ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_LU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_LU.src);
       return;
    case RISCV64in_FMV_X_W:
       vex_printf("fmv.x.w  ");
@@ -1566,66 +1415,6 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       ppHRegRISCV64(i->RISCV64in.FLT_D.src1);
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.FLT_D.src2);
-      return;
-   case RISCV64in_FCVT_S_D:
-      vex_printf("fcvt.s.d ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_D.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_S_D.src);
-      return;
-   case RISCV64in_FCVT_D_S:
-      vex_printf("fcvt.d.s ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_S.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_S.src);
-      return;
-   case RISCV64in_FCVT_W_D:
-      vex_printf("fcvt.w.d ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_W_D.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_W_D.src);
-      return;
-   case RISCV64in_FCVT_WU_D:
-      vex_printf("fcvt.wu.d ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_WU_D.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_WU_D.src);
-      return;
-   case RISCV64in_FCVT_D_W:
-      vex_printf("fcvt.d.w ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_W.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_W.src);
-      return;
-   case RISCV64in_FCVT_D_WU:
-      vex_printf("fcvt.d.wu ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_WU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_WU.src);
-      return;
-   case RISCV64in_FCVT_L_D:
-      vex_printf("fcvt.l.d ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_L_D.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_L_D.src);
-      return;
-   case RISCV64in_FCVT_LU_D:
-      vex_printf("fcvt.lu.d ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_LU_D.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_LU_D.src);
-      return;
-   case RISCV64in_FCVT_D_L:
-      vex_printf("fcvt.d.l ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_L.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_L.src);
-      return;
-   case RISCV64in_FCVT_D_LU:
-      vex_printf("fcvt.d.lu ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_LU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.FCVT_D_LU.src);
       return;
    case RISCV64in_FMV_X_D:
       vex_printf("fmv.x.d  ");
@@ -2093,6 +1882,10 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.FpBinary.src1);
       addHRegUse(u, HRmRead, i->RISCV64in.FpBinary.src2);
       return;
+   case RISCV64in_FpConvert:
+      addHRegUse(u, HRmWrite, i->RISCV64in.FpConvert.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.FpConvert.src);
+      return;
    case RISCV64in_FMADD_S:
       addHRegUse(u, HRmWrite, i->RISCV64in.FMADD_S.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.FMADD_S.src1);
@@ -2112,38 +1905,6 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmWrite, i->RISCV64in.FLT_S.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.FLT_S.src1);
       addHRegUse(u, HRmRead, i->RISCV64in.FLT_S.src2);
-      return;
-   case RISCV64in_FCVT_W_S:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_W_S.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_W_S.src);
-      return;
-   case RISCV64in_FCVT_WU_S:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_WU_S.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_WU_S.src);
-      return;
-   case RISCV64in_FCVT_S_W:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_S_W.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_S_W.src);
-      return;
-   case RISCV64in_FCVT_S_WU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_S_WU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_S_WU.src);
-      return;
-   case RISCV64in_FCVT_L_S:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_L_S.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_L_S.src);
-      return;
-   case RISCV64in_FCVT_LU_S:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_LU_S.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_LU_S.src);
-      return;
-   case RISCV64in_FCVT_S_L:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_S_L.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_S_L.src);
-      return;
-   case RISCV64in_FCVT_S_LU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_S_LU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_S_LU.src);
       return;
    case RISCV64in_FMV_X_W:
       addHRegUse(u, HRmWrite, i->RISCV64in.FMV_X_W.dst);
@@ -2176,46 +1937,6 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmWrite, i->RISCV64in.FLT_D.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.FLT_D.src1);
       addHRegUse(u, HRmRead, i->RISCV64in.FLT_D.src2);
-      return;
-   case RISCV64in_FCVT_S_D:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_S_D.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_S_D.src);
-      return;
-   case RISCV64in_FCVT_D_S:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_D_S.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_D_S.src);
-      return;
-   case RISCV64in_FCVT_W_D:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_W_D.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_W_D.src);
-      return;
-   case RISCV64in_FCVT_WU_D:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_WU_D.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_WU_D.src);
-      return;
-   case RISCV64in_FCVT_D_W:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_D_W.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_D_W.src);
-      return;
-   case RISCV64in_FCVT_D_WU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_D_WU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_D_WU.src);
-      return;
-   case RISCV64in_FCVT_L_D:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_L_D.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_L_D.src);
-      return;
-   case RISCV64in_FCVT_LU_D:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_LU_D.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_LU_D.src);
-      return;
-   case RISCV64in_FCVT_D_L:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_D_L.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_D_L.src);
-      return;
-   case RISCV64in_FCVT_D_LU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.FCVT_D_LU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.FCVT_D_LU.src);
       return;
    case RISCV64in_FMV_X_D:
       addHRegUse(u, HRmWrite, i->RISCV64in.FMV_X_D.dst);
@@ -2609,6 +2330,10 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.FpBinary.src1);
       mapReg(m, &i->RISCV64in.FpBinary.src2);
       return;
+   case RISCV64in_FpConvert:
+      mapReg(m, &i->RISCV64in.FpConvert.dst);
+      mapReg(m, &i->RISCV64in.FpConvert.src);
+      return;
    case RISCV64in_FMADD_S:
       mapReg(m, &i->RISCV64in.FMADD_S.dst);
       mapReg(m, &i->RISCV64in.FMADD_S.src1);
@@ -2628,38 +2353,6 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.FLT_S.dst);
       mapReg(m, &i->RISCV64in.FLT_S.src1);
       mapReg(m, &i->RISCV64in.FLT_S.src2);
-      return;
-   case RISCV64in_FCVT_W_S:
-      mapReg(m, &i->RISCV64in.FCVT_W_S.dst);
-      mapReg(m, &i->RISCV64in.FCVT_W_S.src);
-      return;
-   case RISCV64in_FCVT_WU_S:
-      mapReg(m, &i->RISCV64in.FCVT_WU_S.dst);
-      mapReg(m, &i->RISCV64in.FCVT_WU_S.src);
-      return;
-   case RISCV64in_FCVT_S_W:
-      mapReg(m, &i->RISCV64in.FCVT_S_W.dst);
-      mapReg(m, &i->RISCV64in.FCVT_S_W.src);
-      return;
-   case RISCV64in_FCVT_S_WU:
-      mapReg(m, &i->RISCV64in.FCVT_S_WU.dst);
-      mapReg(m, &i->RISCV64in.FCVT_S_WU.src);
-      return;
-   case RISCV64in_FCVT_L_S:
-      mapReg(m, &i->RISCV64in.FCVT_L_S.dst);
-      mapReg(m, &i->RISCV64in.FCVT_L_S.src);
-      return;
-   case RISCV64in_FCVT_LU_S:
-      mapReg(m, &i->RISCV64in.FCVT_LU_S.dst);
-      mapReg(m, &i->RISCV64in.FCVT_LU_S.src);
-      return;
-   case RISCV64in_FCVT_S_L:
-      mapReg(m, &i->RISCV64in.FCVT_S_L.dst);
-      mapReg(m, &i->RISCV64in.FCVT_S_L.src);
-      return;
-   case RISCV64in_FCVT_S_LU:
-      mapReg(m, &i->RISCV64in.FCVT_S_LU.dst);
-      mapReg(m, &i->RISCV64in.FCVT_S_LU.src);
       return;
    case RISCV64in_FMV_X_W:
       mapReg(m, &i->RISCV64in.FMV_X_W.dst);
@@ -2692,46 +2385,6 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.FLT_D.dst);
       mapReg(m, &i->RISCV64in.FLT_D.src1);
       mapReg(m, &i->RISCV64in.FLT_D.src2);
-      return;
-   case RISCV64in_FCVT_S_D:
-      mapReg(m, &i->RISCV64in.FCVT_S_D.dst);
-      mapReg(m, &i->RISCV64in.FCVT_S_D.src);
-      return;
-   case RISCV64in_FCVT_D_S:
-      mapReg(m, &i->RISCV64in.FCVT_D_S.dst);
-      mapReg(m, &i->RISCV64in.FCVT_D_S.src);
-      return;
-   case RISCV64in_FCVT_W_D:
-      mapReg(m, &i->RISCV64in.FCVT_W_D.dst);
-      mapReg(m, &i->RISCV64in.FCVT_W_D.src);
-      return;
-   case RISCV64in_FCVT_WU_D:
-      mapReg(m, &i->RISCV64in.FCVT_WU_D.dst);
-      mapReg(m, &i->RISCV64in.FCVT_WU_D.src);
-      return;
-   case RISCV64in_FCVT_D_W:
-      mapReg(m, &i->RISCV64in.FCVT_D_W.dst);
-      mapReg(m, &i->RISCV64in.FCVT_D_W.src);
-      return;
-   case RISCV64in_FCVT_D_WU:
-      mapReg(m, &i->RISCV64in.FCVT_D_WU.dst);
-      mapReg(m, &i->RISCV64in.FCVT_D_WU.src);
-      return;
-   case RISCV64in_FCVT_L_D:
-      mapReg(m, &i->RISCV64in.FCVT_L_D.dst);
-      mapReg(m, &i->RISCV64in.FCVT_L_D.src);
-      return;
-   case RISCV64in_FCVT_LU_D:
-      mapReg(m, &i->RISCV64in.FCVT_LU_D.dst);
-      mapReg(m, &i->RISCV64in.FCVT_LU_D.src);
-      return;
-   case RISCV64in_FCVT_D_L:
-      mapReg(m, &i->RISCV64in.FCVT_D_L.dst);
-      mapReg(m, &i->RISCV64in.FCVT_D_L.src);
-      return;
-   case RISCV64in_FCVT_D_LU:
-      mapReg(m, &i->RISCV64in.FCVT_D_LU.dst);
-      mapReg(m, &i->RISCV64in.FCVT_D_LU.src);
       return;
    case RISCV64in_FMV_X_D:
       mapReg(m, &i->RISCV64in.FMV_X_D.dst);
@@ -3760,6 +3413,103 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       }
       break;
    }
+   case RISCV64in_FpConvert: {
+      /* f<op> dst, src */
+      UInt dst, src;
+      switch (i->RISCV64in.FpConvert.op) {
+      case RISCV64fpc_FCVT_W_S:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100000);
+         goto done;
+      case RISCV64fpc_FCVT_WU_S:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100000);
+         goto done;
+      case RISCV64fpc_FCVT_S_W:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101000);
+         goto done;
+      case RISCV64fpc_FCVT_S_WU:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101000);
+         goto done;
+      case RISCV64fpc_FCVT_L_S:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100000);
+         goto done;
+      case RISCV64fpc_FCVT_LU_S:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100000);
+         goto done;
+      case RISCV64fpc_FCVT_S_L:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101000);
+         goto done;
+      case RISCV64fpc_FCVT_S_LU:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101000);
+         goto done;
+      case RISCV64fpc_FCVT_S_D:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b0100000);
+         goto done;
+      case RISCV64fpc_FCVT_D_S:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b0100001);
+         goto done;
+      case RISCV64fpc_FCVT_W_D:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100001);
+         goto done;
+      case RISCV64fpc_FCVT_WU_D:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100001);
+         goto done;
+      case RISCV64fpc_FCVT_D_W:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101001);
+         goto done;
+      case RISCV64fpc_FCVT_D_WU:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101001);
+         goto done;
+      case RISCV64fpc_FCVT_L_D:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100001);
+         goto done;
+      case RISCV64fpc_FCVT_LU_D:
+         dst = iregEnc(i->RISCV64in.FpConvert.dst);
+         src = fregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100001);
+         goto done;
+      case RISCV64fpc_FCVT_D_L:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101001);
+         goto done;
+      case RISCV64fpc_FCVT_D_LU:
+         dst = fregEnc(i->RISCV64in.FpConvert.dst);
+         src = iregEnc(i->RISCV64in.FpConvert.src);
+         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101001);
+         goto done;
+      }
+      break;
+   }
    case RISCV64in_FMADD_S: {
       /* fmadd.s dst, src1, src2, src3 */
       UInt dst  = fregEnc(i->RISCV64in.FMADD_S.dst);
@@ -3776,70 +3526,6 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt src1 = fregEnc(i->RISCV64in.FSQRT_S.src1);
 
       p = emit_R(p, 0b1010011, dst, 0b111, src1, 0b00000, 0b0101100);
-      goto done;
-   }
-   case RISCV64in_FCVT_W_S: {
-      /* fcvt.w.s dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_W_S.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_W_S.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100000);
-      goto done;
-   }
-   case RISCV64in_FCVT_WU_S: {
-      /* fcvt.wu.s dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_WU_S.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_WU_S.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100000);
-      goto done;
-   }
-   case RISCV64in_FCVT_S_W: {
-      /* fcvt.s.w dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_S_W.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_S_W.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101000);
-      goto done;
-   }
-   case RISCV64in_FCVT_S_WU: {
-      /* fcvt.s.wu dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_S_WU.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_S_WU.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101000);
-      goto done;
-   }
-   case RISCV64in_FCVT_L_S: {
-      /* fcvt.l.s dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_L_S.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_L_S.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100000);
-      goto done;
-   }
-   case RISCV64in_FCVT_LU_S: {
-      /* fcvt.lu.s dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_LU_S.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_LU_S.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100000);
-      goto done;
-   }
-   case RISCV64in_FCVT_S_L: {
-      /* fcvt.s.l dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_S_L.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_S_L.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101000);
-      goto done;
-   }
-   case RISCV64in_FCVT_S_LU: {
-      /* fcvt.s.lu dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_S_LU.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_S_LU.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101000);
       goto done;
    }
    case RISCV64in_FEQ_S: {
@@ -3918,86 +3604,6 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       UInt src2 = fregEnc(i->RISCV64in.FLT_D.src2);
 
       p = emit_R(p, 0b1010011, dst, 0b001, src1, src2, 0b1010001);
-      goto done;
-   }
-   case RISCV64in_FCVT_S_D: {
-      /* fcvt.s.d dst, src1 */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_S_D.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_S_D.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b0100000);
-      goto done;
-   }
-   case RISCV64in_FCVT_D_S: {
-      /* fcvt.d.s dst, src1 */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_D_S.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_D_S.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b0100001);
-      goto done;
-   }
-   case RISCV64in_FCVT_W_D: {
-      /* fcvt.w.d dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_W_D.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_W_D.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100001);
-      goto done;
-   }
-   case RISCV64in_FCVT_WU_D: {
-      /* fcvt.wu.d dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_WU_D.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_WU_D.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100001);
-      goto done;
-   }
-   case RISCV64in_FCVT_D_W: {
-      /* fcvt.d.w dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_D_W.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_D_W.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1101001);
-      goto done;
-   }
-   case RISCV64in_FCVT_D_WU: {
-      /* fcvt.d.wu dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_D_WU.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_D_WU.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b000, src, 0b00001, 0b1101001);
-      goto done;
-   }
-   case RISCV64in_FCVT_L_D: {
-      /* fcvt.l.d dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_L_D.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_L_D.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100001);
-      goto done;
-   }
-   case RISCV64in_FCVT_LU_D: {
-      /* fcvt.lu.d dst, src */
-      UInt dst = iregEnc(i->RISCV64in.FCVT_LU_D.dst);
-      UInt src = fregEnc(i->RISCV64in.FCVT_LU_D.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100001);
-      goto done;
-   }
-   case RISCV64in_FCVT_D_L: {
-      /* fcvt.d.l dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_D_L.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_D_L.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101001);
-      goto done;
-   }
-   case RISCV64in_FCVT_D_LU: {
-      /* fcvt.d.lu dst, src */
-      UInt dst = fregEnc(i->RISCV64in.FCVT_D_LU.dst);
-      UInt src = iregEnc(i->RISCV64in.FCVT_D_LU.src);
-
-      p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101001);
       goto done;
    }
    case RISCV64in_FMV_X_D: {

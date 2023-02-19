@@ -883,32 +883,31 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_OR(dst, remuw_hi, divuw_lo));
          return dst;
       }
-      case Iop_F32toI32S: {
-         HReg dst = newVRegI(env);
-         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_W_S(dst, src));
-         return dst;
-      }
-      case Iop_F32toI32U: {
-         HReg dst = newVRegI(env);
-         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_WU_S(dst, src));
-         return dst;
-      }
-      case Iop_F32toI64S: {
-         HReg dst = newVRegI(env);
-         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_L_S(dst, src));
-         return dst;
-      }
+      case Iop_F32toI32S:
+      case Iop_F32toI32U:
+      case Iop_F32toI64S:
       case Iop_F32toI64U: {
+         RISCV64FpConvertOp op;
+         switch (e->Iex.Binop.op) {
+         case Iop_F32toI32S:
+            op = RISCV64fpc_FCVT_W_S;
+            break;
+         case Iop_F32toI32U:
+            op = RISCV64fpc_FCVT_WU_S;
+            break;
+         case Iop_F32toI64S:
+            op = RISCV64fpc_FCVT_L_S;
+            break;
+         case Iop_F32toI64U:
+            op = RISCV64fpc_FCVT_LU_S;
+            break;
+         default:
+            vassert(0);
+         }
          HReg dst = newVRegI(env);
          HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_LU_S(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(op, dst, src));
          return dst;
       }
       case Iop_CmpF32:
@@ -954,32 +953,31 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_CSEL(dst, t5, t4, eq));
          return dst;
       }
-      case Iop_F64toI32S: {
-         HReg dst = newVRegI(env);
-         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_W_D(dst, src));
-         return dst;
-      }
-      case Iop_F64toI32U: {
-         HReg dst = newVRegI(env);
-         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_WU_D(dst, src));
-         return dst;
-      }
-      case Iop_F64toI64S: {
-         HReg dst = newVRegI(env);
-         HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_L_D(dst, src));
-         return dst;
-      }
+      case Iop_F64toI32S:
+      case Iop_F64toI32U:
+      case Iop_F64toI64S:
       case Iop_F64toI64U: {
+         RISCV64FpConvertOp op;
+         switch (e->Iex.Binop.op) {
+         case Iop_F64toI32S:
+            op = RISCV64fpc_FCVT_W_D;
+            break;
+         case Iop_F64toI32U:
+            op = RISCV64fpc_FCVT_WU_D;
+            break;
+         case Iop_F64toI64S:
+            op = RISCV64fpc_FCVT_L_D;
+            break;
+         case Iop_F64toI64U:
+            op = RISCV64fpc_FCVT_LU_D;
+            break;
+         default:
+            vassert(0);
+         }
          HReg dst = newVRegI(env);
          HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_LU_D(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(op, dst, src));
          return dst;
       }
       default:
@@ -1415,53 +1413,46 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          addInstr(env, RISCV64Instr_FSQRT_D(dst, src));
          return dst;
       }
-      case Iop_I32StoF32: {
-         HReg dst = newVRegF(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_S_W(dst, src));
-         return dst;
-      }
-      case Iop_I32UtoF32: {
-         HReg dst = newVRegF(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_S_WU(dst, src));
-         return dst;
-      }
-      case Iop_I64StoF32: {
-         HReg dst = newVRegF(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_S_L(dst, src));
-         return dst;
-      }
-      case Iop_I64UtoF32: {
-         HReg dst = newVRegF(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_S_LU(dst, src));
-         return dst;
-      }
-      case Iop_I64StoF64: {
-         HReg dst = newVRegF(env);
-         HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_D_L(dst, src));
-         return dst;
-      }
+      case Iop_I32StoF32:
+      case Iop_I32UtoF32:
+      case Iop_I64StoF32:
+      case Iop_I64UtoF32:
+      case Iop_I64StoF64:
       case Iop_I64UtoF64: {
+         RISCV64FpConvertOp op;
+         switch (e->Iex.Binop.op) {
+         case Iop_I32StoF32:
+            op = RISCV64fpc_FCVT_S_W;
+            break;
+         case Iop_I32UtoF32:
+            op = RISCV64fpc_FCVT_S_WU;
+            break;
+         case Iop_I64StoF32:
+            op = RISCV64fpc_FCVT_S_L;
+            break;
+         case Iop_I64UtoF32:
+            op = RISCV64fpc_FCVT_S_LU;
+            break;
+         case Iop_I64StoF64:
+            op = RISCV64fpc_FCVT_D_L;
+            break;
+         case Iop_I64UtoF64:
+            op = RISCV64fpc_FCVT_D_LU;
+            break;
+         default:
+            vassert(0);
+         }
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_D_LU(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(op, dst, src));
          return dst;
       }
       case Iop_F64toF32: {
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FCVT_S_D(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_S_D, dst, src));
          return dst;
       }
       case Iop_MinNumF32:
@@ -1530,31 +1521,31 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       case Iop_I32StoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FCVT_D_W(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_D_W, dst, src));
          return dst;
       }
       case Iop_I32UtoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FCVT_D_WU(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_D_WU, dst, src));
          return dst;
       }
       case Iop_F32toF64: {
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FCVT_D_S(dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_D_S, dst, src));
          return dst;
       }
       case Iop_ReinterpI32asF32: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FMV_W_X(dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_W_X, dst, src));
          return dst;
       }
       case Iop_ReinterpI64asF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FMV_D_X(dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_D_X, dst, src));
          return dst;
       }
       default:
