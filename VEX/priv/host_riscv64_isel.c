@@ -195,15 +195,15 @@ static void set_fcsr_rounding_mode(ISelEnv* env, IRExpr* mode)
    HReg imm_30 = newVRegI(env);
    addInstr(env, RISCV64Instr_LI(imm_30, 30));
    HReg t0 = newVRegI(env);
-   addInstr(env, RISCV64Instr_ALU(RISCV64alu_SRL, t0, imm_30, rm_IR));
+   addInstr(env, RISCV64Instr_ALU(RISCV64op_SRL, t0, imm_30, rm_IR));
    HReg t1 = newVRegI(env);
-   addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_ANDI, t1, t0, 19));
+   addInstr(env, RISCV64Instr_ALUImm(RISCV64op_ANDI, t1, t0, 19));
    HReg t2 = newVRegI(env);
-   addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_ADDI, t2, t0, 7));
+   addInstr(env, RISCV64Instr_ALUImm(RISCV64op_ADDI, t2, t0, 7));
    HReg t3 = newVRegI(env);
-   addInstr(env, RISCV64Instr_ALU(RISCV64alu_ADD, t3, t1, t2));
+   addInstr(env, RISCV64Instr_ALU(RISCV64op_ADD, t3, t1, t2));
    HReg fcsr_rm_RISCV = newVRegI(env);
-   addInstr(env, RISCV64Instr_ALU(RISCV64alu_SRL, fcsr_rm_RISCV, t3, t1));
+   addInstr(env, RISCV64Instr_ALU(RISCV64op_SRL, fcsr_rm_RISCV, t3, t1));
    addInstr(env,
             RISCV64Instr_CSRRW(hregRISCV64_x0(), fcsr_rm_RISCV, 0x002 /*frm*/));
 }
@@ -330,7 +330,7 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
    if (nVECRETs == 1) {
       vassert(retTy == Ity_V128 || retTy == Ity_V256);
       r_vecRetAddr = newVRegI(env);
-      addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_ADDI, hregRISCV64_x2(),
+      addInstr(env, RISCV64Instr_ALUImm(RISCV64op_ADDI, hregRISCV64_x2(),
                                         hregRISCV64_x2(),
                                         retTy == Ity_V128 ? -16 : -32));
       addInstr(env, RISCV64Instr_MV(r_vecRetAddr, hregRISCV64_x2()));
@@ -418,9 +418,9 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
          } else if (aTy == Ity_F32 || aTy == Ity_F64) {
             if (nextFArgReg >= RISCV64_N_FARGREGS)
                return False; /* Out of fargregs. */
-            addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_D,
-                                              fargregs[nextFArgReg],
-                                              iselFltExpr(env, args[i])));
+            addInstr(env,
+                     RISCV64Instr_FpMove(RISCV64op_FMV_D, fargregs[nextFArgReg],
+                                         iselFltExpr(env, args[i])));
             nextFArgReg++;
          } else if (arg->tag == Iex_GSPTR) {
             if (nextArgReg >= RISCV64_N_ARGREGS)
@@ -490,7 +490,7 @@ static Bool doHelperCall(/*OUT*/ UInt*   stackAdjustAfterCall,
       }
       for (UInt i = 0; i < nextFArgReg; i++) {
          vassert(!(hregIsInvalid(ftmpregs[i])));
-         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_D, fargregs[i],
+         addInstr(env, RISCV64Instr_FpMove(RISCV64op_FMV_D, fargregs[i],
                                            ftmpregs[i]));
       }
    }
@@ -605,13 +605,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       HReg addr = iselIntExpr_R(env, e->Iex.Load.addr);
 
       if (ty == Ity_I64)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LD, dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LD, dst, addr, 0));
       else if (ty == Ity_I32)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LW, dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LW, dst, addr, 0));
       else if (ty == Ity_I16)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LH, dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LH, dst, addr, 0));
       else if (ty == Ity_I8)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LB, dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LB, dst, addr, 0));
       else
          goto irreducible;
       return dst;
@@ -648,66 +648,66 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          RISCV64ALUOp op;
          switch (e->Iex.Binop.op) {
          case Iop_Add64:
-            op = RISCV64alu_ADD;
+            op = RISCV64op_ADD;
             break;
          case Iop_Add32:
-            op = RISCV64alu_ADDW;
+            op = RISCV64op_ADDW;
             break;
          case Iop_Sub64:
-            op = RISCV64alu_SUB;
+            op = RISCV64op_SUB;
             break;
          case Iop_Sub32:
-            op = RISCV64alu_SUBW;
+            op = RISCV64op_SUBW;
             break;
          case Iop_Xor64:
          case Iop_Xor32:
-            op = RISCV64alu_XOR;
+            op = RISCV64op_XOR;
             break;
          case Iop_Or64:
          case Iop_Or32:
          case Iop_Or1:
-            op = RISCV64alu_OR;
+            op = RISCV64op_OR;
             break;
          case Iop_And64:
          case Iop_And32:
          case Iop_And1:
-            op = RISCV64alu_AND;
+            op = RISCV64op_AND;
             break;
          case Iop_Shl64:
-            op = RISCV64alu_SLL;
+            op = RISCV64op_SLL;
             break;
          case Iop_Shl32:
-            op = RISCV64alu_SLLW;
+            op = RISCV64op_SLLW;
             break;
          case Iop_Shr64:
-            op = RISCV64alu_SRL;
+            op = RISCV64op_SRL;
             break;
          case Iop_Shr32:
-            op = RISCV64alu_SRLW;
+            op = RISCV64op_SRLW;
             break;
          case Iop_Sar64:
-            op = RISCV64alu_SRA;
+            op = RISCV64op_SRA;
             break;
          case Iop_Sar32:
-            op = RISCV64alu_SRAW;
+            op = RISCV64op_SRAW;
             break;
          case Iop_Mul64:
-            op = RISCV64alu_MUL;
+            op = RISCV64op_MUL;
             break;
          case Iop_Mul32:
-            op = RISCV64alu_MULW;
+            op = RISCV64op_MULW;
             break;
          case Iop_DivU64:
-            op = RISCV64alu_DIVU;
+            op = RISCV64op_DIVU;
             break;
          case Iop_DivU32:
-            op = RISCV64alu_DIVUW;
+            op = RISCV64op_DIVUW;
             break;
          case Iop_DivS64:
-            op = RISCV64alu_DIV;
+            op = RISCV64op_DIV;
             break;
          case Iop_DivS32:
-            op = RISCV64alu_DIVW;
+            op = RISCV64op_DIVW;
             break;
          default:
             vassert(0);
@@ -725,9 +725,9 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SUB, tmp, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SUB, tmp, argL, argR));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLTIU, dst, tmp, 1));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLTIU, dst, tmp, 1));
          return dst;
       }
       case Iop_CmpNE64:
@@ -737,10 +737,10 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SUB, tmp, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SUB, tmp, argL, argR));
          HReg dst = newVRegI(env);
-         addInstr(
-            env, RISCV64Instr_ALU(RISCV64alu_SLTU, dst, hregRISCV64_x0(), tmp));
+         addInstr(env,
+                  RISCV64Instr_ALU(RISCV64op_SLTU, dst, hregRISCV64_x0(), tmp));
          return dst;
       }
       case Iop_CmpLT64S:
@@ -748,7 +748,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SLT, dst, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SLT, dst, argL, argR));
          return dst;
       }
       case Iop_CmpLE64S:
@@ -756,9 +756,9 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SLT, tmp, argR, argL));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SLT, tmp, argR, argL));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLTIU, dst, tmp, 1));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLTIU, dst, tmp, 1));
          return dst;
       }
       case Iop_CmpLT64U:
@@ -766,7 +766,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg dst  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SLTU, dst, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SLTU, dst, argL, argR));
          return dst;
       }
       case Iop_CmpLE64U:
@@ -774,16 +774,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg tmp  = newVRegI(env);
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SLTU, tmp, argR, argL));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SLTU, tmp, argR, argL));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLTIU, dst, tmp, 1));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLTIU, dst, tmp, 1));
          return dst;
       }
       case Iop_Max32U: {
          HReg argL = iselIntExpr_R(env, e->Iex.Binop.arg1);
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
          HReg cond = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_SLTU, cond, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_SLTU, cond, argL, argR));
          HReg dst = newVRegI(env);
          addInstr(env, RISCV64Instr_CSEL(dst, argR, argL, cond));
          return dst;
@@ -794,16 +794,15 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
 
          HReg lo32_tmp = newVRegI(env);
          addInstr(env,
-                  RISCV64Instr_ALUImm(RISCV64alu_SLLI, lo32_tmp, lo32s, 32));
+                  RISCV64Instr_ALUImm(RISCV64op_SLLI, lo32_tmp, lo32s, 32));
          HReg lo32 = newVRegI(env);
-         addInstr(env,
-                  RISCV64Instr_ALUImm(RISCV64alu_SRLI, lo32, lo32_tmp, 32));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRLI, lo32, lo32_tmp, 32));
 
          HReg hi32 = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, hi32, hi32s, 32));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, hi32, hi32s, 32));
 
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_OR, dst, hi32, lo32));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_OR, dst, hi32, lo32));
          return dst;
       }
       case Iop_DivModS32to32: {
@@ -812,20 +811,20 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
 
          HReg remw = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_REMW, remw, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_REMW, remw, argL, argR));
          HReg remw_hi = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, remw_hi, remw, 32));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, remw_hi, remw, 32));
 
          HReg divw = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_DIVW, divw, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_DIVW, divw, argL, argR));
          HReg divw_hi = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, divw_hi, divw, 32));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, divw_hi, divw, 32));
          HReg divw_lo = newVRegI(env);
          addInstr(env,
-                  RISCV64Instr_ALUImm(RISCV64alu_SRLI, divw_lo, divw_hi, 32));
+                  RISCV64Instr_ALUImm(RISCV64op_SRLI, divw_lo, divw_hi, 32));
 
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_OR, dst, remw_hi, divw_lo));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_OR, dst, remw_hi, divw_lo));
          return dst;
       }
       case Iop_DivModU32to32: {
@@ -834,23 +833,22 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg argR = iselIntExpr_R(env, e->Iex.Binop.arg2);
 
          HReg remuw = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_REMUW, remuw, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_REMUW, remuw, argL, argR));
          HReg remuw_hi = newVRegI(env);
          addInstr(env,
-                  RISCV64Instr_ALUImm(RISCV64alu_SLLI, remuw_hi, remuw, 32));
+                  RISCV64Instr_ALUImm(RISCV64op_SLLI, remuw_hi, remuw, 32));
 
          HReg divuw = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_DIVUW, divuw, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_DIVUW, divuw, argL, argR));
          HReg divuw_hi = newVRegI(env);
          addInstr(env,
-                  RISCV64Instr_ALUImm(RISCV64alu_SLLI, divuw_hi, divuw, 32));
+                  RISCV64Instr_ALUImm(RISCV64op_SLLI, divuw_hi, divuw, 32));
          HReg divuw_lo = newVRegI(env);
          addInstr(env,
-                  RISCV64Instr_ALUImm(RISCV64alu_SRLI, divuw_lo, divuw_hi, 32));
+                  RISCV64Instr_ALUImm(RISCV64op_SRLI, divuw_lo, divuw_hi, 32));
 
          HReg dst = newVRegI(env);
-         addInstr(env,
-                  RISCV64Instr_ALU(RISCV64alu_OR, dst, remuw_hi, divuw_lo));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_OR, dst, remuw_hi, divuw_lo));
          return dst;
       }
       case Iop_F32toI32S:
@@ -860,16 +858,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          RISCV64FpConvertOp op;
          switch (e->Iex.Binop.op) {
          case Iop_F32toI32S:
-            op = RISCV64fpc_FCVT_W_S;
+            op = RISCV64op_FCVT_W_S;
             break;
          case Iop_F32toI32U:
-            op = RISCV64fpc_FCVT_WU_S;
+            op = RISCV64op_FCVT_WU_S;
             break;
          case Iop_F32toI64S:
-            op = RISCV64fpc_FCVT_L_S;
+            op = RISCV64op_FCVT_L_S;
             break;
          case Iop_F32toI64U:
-            op = RISCV64fpc_FCVT_LU_S;
+            op = RISCV64op_FCVT_LU_S;
             break;
          default:
             vassert(0);
@@ -890,18 +888,18 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg eq = newVRegI(env);
          if (e->Iex.Binop.op == Iop_CmpF32) {
             addInstr(env,
-                     RISCV64Instr_FpCompare(RISCV64fpc_FLT_S, lt, argL, argR));
+                     RISCV64Instr_FpCompare(RISCV64op_FLT_S, lt, argL, argR));
             addInstr(env,
-                     RISCV64Instr_FpCompare(RISCV64fpc_FLT_S, gt, argR, argL));
+                     RISCV64Instr_FpCompare(RISCV64op_FLT_S, gt, argR, argL));
             addInstr(env,
-                     RISCV64Instr_FpCompare(RISCV64fpc_FEQ_S, eq, argL, argR));
+                     RISCV64Instr_FpCompare(RISCV64op_FEQ_S, eq, argL, argR));
          } else {
             addInstr(env,
-                     RISCV64Instr_FpCompare(RISCV64fpc_FLT_D, lt, argL, argR));
+                     RISCV64Instr_FpCompare(RISCV64op_FLT_D, lt, argL, argR));
             addInstr(env,
-                     RISCV64Instr_FpCompare(RISCV64fpc_FLT_D, gt, argR, argL));
+                     RISCV64Instr_FpCompare(RISCV64op_FLT_D, gt, argR, argL));
             addInstr(env,
-                     RISCV64Instr_FpCompare(RISCV64fpc_FEQ_D, eq, argL, argR));
+                     RISCV64Instr_FpCompare(RISCV64op_FEQ_D, eq, argL, argR));
          }
 
          /*
@@ -936,16 +934,16 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          RISCV64FpConvertOp op;
          switch (e->Iex.Binop.op) {
          case Iop_F64toI32S:
-            op = RISCV64fpc_FCVT_W_D;
+            op = RISCV64op_FCVT_W_D;
             break;
          case Iop_F64toI32U:
-            op = RISCV64fpc_FCVT_WU_D;
+            op = RISCV64op_FCVT_WU_D;
             break;
          case Iop_F64toI64S:
-            op = RISCV64fpc_FCVT_L_D;
+            op = RISCV64op_FCVT_L_D;
             break;
          case Iop_F64toI64U:
-            op = RISCV64fpc_FCVT_LU_D;
+            op = RISCV64op_FCVT_LU_D;
             break;
          default:
             vassert(0);
@@ -970,13 +968,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_Not32: {
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_XORI, dst, src, -1));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_XORI, dst, src, -1));
          return dst;
       }
       case Iop_Not1: {
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLTIU, dst, src, 1));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLTIU, dst, src, 1));
          return dst;
       }
       case Iop_8Uto32:
@@ -987,18 +985,18 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
             64 - 8 * sizeofIRType(typeOfIRExpr(env->type_env, e->Iex.Unop.arg));
          HReg tmp = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, tmp, src, shift));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, tmp, src, shift));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SRLI, dst, tmp, shift));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRLI, dst, tmp, shift));
          return dst;
       }
       case Iop_1Sto32:
       case Iop_1Sto64: {
          HReg tmp = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, tmp, src, 63));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, tmp, src, 63));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SRAI, dst, tmp, 63));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRAI, dst, tmp, 63));
          return dst;
       }
       case Iop_1Uto64:
@@ -1015,9 +1013,9 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          UInt shift = 64 - 8 * sizeofIRType(ty);
          HReg tmp   = newVRegI(env);
          HReg src   = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, tmp, src, shift));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, tmp, src, shift));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SRAI, dst, tmp, shift));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRAI, dst, tmp, shift));
          return dst;
       }
       case Iop_128HIto64: {
@@ -1028,19 +1026,19 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_64HIto32: {
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SRAI, dst, src, 32));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRAI, dst, src, 32));
          return dst;
       }
       case Iop_ReinterpF32asI32: {
          HReg dst = newVRegI(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_X_W, dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64op_FMV_X_W, dst, src));
          return dst;
       }
       case Iop_ReinterpF64asI64: {
          HReg dst = newVRegI(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_X_D, dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64op_FMV_X_D, dst, src));
          return dst;
       }
       case Iop_CmpNEZ8:
@@ -1048,8 +1046,8 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Iop_CmpNEZ64: {
          HReg dst = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(
-            env, RISCV64Instr_ALU(RISCV64alu_SLTU, dst, hregRISCV64_x0(), src));
+         addInstr(env,
+                  RISCV64Instr_ALU(RISCV64op_SLTU, dst, hregRISCV64_x0(), src));
          return dst;
       }
       case Iop_CmpwNEZ32:
@@ -1059,11 +1057,11 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg neg = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env,
-                  RISCV64Instr_ALU(RISCV64alu_SUB, neg, hregRISCV64_x0(), src));
+                  RISCV64Instr_ALU(RISCV64op_SUB, neg, hregRISCV64_x0(), src));
          HReg or = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_OR, or, src, neg));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_OR, or, src, neg));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SRAI, dst, or, 63));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRAI, dst, or, 63));
          return dst;
       }
       case Iop_Left32:
@@ -1072,9 +1070,9 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          HReg neg = newVRegI(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
          addInstr(env,
-                  RISCV64Instr_ALU(RISCV64alu_SUB, neg, hregRISCV64_x0(), src));
+                  RISCV64Instr_ALU(RISCV64op_SUB, neg, hregRISCV64_x0(), src));
          HReg dst = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_OR, dst, src, neg));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_OR, dst, src, neg));
          return dst;
       }
       default:
@@ -1092,13 +1090,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       vassert(off >= -2048 && off < 2048);
 
       if (ty == Ity_I64)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LD, dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LD, dst, base, off));
       else if (ty == Ity_I32)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LW, dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LW, dst, base, off));
       else if (ty == Ity_I16)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LH, dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LH, dst, base, off));
       else if (ty == Ity_I8)
-         addInstr(env, RISCV64Instr_Load(RISCV64_LB, dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64op_LB, dst, base, off));
       else
          goto irreducible;
       return dst;
@@ -1130,7 +1128,7 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       case Ity_I32:
          /* Sign-extend the value returned from the helper as is expected by the
             rest of the backend. */
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_ADDIW, dst,
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_ADDIW, dst,
                                            hregRISCV64_x10(), 0));
          break;
       case Ity_I64:
@@ -1225,10 +1223,10 @@ static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
          *rHi      = newVRegI(env);
          *rLo      = newVRegI(env);
          if (e->Iex.Binop.op == Iop_MullS64)
-            addInstr(env, RISCV64Instr_ALU(RISCV64alu_MULH, *rHi, argL, argR));
+            addInstr(env, RISCV64Instr_ALU(RISCV64op_MULH, *rHi, argL, argR));
          else
-            addInstr(env, RISCV64Instr_ALU(RISCV64alu_MULHU, *rHi, argL, argR));
-         addInstr(env, RISCV64Instr_ALU(RISCV64alu_MUL, *rLo, argL, argR));
+            addInstr(env, RISCV64Instr_ALU(RISCV64op_MULHU, *rHi, argL, argR));
+         addInstr(env, RISCV64Instr_ALU(RISCV64op_MUL, *rLo, argL, argR));
          return;
       }
 
@@ -1240,11 +1238,11 @@ static void iselInt128Expr_wrk(HReg* rHi, HReg* rLo, ISelEnv* env, IRExpr* e)
          *rHi      = newVRegI(env);
          *rLo      = newVRegI(env);
          if (e->Iex.Binop.op == Iop_DivModS64to64) {
-            addInstr(env, RISCV64Instr_ALU(RISCV64alu_REM, *rHi, argL, argR));
-            addInstr(env, RISCV64Instr_ALU(RISCV64alu_DIV, *rLo, argL, argR));
+            addInstr(env, RISCV64Instr_ALU(RISCV64op_REM, *rHi, argL, argR));
+            addInstr(env, RISCV64Instr_ALU(RISCV64op_DIV, *rLo, argL, argR));
          } else {
-            addInstr(env, RISCV64Instr_ALU(RISCV64alu_REMU, *rHi, argL, argR));
-            addInstr(env, RISCV64Instr_ALU(RISCV64alu_DIVU, *rLo, argL, argR));
+            addInstr(env, RISCV64Instr_ALU(RISCV64op_REMU, *rHi, argL, argR));
+            addInstr(env, RISCV64Instr_ALU(RISCV64op_DIVU, *rLo, argL, argR));
          }
          return;
       }
@@ -1304,9 +1302,9 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       HReg addr = iselIntExpr_R(env, e->Iex.Load.addr);
 
       if (ty == Ity_F32)
-         addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FLW, dst, addr, 0));
+         addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FLW, dst, addr, 0));
       else if (ty == Ity_F64)
-         addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FLD, dst, addr, 0));
+         addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FLD, dst, addr, 0));
       else
          vassert(0);
       return dst;
@@ -1321,7 +1319,7 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          HReg argM = iselFltExpr(env, e->Iex.Qop.details->arg3);
          HReg argA = iselFltExpr(env, e->Iex.Qop.details->arg4);
          set_fcsr_rounding_mode(env, e->Iex.Qop.details->arg1);
-         addInstr(env, RISCV64Instr_FpTernary(RISCV64fpt_FMADD_S, dst, argN,
+         addInstr(env, RISCV64Instr_FpTernary(RISCV64op_FMADD_S, dst, argN,
                                               argM, argA));
          return dst;
       }
@@ -1331,7 +1329,7 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          HReg argM = iselFltExpr(env, e->Iex.Qop.details->arg3);
          HReg argA = iselFltExpr(env, e->Iex.Qop.details->arg4);
          set_fcsr_rounding_mode(env, e->Iex.Qop.details->arg1);
-         addInstr(env, RISCV64Instr_FpTernary(RISCV64fpt_FMADD_D, dst, argN,
+         addInstr(env, RISCV64Instr_FpTernary(RISCV64op_FMADD_D, dst, argN,
                                               argM, argA));
          return dst;
       }
@@ -1347,25 +1345,25 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       RISCV64FpBinaryOp op;
       switch (e->Iex.Triop.details->op) {
       case Iop_AddF32:
-         op = RISCV64fpb_FADD_S;
+         op = RISCV64op_FADD_S;
          break;
       case Iop_MulF32:
-         op = RISCV64fpb_FMUL_S;
+         op = RISCV64op_FMUL_S;
          break;
       case Iop_DivF32:
-         op = RISCV64fpb_FDIV_S;
+         op = RISCV64op_FDIV_S;
          break;
       case Iop_AddF64:
-         op = RISCV64fpb_FADD_D;
+         op = RISCV64op_FADD_D;
          break;
       case Iop_SubF64:
-         op = RISCV64fpb_FSUB_D;
+         op = RISCV64op_FSUB_D;
          break;
       case Iop_MulF64:
-         op = RISCV64fpb_FMUL_D;
+         op = RISCV64op_FMUL_D;
          break;
       case Iop_DivF64:
-         op = RISCV64fpb_FDIV_D;
+         op = RISCV64op_FDIV_D;
          break;
       default:
          goto irreducible;
@@ -1385,14 +1383,14 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FpUnary(RISCV64fpu_FSQRT_S, dst, src));
+         addInstr(env, RISCV64Instr_FpUnary(RISCV64op_FSQRT_S, dst, src));
          return dst;
       }
       case Iop_SqrtF64: {
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FpUnary(RISCV64fpu_FSQRT_D, dst, src));
+         addInstr(env, RISCV64Instr_FpUnary(RISCV64op_FSQRT_D, dst, src));
          return dst;
       }
       case Iop_I32StoF32:
@@ -1404,22 +1402,22 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          RISCV64FpConvertOp op;
          switch (e->Iex.Binop.op) {
          case Iop_I32StoF32:
-            op = RISCV64fpc_FCVT_S_W;
+            op = RISCV64op_FCVT_S_W;
             break;
          case Iop_I32UtoF32:
-            op = RISCV64fpc_FCVT_S_WU;
+            op = RISCV64op_FCVT_S_WU;
             break;
          case Iop_I64StoF32:
-            op = RISCV64fpc_FCVT_S_L;
+            op = RISCV64op_FCVT_S_L;
             break;
          case Iop_I64UtoF32:
-            op = RISCV64fpc_FCVT_S_LU;
+            op = RISCV64op_FCVT_S_LU;
             break;
          case Iop_I64StoF64:
-            op = RISCV64fpc_FCVT_D_L;
+            op = RISCV64op_FCVT_D_L;
             break;
          case Iop_I64UtoF64:
-            op = RISCV64fpc_FCVT_D_LU;
+            op = RISCV64op_FCVT_D_LU;
             break;
          default:
             vassert(0);
@@ -1434,7 +1432,7 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Binop.arg2);
          set_fcsr_rounding_mode(env, e->Iex.Binop.arg1);
-         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_S_D, dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64op_FCVT_S_D, dst, src));
          return dst;
       }
       case Iop_MinNumF32:
@@ -1444,16 +1442,16 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          RISCV64FpBinaryOp op;
          switch (e->Iex.Binop.op) {
          case Iop_MinNumF32:
-            op = RISCV64fpb_FMIN_S;
+            op = RISCV64op_FMIN_S;
             break;
          case Iop_MaxNumF32:
-            op = RISCV64fpb_FMAX_S;
+            op = RISCV64op_FMAX_S;
             break;
          case Iop_MinNumF64:
-            op = RISCV64fpb_FMIN_D;
+            op = RISCV64op_FMIN_D;
             break;
          case Iop_MaxNumF64:
-            op = RISCV64fpb_FMAX_D;
+            op = RISCV64op_FMAX_D;
             break;
          default:
             vassert(0);
@@ -1481,16 +1479,16 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
          RISCV64FpBinaryOp op;
          switch (e->Iex.Unop.op) {
          case Iop_NegF32:
-            op = RISCV64fpb_FSGNJN_S;
+            op = RISCV64op_FSGNJN_S;
             break;
          case Iop_AbsF32:
-            op = RISCV64fpb_FSGNJX_S;
+            op = RISCV64op_FSGNJX_S;
             break;
          case Iop_NegF64:
-            op = RISCV64fpb_FSGNJN_D;
+            op = RISCV64op_FSGNJN_D;
             break;
          case Iop_AbsF64:
-            op = RISCV64fpb_FSGNJX_D;
+            op = RISCV64op_FSGNJX_D;
             break;
          default:
             vassert(0);
@@ -1503,31 +1501,31 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       case Iop_I32StoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_D_W, dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64op_FCVT_D_W, dst, src));
          return dst;
       }
       case Iop_I32UtoF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_D_WU, dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64op_FCVT_D_WU, dst, src));
          return dst;
       }
       case Iop_F32toF64: {
          HReg dst = newVRegF(env);
          HReg src = iselFltExpr(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpConvert(RISCV64fpc_FCVT_D_S, dst, src));
+         addInstr(env, RISCV64Instr_FpConvert(RISCV64op_FCVT_D_S, dst, src));
          return dst;
       }
       case Iop_ReinterpI32asF32: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_W_X, dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64op_FMV_W_X, dst, src));
          return dst;
       }
       case Iop_ReinterpI64asF64: {
          HReg dst = newVRegF(env);
          HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
-         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_D_X, dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64op_FMV_D_X, dst, src));
          return dst;
       }
       default:
@@ -1545,9 +1543,9 @@ static HReg iselFltExpr_wrk(ISelEnv* env, IRExpr* e)
       vassert(off >= -2048 && off < 2048);
 
       if (ty == Ity_F32)
-         addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FLW, dst, base, off));
+         addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FLW, dst, base, off));
       else if (ty == Ity_F64)
-         addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FLD, dst, base, off));
+         addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FLD, dst, base, off));
       else
          vassert(0);
       return dst;
@@ -1599,13 +1597,13 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          HReg addr = iselIntExpr_R(env, stmt->Ist.Store.addr);
 
          if (tyd == Ity_I64)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SD, src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SD, src, addr, 0));
          else if (tyd == Ity_I32)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SW, src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SW, src, addr, 0));
          else if (tyd == Ity_I16)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SH, src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SH, src, addr, 0));
          else if (tyd == Ity_I8)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SB, src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SB, src, addr, 0));
          else
             vassert(0);
          return;
@@ -1615,9 +1613,9 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          HReg addr = iselIntExpr_R(env, stmt->Ist.Store.addr);
 
          if (tyd == Ity_F32)
-            addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FSW, src, addr, 0));
+            addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FSW, src, addr, 0));
          else if (tyd == Ity_F64)
-            addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FSD, src, addr, 0));
+            addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FSD, src, addr, 0));
          else
             vassert(0);
          return;
@@ -1636,13 +1634,13 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          vassert(off >= -2048 && off < 2048);
 
          if (tyd == Ity_I64)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SD, src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SD, src, base, off));
          else if (tyd == Ity_I32)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SW, src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SW, src, base, off));
          else if (tyd == Ity_I16)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SH, src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SH, src, base, off));
          else if (tyd == Ity_I8)
-            addInstr(env, RISCV64Instr_Store(RISCV64_SB, src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64op_SB, src, base, off));
          else
             vassert(0);
          return;
@@ -1654,9 +1652,9 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          vassert(off >= -2048 && off < 2048);
 
          if (tyd == Ity_F32)
-            addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FSW, src, base, off));
+            addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FSW, src, base, off));
          else if (tyd == Ity_F64)
-            addInstr(env, RISCV64Instr_FpLdSt(RISCV64fpm_FSD, src, base, off));
+            addInstr(env, RISCV64Instr_FpLdSt(RISCV64op_FSD, src, base, off));
          else
             vassert(0);
          return;
@@ -1678,7 +1676,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       if (ty == Ity_F32 || ty == Ity_F64) {
          HReg dst = lookupIRTemp(env, stmt->Ist.WrTmp.tmp);
          HReg src = iselFltExpr(env, stmt->Ist.WrTmp.data);
-         addInstr(env, RISCV64Instr_FpMove(RISCV64fpm_FMV_D, dst, src));
+         addInstr(env, RISCV64Instr_FpMove(RISCV64op_FMV_D, dst, src));
          return;
       }
       break;
@@ -1726,15 +1724,15 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          HReg dst   = lookupIRTemp(env, d->tmp);
          UInt shift = 64 - 8 * sizeofIRType(retty);
          HReg tmp   = newVRegI(env);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SLLI, tmp,
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SLLI, tmp,
                                            hregRISCV64_x10(), shift));
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_SRAI, dst, tmp, shift));
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_SRAI, dst, tmp, shift));
          return;
       }
       case Ity_I32: {
          vassert(rloc.pri == RLPri_Int);
          HReg dst = lookupIRTemp(env, d->tmp);
-         addInstr(env, RISCV64Instr_ALUImm(RISCV64alu_ADDIW, dst,
+         addInstr(env, RISCV64Instr_ALUImm(RISCV64op_ADDIW, dst,
                                            hregRISCV64_x10(), 0));
          return;
       }
@@ -1759,7 +1757,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          if (ty == Ity_I32) {
             HReg r_dst  = lookupIRTemp(env, res);
             HReg r_addr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-            addInstr(env, RISCV64Instr_LoadR(RISCV64_LR_W, r_dst, r_addr));
+            addInstr(env, RISCV64Instr_LoadR(RISCV64op_LR_W, r_dst, r_addr));
             return;
          }
       } else {
@@ -1770,7 +1768,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             HReg r_src  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
             HReg r_addr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
             addInstr(env,
-                     RISCV64Instr_StoreC(RISCV64_SC_W, r_tmp, r_src, r_addr));
+                     RISCV64Instr_StoreC(RISCV64op_SC_W, r_tmp, r_src, r_addr));
 
             /* Now r_tmp is non-zero if failed, 0 if success. Change to IR
                conventions (0 is fail, 1 is success). */
@@ -1779,7 +1777,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             IRType ty    = typeOfIRTemp(env->type_env, res);
             vassert(ty == Ity_I1);
             addInstr(env,
-                     RISCV64Instr_ALUImm(RISCV64alu_SLTIU, r_res, r_tmp, 1));
+                     RISCV64Instr_ALUImm(RISCV64op_SLTIU, r_res, r_tmp, 1));
             return;
          }
       }
