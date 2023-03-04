@@ -106,6 +106,90 @@ static const HChar* showRISCV64CSR(UInt csr)
    vpanic("showRISCV64CSR");
 }
 
+static const HChar* showRISCV64ALUOp(RISCV64ALUOp op)
+{
+   switch (op) {
+   case RISCV64alu_ADD:
+      return "add";
+   case RISCV64alu_SUB:
+      return "sub";
+   case RISCV64alu_ADDW:
+      return "addw";
+   case RISCV64alu_SUBW:
+      return "subw";
+   case RISCV64alu_XOR:
+      return "xor";
+   case RISCV64alu_OR:
+      return "or";
+   case RISCV64alu_AND:
+      return "and";
+   case RISCV64alu_SLL:
+      return "sll";
+   case RISCV64alu_SRL:
+      return "srl";
+   case RISCV64alu_SRA:
+      return "sra";
+   case RISCV64alu_SLLW:
+      return "sllw";
+   case RISCV64alu_SRLW:
+      return "srlw";
+   case RISCV64alu_SRAW:
+      return "sraw";
+   case RISCV64alu_SLT:
+      return "slt";
+   case RISCV64alu_SLTU:
+      return "sltu";
+   case RISCV64alu_MUL:
+      return "mul";
+   case RISCV64alu_MULH:
+      return "mulh";
+   case RISCV64alu_MULHU:
+      return "mulhu";
+   case RISCV64alu_DIV:
+      return "div";
+   case RISCV64alu_DIVU:
+      return "divu";
+   case RISCV64alu_REM:
+      return "rem";
+   case RISCV64alu_REMU:
+      return "remu";
+   case RISCV64alu_MULW:
+      return "mulw";
+   case RISCV64alu_DIVW:
+      return "divw";
+   case RISCV64alu_DIVUW:
+      return "divuw";
+   case RISCV64alu_REMW:
+      return "remw";
+   case RISCV64alu_REMUW:
+      return "remuw";
+   }
+   vpanic("showRISCV64ALUOp");
+}
+
+static const HChar* showRISCV64ALUImmOp(RISCV64ALUImmOp op)
+{
+   switch (op) {
+   case RISCV64alu_ADDI:
+      return "addi";
+   case RISCV64alu_ADDIW:
+      return "addiw";
+   case RISCV64alu_XORI:
+      return "xori";
+   case RISCV64alu_ANDI:
+      return "andi";
+   case RISCV64alu_SLLI:
+      return "slli";
+   case RISCV64alu_SRLI:
+      return "srli";
+   case RISCV64alu_SRAI:
+      return "srai";
+   case RISCV64alu_SLTIU:
+      return "sltiu";
+   }
+   vpanic("showRISCV64ALUImmOp");
+}
+
 static const HChar* showRISCV64FpUnaryOp(RISCV64FpUnaryOp op)
 {
    switch (op) {
@@ -273,233 +357,26 @@ RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src)
    return i;
 }
 
-RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2)
+RISCV64Instr* RISCV64Instr_ALU(RISCV64ALUOp op, HReg dst, HReg src1, HReg src2)
 {
    RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_ADD;
-   i->RISCV64in.ADD.dst  = dst;
-   i->RISCV64in.ADD.src1 = src1;
-   i->RISCV64in.ADD.src2 = src2;
+   i->tag                = RISCV64in_ALU;
+   i->RISCV64in.ALU.op   = op;
+   i->RISCV64in.ALU.dst  = dst;
+   i->RISCV64in.ALU.src1 = src1;
+   i->RISCV64in.ALU.src2 = src2;
    return i;
 }
 
-RISCV64Instr* RISCV64Instr_ADDI(HReg dst, HReg src, Int simm12)
-{
-   RISCV64Instr* i          = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                   = RISCV64in_ADDI;
-   i->RISCV64in.ADDI.dst    = dst;
-   i->RISCV64in.ADDI.src    = src;
-   i->RISCV64in.ADDI.simm12 = simm12;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_ADDW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_ADDW;
-   i->RISCV64in.ADDW.dst  = dst;
-   i->RISCV64in.ADDW.src1 = src1;
-   i->RISCV64in.ADDW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_ADDIW(HReg dst, HReg src, Int simm12)
+RISCV64Instr*
+RISCV64Instr_ALUImm(RISCV64ALUImmOp op, HReg dst, HReg src, Int imm12)
 {
    RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_ADDIW;
-   i->RISCV64in.ADDIW.dst    = dst;
-   i->RISCV64in.ADDIW.src    = src;
-   i->RISCV64in.ADDIW.simm12 = simm12;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SUB(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_SUB;
-   i->RISCV64in.SUB.dst  = dst;
-   i->RISCV64in.SUB.src1 = src1;
-   i->RISCV64in.SUB.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SUBW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_SUBW;
-   i->RISCV64in.SUBW.dst  = dst;
-   i->RISCV64in.SUBW.src1 = src1;
-   i->RISCV64in.SUBW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_XOR(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_XOR;
-   i->RISCV64in.XOR.dst  = dst;
-   i->RISCV64in.XOR.src1 = src1;
-   i->RISCV64in.XOR.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_XORI(HReg dst, HReg src, Int simm12)
-{
-   RISCV64Instr* i          = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                   = RISCV64in_XORI;
-   i->RISCV64in.XORI.dst    = dst;
-   i->RISCV64in.XORI.src    = src;
-   i->RISCV64in.XORI.simm12 = simm12;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_OR(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i      = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag               = RISCV64in_OR;
-   i->RISCV64in.OR.dst  = dst;
-   i->RISCV64in.OR.src1 = src1;
-   i->RISCV64in.OR.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_AND(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_AND;
-   i->RISCV64in.AND.dst  = dst;
-   i->RISCV64in.AND.src1 = src1;
-   i->RISCV64in.AND.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_ANDI(HReg dst, HReg src, Int simm12)
-{
-   RISCV64Instr* i          = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                   = RISCV64in_ANDI;
-   i->RISCV64in.ANDI.dst    = dst;
-   i->RISCV64in.ANDI.src    = src;
-   i->RISCV64in.ANDI.simm12 = simm12;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_SLL;
-   i->RISCV64in.SLL.dst  = dst;
-   i->RISCV64in.SLL.src1 = src1;
-   i->RISCV64in.SLL.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SRL(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_SRL;
-   i->RISCV64in.SRL.dst  = dst;
-   i->RISCV64in.SRL.src1 = src1;
-   i->RISCV64in.SRL.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SRA(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_SRA;
-   i->RISCV64in.SRA.dst  = dst;
-   i->RISCV64in.SRA.src1 = src1;
-   i->RISCV64in.SRA.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SLLI(HReg dst, HReg src, UInt uimm6)
-{
-   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                  = RISCV64in_SLLI;
-   i->RISCV64in.SLLI.dst   = dst;
-   i->RISCV64in.SLLI.src   = src;
-   i->RISCV64in.SLLI.uimm6 = uimm6;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SRLI(HReg dst, HReg src, UInt uimm6)
-{
-   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                  = RISCV64in_SRLI;
-   i->RISCV64in.SRLI.dst   = dst;
-   i->RISCV64in.SRLI.src   = src;
-   i->RISCV64in.SRLI.uimm6 = uimm6;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SRAI(HReg dst, HReg src, UInt uimm6)
-{
-   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                  = RISCV64in_SRAI;
-   i->RISCV64in.SRAI.dst   = dst;
-   i->RISCV64in.SRAI.src   = src;
-   i->RISCV64in.SRAI.uimm6 = uimm6;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_SLLW;
-   i->RISCV64in.SLLW.dst  = dst;
-   i->RISCV64in.SLLW.src1 = src1;
-   i->RISCV64in.SLLW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SRLW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_SRLW;
-   i->RISCV64in.SRLW.dst  = dst;
-   i->RISCV64in.SRLW.src1 = src1;
-   i->RISCV64in.SRLW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_SRAW;
-   i->RISCV64in.SRAW.dst  = dst;
-   i->RISCV64in.SRAW.src1 = src1;
-   i->RISCV64in.SRAW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SLT(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_SLT;
-   i->RISCV64in.SLT.dst  = dst;
-   i->RISCV64in.SLT.src1 = src1;
-   i->RISCV64in.SLT.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_SLTU;
-   i->RISCV64in.SLTU.dst  = dst;
-   i->RISCV64in.SLTU.src1 = src1;
-   i->RISCV64in.SLTU.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12)
-{
-   RISCV64Instr* i           = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                    = RISCV64in_SLTIU;
-   i->RISCV64in.SLTIU.dst    = dst;
-   i->RISCV64in.SLTIU.src    = src;
-   i->RISCV64in.SLTIU.simm12 = simm12;
+   i->tag                    = RISCV64in_ALUImm;
+   i->RISCV64in.ALUImm.op    = op;
+   i->RISCV64in.ALUImm.dst   = dst;
+   i->RISCV64in.ALUImm.src   = src;
+   i->RISCV64in.ALUImm.imm12 = imm12;
    return i;
 }
 
@@ -510,126 +387,6 @@ RISCV64Instr* RISCV64Instr_CSRRW(HReg dst, HReg src, UInt csr)
    i->RISCV64in.CSRRW.dst = dst;
    i->RISCV64in.CSRRW.src = src;
    i->RISCV64in.CSRRW.csr = csr;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_MUL;
-   i->RISCV64in.MUL.dst  = dst;
-   i->RISCV64in.MUL.src1 = src1;
-   i->RISCV64in.MUL.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_MULH(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_MULH;
-   i->RISCV64in.MULH.dst  = dst;
-   i->RISCV64in.MULH.src1 = src1;
-   i->RISCV64in.MULH.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_MULHU(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                  = RISCV64in_MULHU;
-   i->RISCV64in.MULHU.dst  = dst;
-   i->RISCV64in.MULHU.src1 = src1;
-   i->RISCV64in.MULHU.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_DIV(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_DIV;
-   i->RISCV64in.DIV.dst  = dst;
-   i->RISCV64in.DIV.src1 = src1;
-   i->RISCV64in.DIV.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_DIVU(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_DIVU;
-   i->RISCV64in.DIVU.dst  = dst;
-   i->RISCV64in.DIVU.src1 = src1;
-   i->RISCV64in.DIVU.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_REM(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i       = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                = RISCV64in_REM;
-   i->RISCV64in.REM.dst  = dst;
-   i->RISCV64in.REM.src1 = src1;
-   i->RISCV64in.REM.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_REMU(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_REMU;
-   i->RISCV64in.REMU.dst  = dst;
-   i->RISCV64in.REMU.src1 = src1;
-   i->RISCV64in.REMU.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_MULW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_MULW;
-   i->RISCV64in.MULW.dst  = dst;
-   i->RISCV64in.MULW.src1 = src1;
-   i->RISCV64in.MULW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_DIVW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_DIVW;
-   i->RISCV64in.DIVW.dst  = dst;
-   i->RISCV64in.DIVW.src1 = src1;
-   i->RISCV64in.DIVW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_DIVUW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                  = RISCV64in_DIVUW;
-   i->RISCV64in.DIVUW.dst  = dst;
-   i->RISCV64in.DIVUW.src1 = src1;
-   i->RISCV64in.DIVUW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_REMW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i        = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                 = RISCV64in_REMW;
-   i->RISCV64in.REMW.dst  = dst;
-   i->RISCV64in.REMW.src1 = src1;
-   i->RISCV64in.REMW.src2 = src2;
-   return i;
-}
-
-RISCV64Instr* RISCV64Instr_REMUW(HReg dst, HReg src1, HReg src2)
-{
-   RISCV64Instr* i         = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
-   i->tag                  = RISCV64in_REMUW;
-   i->RISCV64in.REMUW.dst  = dst;
-   i->RISCV64in.REMUW.src1 = src1;
-   i->RISCV64in.REMUW.src2 = src2;
    return i;
 }
 
@@ -931,283 +688,26 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
       vex_printf(", ");
       ppHRegRISCV64(i->RISCV64in.MV.src);
       return;
-   case RISCV64in_ADD:
-      vex_printf("add     ");
-      ppHRegRISCV64(i->RISCV64in.ADD.dst);
+   case RISCV64in_ALU:
+      vex_printf("%-7s ", showRISCV64ALUOp(i->RISCV64in.ALU.op));
+      ppHRegRISCV64(i->RISCV64in.ALU.dst);
       vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ADD.src1);
+      ppHRegRISCV64(i->RISCV64in.ALU.src1);
       vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ADD.src2);
+      ppHRegRISCV64(i->RISCV64in.ALU.src2);
       return;
-   case RISCV64in_ADDI:
-      vex_printf("addi    ");
-      ppHRegRISCV64(i->RISCV64in.ADDI.dst);
+   case RISCV64in_ALUImm:
+      vex_printf("%-7s ", showRISCV64ALUImmOp(i->RISCV64in.ALUImm.op));
+      ppHRegRISCV64(i->RISCV64in.ALUImm.dst);
       vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ADDI.src);
-      vex_printf(", %d", i->RISCV64in.ADDI.simm12);
-      return;
-   case RISCV64in_ADDW:
-      vex_printf("addw    ");
-      ppHRegRISCV64(i->RISCV64in.ADDW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ADDW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ADDW.src2);
-      return;
-   case RISCV64in_ADDIW:
-      vex_printf("addiw   ");
-      ppHRegRISCV64(i->RISCV64in.ADDIW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ADDIW.src);
-      vex_printf(", %d", i->RISCV64in.ADDIW.simm12);
-      return;
-   case RISCV64in_SUB:
-      vex_printf("sub     ");
-      ppHRegRISCV64(i->RISCV64in.SUB.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SUB.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SUB.src2);
-      return;
-   case RISCV64in_SUBW:
-      vex_printf("subw    ");
-      ppHRegRISCV64(i->RISCV64in.SUBW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SUBW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SUBW.src2);
-      return;
-   case RISCV64in_XOR:
-      vex_printf("xor     ");
-      ppHRegRISCV64(i->RISCV64in.XOR.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.XOR.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.XOR.src2);
-      return;
-   case RISCV64in_XORI:
-      vex_printf("xori    ");
-      ppHRegRISCV64(i->RISCV64in.XORI.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.XORI.src);
-      vex_printf(", %d", i->RISCV64in.XORI.simm12);
-      return;
-   case RISCV64in_OR:
-      vex_printf("or      ");
-      ppHRegRISCV64(i->RISCV64in.OR.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.OR.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.OR.src2);
-      return;
-   case RISCV64in_AND:
-      vex_printf("and     ");
-      ppHRegRISCV64(i->RISCV64in.AND.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.AND.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.AND.src2);
-      return;
-   case RISCV64in_ANDI:
-      vex_printf("andi    ");
-      ppHRegRISCV64(i->RISCV64in.ANDI.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.ANDI.src);
-      vex_printf(", %d", i->RISCV64in.ANDI.simm12);
-      return;
-   case RISCV64in_SLL:
-      vex_printf("sll     ");
-      ppHRegRISCV64(i->RISCV64in.SLL.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLL.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLL.src2);
-      return;
-   case RISCV64in_SRL:
-      vex_printf("srl     ");
-      ppHRegRISCV64(i->RISCV64in.SRL.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRL.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRL.src2);
-      return;
-   case RISCV64in_SRA:
-      vex_printf("sra     ");
-      ppHRegRISCV64(i->RISCV64in.SRA.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRA.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRA.src2);
-      return;
-   case RISCV64in_SLLI:
-      vex_printf("slli    ");
-      ppHRegRISCV64(i->RISCV64in.SLLI.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLLI.src);
-      vex_printf(", %u", i->RISCV64in.SLLI.uimm6);
-      return;
-   case RISCV64in_SRLI:
-      vex_printf("srli    ");
-      ppHRegRISCV64(i->RISCV64in.SRLI.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRLI.src);
-      vex_printf(", %u", i->RISCV64in.SRLI.uimm6);
-      return;
-   case RISCV64in_SRAI:
-      vex_printf("srai    ");
-      ppHRegRISCV64(i->RISCV64in.SRAI.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRAI.src);
-      vex_printf(", %u", i->RISCV64in.SRAI.uimm6);
-      return;
-   case RISCV64in_SLLW:
-      vex_printf("sllw    ");
-      ppHRegRISCV64(i->RISCV64in.SLLW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLLW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLLW.src2);
-      return;
-   case RISCV64in_SRLW:
-      vex_printf("srlw    ");
-      ppHRegRISCV64(i->RISCV64in.SRLW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRLW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRLW.src2);
-      return;
-   case RISCV64in_SRAW:
-      vex_printf("sraw    ");
-      ppHRegRISCV64(i->RISCV64in.SRAW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRAW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SRAW.src2);
-      return;
-   case RISCV64in_SLT:
-      vex_printf("slt     ");
-      ppHRegRISCV64(i->RISCV64in.SLT.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLT.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLT.src2);
-      return;
-   case RISCV64in_SLTU:
-      vex_printf("sltu    ");
-      ppHRegRISCV64(i->RISCV64in.SLTU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLTU.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLTU.src2);
-      return;
-   case RISCV64in_SLTIU:
-      vex_printf("sltiu   ");
-      ppHRegRISCV64(i->RISCV64in.SLTIU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.SLTIU.src);
-      vex_printf(", %d", i->RISCV64in.SLTIU.simm12);
+      ppHRegRISCV64(i->RISCV64in.ALUImm.src);
+      vex_printf(", %d", i->RISCV64in.ALUImm.imm12);
       return;
    case RISCV64in_CSRRW:
       vex_printf("csrrw   ");
       ppHRegRISCV64(i->RISCV64in.CSRRW.dst);
       vex_printf(", %s, ", showRISCV64CSR(i->RISCV64in.CSRRW.csr));
       ppHRegRISCV64(i->RISCV64in.CSRRW.src);
-      return;
-   case RISCV64in_MUL:
-      vex_printf("mul     ");
-      ppHRegRISCV64(i->RISCV64in.MUL.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MUL.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MUL.src2);
-      return;
-   case RISCV64in_MULH:
-      vex_printf("mulh    ");
-      ppHRegRISCV64(i->RISCV64in.MULH.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MULH.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MULH.src2);
-      return;
-   case RISCV64in_MULHU:
-      vex_printf("mulhu   ");
-      ppHRegRISCV64(i->RISCV64in.MULHU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MULHU.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MULHU.src2);
-      return;
-   case RISCV64in_DIV:
-      vex_printf("div     ");
-      ppHRegRISCV64(i->RISCV64in.DIV.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIV.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIV.src2);
-      return;
-   case RISCV64in_DIVU:
-      vex_printf("divu    ");
-      ppHRegRISCV64(i->RISCV64in.DIVU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIVU.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIVU.src2);
-      return;
-   case RISCV64in_REM:
-      vex_printf("rem     ");
-      ppHRegRISCV64(i->RISCV64in.REM.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REM.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REM.src2);
-      return;
-   case RISCV64in_REMU:
-      vex_printf("remu    ");
-      ppHRegRISCV64(i->RISCV64in.REMU.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REMU.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REMU.src2);
-      return;
-   case RISCV64in_MULW:
-      vex_printf("mulw    ");
-      ppHRegRISCV64(i->RISCV64in.MULW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MULW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.MULW.src2);
-      return;
-   case RISCV64in_DIVW:
-      vex_printf("divw    ");
-      ppHRegRISCV64(i->RISCV64in.DIVW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIVW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIVW.src2);
-      return;
-   case RISCV64in_DIVUW:
-      vex_printf("divuw   ");
-      ppHRegRISCV64(i->RISCV64in.DIVUW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIVUW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.DIVUW.src2);
-      return;
-   case RISCV64in_REMW:
-      vex_printf("remw    ");
-      ppHRegRISCV64(i->RISCV64in.REMW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REMW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REMW.src2);
-      return;
-   case RISCV64in_REMUW:
-      vex_printf("remuw   ");
-      ppHRegRISCV64(i->RISCV64in.REMUW.dst);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REMUW.src1);
-      vex_printf(", ");
-      ppHRegRISCV64(i->RISCV64in.REMUW.src2);
       return;
    case RISCV64in_LD:
       vex_printf("ld      ");
@@ -1541,176 +1041,18 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmWrite, i->RISCV64in.MV.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.MV.src);
       return;
-   case RISCV64in_ADD:
-      addHRegUse(u, HRmWrite, i->RISCV64in.ADD.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.ADD.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.ADD.src2);
+   case RISCV64in_ALU:
+      addHRegUse(u, HRmWrite, i->RISCV64in.ALU.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.ALU.src1);
+      addHRegUse(u, HRmRead, i->RISCV64in.ALU.src2);
       return;
-   case RISCV64in_ADDI:
-      addHRegUse(u, HRmWrite, i->RISCV64in.ADDI.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.ADDI.src);
-      return;
-   case RISCV64in_ADDW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.ADDW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.ADDW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.ADDW.src2);
-      return;
-   case RISCV64in_ADDIW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.ADDIW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.ADDIW.src);
-      return;
-   case RISCV64in_SUB:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SUB.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SUB.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SUB.src2);
-      return;
-   case RISCV64in_SUBW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SUBW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SUBW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SUBW.src2);
-      return;
-   case RISCV64in_XOR:
-      addHRegUse(u, HRmWrite, i->RISCV64in.XOR.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.XOR.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.XOR.src2);
-      return;
-   case RISCV64in_XORI:
-      addHRegUse(u, HRmWrite, i->RISCV64in.XORI.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.XORI.src);
-      return;
-   case RISCV64in_OR:
-      addHRegUse(u, HRmWrite, i->RISCV64in.OR.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.OR.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.OR.src2);
-      return;
-   case RISCV64in_AND:
-      addHRegUse(u, HRmWrite, i->RISCV64in.AND.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.AND.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.AND.src2);
-      return;
-   case RISCV64in_ANDI:
-      addHRegUse(u, HRmWrite, i->RISCV64in.ANDI.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.ANDI.src);
-      return;
-   case RISCV64in_SLL:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SLL.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLL.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLL.src2);
-      return;
-   case RISCV64in_SRL:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SRL.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRL.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRL.src2);
-      return;
-   case RISCV64in_SRA:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SRA.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRA.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRA.src2);
-      return;
-   case RISCV64in_SLLI:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SLLI.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLLI.src);
-      return;
-   case RISCV64in_SRLI:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SRLI.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRLI.src);
-      return;
-   case RISCV64in_SRAI:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SRAI.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRAI.src);
-      return;
-   case RISCV64in_SLLW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SLLW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLLW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLLW.src2);
-      return;
-   case RISCV64in_SRLW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SRLW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRLW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRLW.src2);
-      return;
-   case RISCV64in_SRAW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SRAW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRAW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SRAW.src2);
-      return;
-   case RISCV64in_SLT:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SLT.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLT.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLT.src2);
-      return;
-   case RISCV64in_SLTU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SLTU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLTU.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLTU.src2);
-      return;
-   case RISCV64in_SLTIU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.SLTIU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.SLTIU.src);
+   case RISCV64in_ALUImm:
+      addHRegUse(u, HRmWrite, i->RISCV64in.ALUImm.dst);
+      addHRegUse(u, HRmRead, i->RISCV64in.ALUImm.src);
       return;
    case RISCV64in_CSRRW:
       addHRegUse(u, HRmWrite, i->RISCV64in.CSRRW.dst);
       addHRegUse(u, HRmRead, i->RISCV64in.CSRRW.src);
-      return;
-   case RISCV64in_MUL:
-      addHRegUse(u, HRmWrite, i->RISCV64in.MUL.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.MUL.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.MUL.src2);
-      return;
-   case RISCV64in_MULH:
-      addHRegUse(u, HRmWrite, i->RISCV64in.MULH.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.MULH.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.MULH.src2);
-      return;
-   case RISCV64in_MULHU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.MULHU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.MULHU.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.MULHU.src2);
-      return;
-   case RISCV64in_DIV:
-      addHRegUse(u, HRmWrite, i->RISCV64in.DIV.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIV.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIV.src2);
-      return;
-   case RISCV64in_DIVU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.DIVU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIVU.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIVU.src2);
-      return;
-   case RISCV64in_REM:
-      addHRegUse(u, HRmWrite, i->RISCV64in.REM.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.REM.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.REM.src2);
-      return;
-   case RISCV64in_REMU:
-      addHRegUse(u, HRmWrite, i->RISCV64in.REMU.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.REMU.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.REMU.src2);
-      return;
-   case RISCV64in_MULW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.MULW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.MULW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.MULW.src2);
-      return;
-   case RISCV64in_DIVW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.DIVW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIVW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIVW.src2);
-      return;
-   case RISCV64in_DIVUW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.DIVUW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIVUW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.DIVUW.src2);
-      return;
-   case RISCV64in_REMW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.REMW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.REMW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.REMW.src2);
-      return;
-   case RISCV64in_REMUW:
-      addHRegUse(u, HRmWrite, i->RISCV64in.REMUW.dst);
-      addHRegUse(u, HRmRead, i->RISCV64in.REMUW.src1);
-      addHRegUse(u, HRmRead, i->RISCV64in.REMUW.src2);
       return;
    case RISCV64in_LD:
       addHRegUse(u, HRmWrite, i->RISCV64in.LD.dst);
@@ -1945,176 +1287,18 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
       mapReg(m, &i->RISCV64in.MV.dst);
       mapReg(m, &i->RISCV64in.MV.src);
       return;
-   case RISCV64in_ADD:
-      mapReg(m, &i->RISCV64in.ADD.dst);
-      mapReg(m, &i->RISCV64in.ADD.src1);
-      mapReg(m, &i->RISCV64in.ADD.src2);
+   case RISCV64in_ALU:
+      mapReg(m, &i->RISCV64in.ALU.dst);
+      mapReg(m, &i->RISCV64in.ALU.src1);
+      mapReg(m, &i->RISCV64in.ALU.src2);
       return;
-   case RISCV64in_ADDI:
-      mapReg(m, &i->RISCV64in.ADDI.dst);
-      mapReg(m, &i->RISCV64in.ADDI.src);
-      return;
-   case RISCV64in_ADDW:
-      mapReg(m, &i->RISCV64in.ADDW.dst);
-      mapReg(m, &i->RISCV64in.ADDW.src1);
-      mapReg(m, &i->RISCV64in.ADDW.src2);
-      return;
-   case RISCV64in_ADDIW:
-      mapReg(m, &i->RISCV64in.ADDIW.dst);
-      mapReg(m, &i->RISCV64in.ADDIW.src);
-      return;
-   case RISCV64in_SUB:
-      mapReg(m, &i->RISCV64in.SUB.dst);
-      mapReg(m, &i->RISCV64in.SUB.src1);
-      mapReg(m, &i->RISCV64in.SUB.src2);
-      return;
-   case RISCV64in_SUBW:
-      mapReg(m, &i->RISCV64in.SUBW.dst);
-      mapReg(m, &i->RISCV64in.SUBW.src1);
-      mapReg(m, &i->RISCV64in.SUBW.src2);
-      return;
-   case RISCV64in_XOR:
-      mapReg(m, &i->RISCV64in.XOR.dst);
-      mapReg(m, &i->RISCV64in.XOR.src1);
-      mapReg(m, &i->RISCV64in.XOR.src2);
-      return;
-   case RISCV64in_XORI:
-      mapReg(m, &i->RISCV64in.XORI.dst);
-      mapReg(m, &i->RISCV64in.XORI.src);
-      return;
-   case RISCV64in_OR:
-      mapReg(m, &i->RISCV64in.OR.dst);
-      mapReg(m, &i->RISCV64in.OR.src1);
-      mapReg(m, &i->RISCV64in.OR.src2);
-      return;
-   case RISCV64in_AND:
-      mapReg(m, &i->RISCV64in.AND.dst);
-      mapReg(m, &i->RISCV64in.AND.src1);
-      mapReg(m, &i->RISCV64in.AND.src2);
-      return;
-   case RISCV64in_ANDI:
-      mapReg(m, &i->RISCV64in.ANDI.dst);
-      mapReg(m, &i->RISCV64in.ANDI.src);
-      return;
-   case RISCV64in_SLL:
-      mapReg(m, &i->RISCV64in.SLL.dst);
-      mapReg(m, &i->RISCV64in.SLL.src1);
-      mapReg(m, &i->RISCV64in.SLL.src2);
-      return;
-   case RISCV64in_SRL:
-      mapReg(m, &i->RISCV64in.SRL.dst);
-      mapReg(m, &i->RISCV64in.SRL.src1);
-      mapReg(m, &i->RISCV64in.SRL.src2);
-      return;
-   case RISCV64in_SRA:
-      mapReg(m, &i->RISCV64in.SRA.dst);
-      mapReg(m, &i->RISCV64in.SRA.src1);
-      mapReg(m, &i->RISCV64in.SRA.src2);
-      return;
-   case RISCV64in_SLLI:
-      mapReg(m, &i->RISCV64in.SLLI.dst);
-      mapReg(m, &i->RISCV64in.SLLI.src);
-      return;
-   case RISCV64in_SRLI:
-      mapReg(m, &i->RISCV64in.SRLI.dst);
-      mapReg(m, &i->RISCV64in.SRLI.src);
-      return;
-   case RISCV64in_SRAI:
-      mapReg(m, &i->RISCV64in.SRAI.dst);
-      mapReg(m, &i->RISCV64in.SRAI.src);
-      return;
-   case RISCV64in_SLLW:
-      mapReg(m, &i->RISCV64in.SLLW.dst);
-      mapReg(m, &i->RISCV64in.SLLW.src1);
-      mapReg(m, &i->RISCV64in.SLLW.src2);
-      return;
-   case RISCV64in_SRLW:
-      mapReg(m, &i->RISCV64in.SRLW.dst);
-      mapReg(m, &i->RISCV64in.SRLW.src1);
-      mapReg(m, &i->RISCV64in.SRLW.src2);
-      return;
-   case RISCV64in_SRAW:
-      mapReg(m, &i->RISCV64in.SRAW.dst);
-      mapReg(m, &i->RISCV64in.SRAW.src1);
-      mapReg(m, &i->RISCV64in.SRAW.src2);
-      return;
-   case RISCV64in_SLT:
-      mapReg(m, &i->RISCV64in.SLT.dst);
-      mapReg(m, &i->RISCV64in.SLT.src1);
-      mapReg(m, &i->RISCV64in.SLT.src2);
-      return;
-   case RISCV64in_SLTU:
-      mapReg(m, &i->RISCV64in.SLTU.dst);
-      mapReg(m, &i->RISCV64in.SLTU.src1);
-      mapReg(m, &i->RISCV64in.SLTU.src2);
-      return;
-   case RISCV64in_SLTIU:
-      mapReg(m, &i->RISCV64in.SLTIU.dst);
-      mapReg(m, &i->RISCV64in.SLTIU.src);
+   case RISCV64in_ALUImm:
+      mapReg(m, &i->RISCV64in.ALUImm.dst);
+      mapReg(m, &i->RISCV64in.ALUImm.src);
       return;
    case RISCV64in_CSRRW:
       mapReg(m, &i->RISCV64in.CSRRW.dst);
       mapReg(m, &i->RISCV64in.CSRRW.src);
-      return;
-   case RISCV64in_MUL:
-      mapReg(m, &i->RISCV64in.MUL.dst);
-      mapReg(m, &i->RISCV64in.MUL.src1);
-      mapReg(m, &i->RISCV64in.MUL.src2);
-      return;
-   case RISCV64in_MULH:
-      mapReg(m, &i->RISCV64in.MULH.dst);
-      mapReg(m, &i->RISCV64in.MULH.src1);
-      mapReg(m, &i->RISCV64in.MULH.src2);
-      return;
-   case RISCV64in_MULHU:
-      mapReg(m, &i->RISCV64in.MULHU.dst);
-      mapReg(m, &i->RISCV64in.MULHU.src1);
-      mapReg(m, &i->RISCV64in.MULHU.src2);
-      return;
-   case RISCV64in_DIV:
-      mapReg(m, &i->RISCV64in.DIV.dst);
-      mapReg(m, &i->RISCV64in.DIV.src1);
-      mapReg(m, &i->RISCV64in.DIV.src2);
-      return;
-   case RISCV64in_DIVU:
-      mapReg(m, &i->RISCV64in.DIVU.dst);
-      mapReg(m, &i->RISCV64in.DIVU.src1);
-      mapReg(m, &i->RISCV64in.DIVU.src2);
-      return;
-   case RISCV64in_REM:
-      mapReg(m, &i->RISCV64in.REM.dst);
-      mapReg(m, &i->RISCV64in.REM.src1);
-      mapReg(m, &i->RISCV64in.REM.src2);
-      return;
-   case RISCV64in_REMU:
-      mapReg(m, &i->RISCV64in.REMU.dst);
-      mapReg(m, &i->RISCV64in.REMU.src1);
-      mapReg(m, &i->RISCV64in.REMU.src2);
-      return;
-   case RISCV64in_MULW:
-      mapReg(m, &i->RISCV64in.MULW.dst);
-      mapReg(m, &i->RISCV64in.MULW.src1);
-      mapReg(m, &i->RISCV64in.MULW.src2);
-      return;
-   case RISCV64in_DIVW:
-      mapReg(m, &i->RISCV64in.DIVW.dst);
-      mapReg(m, &i->RISCV64in.DIVW.src1);
-      mapReg(m, &i->RISCV64in.DIVW.src2);
-      return;
-   case RISCV64in_DIVUW:
-      mapReg(m, &i->RISCV64in.DIVUW.dst);
-      mapReg(m, &i->RISCV64in.DIVUW.src1);
-      mapReg(m, &i->RISCV64in.DIVUW.src2);
-      return;
-   case RISCV64in_REMW:
-      mapReg(m, &i->RISCV64in.REMW.dst);
-      mapReg(m, &i->RISCV64in.REMW.src1);
-      mapReg(m, &i->RISCV64in.REMW.src2);
-      return;
-   case RISCV64in_REMUW:
-      mapReg(m, &i->RISCV64in.REMUW.dst);
-      mapReg(m, &i->RISCV64in.REMUW.src1);
-      mapReg(m, &i->RISCV64in.REMUW.src2);
       return;
    case RISCV64in_LD:
       mapReg(m, &i->RISCV64in.LD.dst);
@@ -2686,234 +1870,136 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       p = emit_CR(p, 0b10, src, dst, 0b1000);
       goto done;
    }
-   case RISCV64in_ADD: {
-      /* add dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.ADD.dst);
-      UInt src1 = iregEnc(i->RISCV64in.ADD.src1);
-      UInt src2 = iregEnc(i->RISCV64in.ADD.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0000000);
-      goto done;
+   case RISCV64in_ALU: {
+      /* <op> dst, src1, src2 */
+      UInt dst  = iregEnc(i->RISCV64in.ALU.dst);
+      UInt src1 = iregEnc(i->RISCV64in.ALU.src1);
+      UInt src2 = iregEnc(i->RISCV64in.ALU.src2);
+      switch (i->RISCV64in.ALU.op) {
+      case RISCV64alu_ADD:
+         p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SUB:
+         p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0100000);
+         goto done;
+      case RISCV64alu_ADDW:
+         p = emit_R(p, 0b0111011, dst, 0b000, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SUBW:
+         p = emit_R(p, 0b0111011, dst, 0b000, src1, src2, 0b0100000);
+         goto done;
+      case RISCV64alu_XOR:
+         p = emit_R(p, 0b0110011, dst, 0b100, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_OR:
+         p = emit_R(p, 0b0110011, dst, 0b110, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_AND:
+         p = emit_R(p, 0b0110011, dst, 0b111, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SLL:
+         p = emit_R(p, 0b0110011, dst, 0b001, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SRL:
+         p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SRA:
+         p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0100000);
+         goto done;
+      case RISCV64alu_SLLW:
+         p = emit_R(p, 0b0111011, dst, 0b001, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SRLW:
+         p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SRAW:
+         p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0100000);
+         goto done;
+      case RISCV64alu_SLT:
+         p = emit_R(p, 0b0110011, dst, 0b010, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_SLTU:
+         p = emit_R(p, 0b0110011, dst, 0b011, src1, src2, 0b0000000);
+         goto done;
+      case RISCV64alu_MUL:
+         p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_MULH:
+         p = emit_R(p, 0b0110011, dst, 0b001, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_MULHU:
+         p = emit_R(p, 0b0110011, dst, 0b011, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_DIV:
+         p = emit_R(p, 0b0110011, dst, 0b100, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_DIVU:
+         p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_REM:
+         p = emit_R(p, 0b0110011, dst, 0b110, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_REMU:
+         p = emit_R(p, 0b0110011, dst, 0b111, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_MULW:
+         p = emit_R(p, 0b0111011, dst, 0b000, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_DIVW:
+         p = emit_R(p, 0b0111011, dst, 0b100, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_DIVUW:
+         p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_REMW:
+         p = emit_R(p, 0b0111011, dst, 0b110, src1, src2, 0b0000001);
+         goto done;
+      case RISCV64alu_REMUW:
+         p = emit_R(p, 0b0111011, dst, 0b111, src1, src2, 0b0000001);
+         goto done;
+      }
+      break;
    }
-   case RISCV64in_ADDI: {
-      /* addi dst, src, simm12 */
-      UInt dst    = iregEnc(i->RISCV64in.ADDI.dst);
-      UInt src    = iregEnc(i->RISCV64in.ADDI.src);
-      Int  simm12 = i->RISCV64in.ADDI.simm12;
-      vassert(simm12 >= -2048 && simm12 < 2048);
-      UInt imm11_0 = simm12 & 0xfff;
-
-      p = emit_I(p, 0b0010011, dst, 0b000, src, imm11_0);
-      goto done;
-   }
-   case RISCV64in_ADDW: {
-      /* addw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.ADDW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.ADDW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.ADDW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b000, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_ADDIW: {
-      /* addiw dst, src, simm12 */
-      UInt dst    = iregEnc(i->RISCV64in.ADDIW.dst);
-      UInt src    = iregEnc(i->RISCV64in.ADDIW.src);
-      Int  simm12 = i->RISCV64in.ADDIW.simm12;
-      vassert(simm12 >= -2048 && simm12 < 2048);
-      UInt imm11_0 = simm12 & 0xfff;
-
-      p = emit_I(p, 0b0011011, dst, 0b000, src, imm11_0);
-      goto done;
-   }
-   case RISCV64in_SUB: {
-      /* sub dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SUB.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SUB.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SUB.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0100000);
-      goto done;
-   }
-   case RISCV64in_SUBW: {
-      /* subw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SUBW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SUBW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SUBW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b000, src1, src2, 0b0100000);
-      goto done;
-   }
-   case RISCV64in_XOR: {
-      /* xor dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.XOR.dst);
-      UInt src1 = iregEnc(i->RISCV64in.XOR.src1);
-      UInt src2 = iregEnc(i->RISCV64in.XOR.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b100, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_XORI: {
-      /* xori dst, src, simm12 */
-      UInt dst    = iregEnc(i->RISCV64in.XORI.dst);
-      UInt src    = iregEnc(i->RISCV64in.XORI.src);
-      Int  simm12 = i->RISCV64in.XORI.simm12;
-      vassert(simm12 >= -2048 && simm12 < 2048);
-      UInt imm11_0 = simm12 & 0xfff;
-
-      p = emit_I(p, 0b0010011, dst, 0b100, src, imm11_0);
-      goto done;
-   }
-   case RISCV64in_OR: {
-      /* or dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.OR.dst);
-      UInt src1 = iregEnc(i->RISCV64in.OR.src1);
-      UInt src2 = iregEnc(i->RISCV64in.OR.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b110, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_AND: {
-      /* and dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.AND.dst);
-      UInt src1 = iregEnc(i->RISCV64in.AND.src1);
-      UInt src2 = iregEnc(i->RISCV64in.AND.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b111, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_ANDI: {
-      /* andi dst, src, simm12 */
-      UInt dst    = iregEnc(i->RISCV64in.ANDI.dst);
-      UInt src    = iregEnc(i->RISCV64in.ANDI.src);
-      Int  simm12 = i->RISCV64in.ANDI.simm12;
-      vassert(simm12 >= -2048 && simm12 < 2048);
-      UInt imm11_0 = simm12 & 0xfff;
-
-      p = emit_I(p, 0b0010011, dst, 0b111, src, imm11_0);
-      goto done;
-   }
-   case RISCV64in_SLL: {
-      /* sll dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SLL.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SLL.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SLL.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b001, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_SRL: {
-      /* srl dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SRL.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SRL.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SRL.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_SRA: {
-      /* sra dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SRA.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SRA.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SRA.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0100000);
-      goto done;
-   }
-   case RISCV64in_SLLI: {
-      /* slli dst, src, uimm6 */
-      UInt dst   = iregEnc(i->RISCV64in.SLLI.dst);
-      UInt src   = iregEnc(i->RISCV64in.SLLI.src);
-      UInt uimm6 = i->RISCV64in.SLLI.uimm6;
-      vassert(uimm6 < 64);
-      UInt uimm4_0 = uimm6 & 0x1f;
-      UInt uimm5_5 = (uimm6 >> 5) & 0x1;
-
-      p = emit_R(p, 0b0010011, dst, 0b001, src, uimm4_0,
-                 0b000000 << 1 | uimm5_5);
-      goto done;
-   }
-   case RISCV64in_SRLI: {
-      /* srli dst, src, uimm6 */
-      UInt dst   = iregEnc(i->RISCV64in.SRLI.dst);
-      UInt src   = iregEnc(i->RISCV64in.SRLI.src);
-      UInt uimm6 = i->RISCV64in.SRLI.uimm6;
-      vassert(uimm6 < 64);
-      UInt uimm4_0 = uimm6 & 0x1f;
-      UInt uimm5_5 = (uimm6 >> 5) & 0x1;
-
-      p = emit_R(p, 0b0010011, dst, 0b101, src, uimm4_0,
-                 0b000000 << 1 | uimm5_5);
-      goto done;
-   }
-   case RISCV64in_SRAI: {
-      /* srai dst, src, uimm6 */
-      UInt dst   = iregEnc(i->RISCV64in.SRAI.dst);
-      UInt src   = iregEnc(i->RISCV64in.SRAI.src);
-      UInt uimm6 = i->RISCV64in.SRAI.uimm6;
-      vassert(uimm6 < 64);
-      UInt uimm4_0 = uimm6 & 0x1f;
-      UInt uimm5_5 = (uimm6 >> 5) & 0x1;
-
-      p = emit_R(p, 0b0010011, dst, 0b101, src, uimm4_0,
-                 0b010000 << 1 | uimm5_5);
-      goto done;
-   }
-   case RISCV64in_SLLW: {
-      /* sllw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SLLW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SLLW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SLLW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b001, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_SRLW: {
-      /* srlw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SRLW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SRLW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SRLW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_SRAW: {
-      /* sraw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SRAW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SRAW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SRAW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0100000);
-      goto done;
-   }
-   case RISCV64in_SLT: {
-      /* slt dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SLT.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SLT.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SLT.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b010, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_SLTU: {
-      /* sltu dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.SLTU.dst);
-      UInt src1 = iregEnc(i->RISCV64in.SLTU.src1);
-      UInt src2 = iregEnc(i->RISCV64in.SLTU.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b011, src1, src2, 0b0000000);
-      goto done;
-   }
-   case RISCV64in_SLTIU: {
-      /* sltiu dst, src, simm12 */
-      UInt dst    = iregEnc(i->RISCV64in.SLTIU.dst);
-      UInt src    = iregEnc(i->RISCV64in.SLTIU.src);
-      Int  simm12 = i->RISCV64in.SLTIU.simm12;
-      vassert(simm12 >= -2048 && simm12 < 2048);
-      UInt imm11_0 = simm12 & 0xfff;
-
-      p = emit_I(p, 0b0010011, dst, 0b011, src, imm11_0);
-      goto done;
+   case RISCV64in_ALUImm: {
+      /* <op> dst, src, imm12 */
+      UInt dst   = iregEnc(i->RISCV64in.ALUImm.dst);
+      UInt src   = iregEnc(i->RISCV64in.ALUImm.src);
+      Int  imm12 = i->RISCV64in.ALUImm.imm12;
+      switch (i->RISCV64in.ALUImm.op) {
+      case RISCV64alu_ADDI:
+         vassert(imm12 >= -2048 && imm12 < 2048);
+         p = emit_I(p, 0b0010011, dst, 0b000, src, imm12 & 0xfff);
+         goto done;
+      case RISCV64alu_ADDIW:
+         vassert(imm12 >= -2048 && imm12 < 2048);
+         p = emit_I(p, 0b0011011, dst, 0b000, src, imm12 & 0xfff);
+         goto done;
+      case RISCV64alu_XORI:
+         vassert(imm12 >= -2048 && imm12 < 2048);
+         p = emit_I(p, 0b0010011, dst, 0b100, src, imm12 & 0xfff);
+         goto done;
+      case RISCV64alu_ANDI:
+         vassert(imm12 >= -2048 && imm12 < 2048);
+         p = emit_I(p, 0b0010011, dst, 0b111, src, imm12 & 0xfff);
+         goto done;
+      case RISCV64alu_SLLI:
+         vassert(imm12 >= 0 && imm12 < 64);
+         p = emit_I(p, 0b0010011, dst, 0b001, src, (0b000000 << 6) | imm12);
+         goto done;
+      case RISCV64alu_SRLI:
+         vassert(imm12 >= 0 && imm12 < 64);
+         p = emit_I(p, 0b0010011, dst, 0b101, src, (0b000000 << 6) | imm12);
+         goto done;
+      case RISCV64alu_SRAI:
+         vassert(imm12 >= 0 && imm12 < 64);
+         p = emit_I(p, 0b0010011, dst, 0b101, src, (0b010000 << 6) | imm12);
+         goto done;
+      case RISCV64alu_SLTIU:
+         vassert(imm12 >= -2048 && imm12 < 2048);
+         p = emit_I(p, 0b0010011, dst, 0b011, src, imm12 & 0xfff);
+         goto done;
+      }
+      break;
    }
    case RISCV64in_CSRRW: {
       /* csrrw dst, csr, src */
@@ -2923,114 +2009,6 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       vassert(csr < 4096);
 
       p = emit_I(p, 0b1110011, dst, 0b001, src, csr);
-      goto done;
-   }
-   case RISCV64in_MUL: {
-      /* mul dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.MUL.dst);
-      UInt src1 = iregEnc(i->RISCV64in.MUL.src1);
-      UInt src2 = iregEnc(i->RISCV64in.MUL.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b000, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_MULH: {
-      /* mulh dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.MULH.dst);
-      UInt src1 = iregEnc(i->RISCV64in.MULH.src1);
-      UInt src2 = iregEnc(i->RISCV64in.MULH.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b001, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_MULHU: {
-      /* mulhu dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.MULHU.dst);
-      UInt src1 = iregEnc(i->RISCV64in.MULHU.src1);
-      UInt src2 = iregEnc(i->RISCV64in.MULHU.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b011, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_DIV: {
-      /* div dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.DIV.dst);
-      UInt src1 = iregEnc(i->RISCV64in.DIV.src1);
-      UInt src2 = iregEnc(i->RISCV64in.DIV.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b100, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_DIVU: {
-      /* divu dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.DIVU.dst);
-      UInt src1 = iregEnc(i->RISCV64in.DIVU.src1);
-      UInt src2 = iregEnc(i->RISCV64in.DIVU.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b101, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_REM: {
-      /* rem dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.REM.dst);
-      UInt src1 = iregEnc(i->RISCV64in.REM.src1);
-      UInt src2 = iregEnc(i->RISCV64in.REM.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b110, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_REMU: {
-      /* remu dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.REMU.dst);
-      UInt src1 = iregEnc(i->RISCV64in.REMU.src1);
-      UInt src2 = iregEnc(i->RISCV64in.REMU.src2);
-
-      p = emit_R(p, 0b0110011, dst, 0b111, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_MULW: {
-      /* mulw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.MULW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.MULW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.MULW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b000, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_DIVW: {
-      /* divw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.DIVW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.DIVW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.DIVW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b100, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_DIVUW: {
-      /* divuw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.DIVUW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.DIVUW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.DIVUW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b101, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_REMW: {
-      /* remw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.REMW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.REMW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.REMW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b110, src1, src2, 0b0000001);
-      goto done;
-   }
-   case RISCV64in_REMUW: {
-      /* remuw dst, src1, src2 */
-      UInt dst  = iregEnc(i->RISCV64in.REMUW.dst);
-      UInt src1 = iregEnc(i->RISCV64in.REMUW.src1);
-      UInt src2 = iregEnc(i->RISCV64in.REMUW.src2);
-
-      p = emit_R(p, 0b0111011, dst, 0b111, src1, src2, 0b0000001);
       goto done;
    }
    case RISCV64in_LD: {

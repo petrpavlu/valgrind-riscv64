@@ -95,9 +95,71 @@ ST_IN HReg hregRISCV64_x8(void) { return mkHReg(False, HRcInt64, 8, 40); }
 /*--- Instructions                                         ---*/
 /*------------------------------------------------------------*/
 
+/* RISCV64in_ALU sub-types. */
+typedef enum {
+   RISCV64alu_ADD = 0x100, /* Addition of two registers. */
+   RISCV64alu_SUB,         /* Subtraction of one register from another. */
+   RISCV64alu_ADDW,        /* 32-bit addition of two registers. */
+   RISCV64alu_SUBW,        /* 32-bit subtraction of one register from
+                              another. */
+   RISCV64alu_XOR,         /* Bitwise XOR of two registers. */
+   RISCV64alu_OR,          /* Bitwise OR of two registers. */
+   RISCV64alu_AND,         /* Bitwise AND of two registers. */
+   RISCV64alu_SLL,         /* Logical left shift on a register. */
+   RISCV64alu_SRL,         /* Logical right shift on a register. */
+   RISCV64alu_SRA,         /* Arithmetic right shift on a register. */
+   RISCV64alu_SLLW,        /* 32-bit logical left shift on a register. */
+   RISCV64alu_SRLW,        /* 32-bit logical right shift on a register. */
+   RISCV64alu_SRAW,        /* 32-bit arithmetic right shift on a register. */
+   RISCV64alu_SLT,         /* Signed comparison of two registers. */
+   RISCV64alu_SLTU,        /* Unsigned comparison of two registers. */
+   RISCV64alu_MUL,         /* Multiplication of two registers, producing the
+                              lower 64 bits. */
+   RISCV64alu_MULH,        /* Signed multiplication of two registers, producing
+                              the upper 64 bits. */
+   RISCV64alu_MULHU,       /* Unsigned multiplication of two registers,
+                              producing the upper 64 bits. */
+   RISCV64alu_DIV,         /* Signed division of one register by another. */
+   RISCV64alu_DIVU,        /* Unsigned division of one register by another. */
+   RISCV64alu_REM,         /* Remainder from signed division of one register by
+                              another. */
+   RISCV64alu_REMU,        /* Remainder from unsigned division of one register
+                              by another. */
+   RISCV64alu_MULW,        /* 32-bit multiplication of two registers, producing
+                              the lower 32 bits. */
+   RISCV64alu_DIVW,        /* 32-bit signed division of one register by
+                              another. */
+   RISCV64alu_DIVUW,       /* 32-bit unsigned division of one register by
+                              another. */
+   RISCV64alu_REMW,        /* Remainder from 32-bit signed division of one
+                              register by another. */
+   RISCV64alu_REMUW,       /* Remainder from 32-bit unsigned division of one
+                              register by another. */
+} RISCV64ALUOp;
+
+/* RISCV64in_ALUImm sub-types. */
+typedef enum {
+   RISCV64alu_ADDI = 0x200, /* Addition of a register and a sx-12-bit
+                               immediate. */
+   RISCV64alu_ADDIW,        /* 32-bit addition of a register and a sx-12-bit
+                               immediate. */
+   RISCV64alu_XORI,         /* Bitwise XOR of a register and a sx-12-bit
+                               immediate. */
+   RISCV64alu_ANDI,         /* Bitwise AND of a register and a sx-12-bit
+                               immediate. */
+   RISCV64alu_SLLI,         /* Logical left shift on a register by a 6-bit
+                               immediate. */
+   RISCV64alu_SRLI,         /* Logical right shift on a register by a 6-bit
+                               immediate. */
+   RISCV64alu_SRAI,         /* Arithmetic right shift on a register by a 6-bit
+                               immediate. */
+   RISCV64alu_SLTIU,        /* Unsigned comparison of a register and a sx-12-bit
+                               immediate. */
+} RISCV64ALUImmOp;
+
 /* RISCV64in_FpUnary sub-types. */
 typedef enum {
-   RISCV64fpu_FSQRT_S = 0x100, /* Square root of a 32-bit floating-point
+   RISCV64fpu_FSQRT_S = 0x300, /* Square root of a 32-bit floating-point
                                   register. */
    RISCV64fpu_FSQRT_D,         /* Square root of a 64-bit floating-point
                                   register. */
@@ -105,7 +167,7 @@ typedef enum {
 
 /* RISCV64in_FpBinary sub-types. */
 typedef enum {
-   RISCV64fpb_FADD_S = 0x200, /* Addition of two 32-bit floating-point
+   RISCV64fpb_FADD_S = 0x400, /* Addition of two 32-bit floating-point
                                  registers. */
    RISCV64fpb_FMUL_S,         /* Multiplication of two 32-bit floating-point
                                  registers. */
@@ -143,7 +205,7 @@ typedef enum {
 
 /* RISCV64in_FpTernary sub-types. */
 typedef enum {
-   RISCV64fpt_FMADD_S = 0x300, /* Fused multiply-add of 32-bit floating-point
+   RISCV64fpt_FMADD_S = 0x500, /* Fused multiply-add of 32-bit floating-point
                                   registers. */
    RISCV64fpt_FMADD_D,         /* Fused multiply-add of 64-bit floating-point
                                   registers. */
@@ -151,7 +213,7 @@ typedef enum {
 
 /* RISCV64in_FpMove sub-types. */
 typedef enum {
-   RISCV64fpm_FMV_X_W = 0x400, /* Move as-is a 32-bit value from
+   RISCV64fpm_FMV_X_W = 0x600, /* Move as-is a 32-bit value from
                                   a floating-point register to an integer
                                   register. */
    RISCV64fpm_FMV_W_X,         /* Move as-is a 32-bit value from an integer
@@ -167,7 +229,7 @@ typedef enum {
 
 /* RISCV64in_FpConvert sub-types. */
 typedef enum {
-   RISCV64fpc_FCVT_W_S = 0x500, /* Convert a 32-bit floating-point number to
+   RISCV64fpc_FCVT_W_S = 0x700, /* Convert a 32-bit floating-point number to
                                    a 32-bit signed integer. */
    RISCV64fpc_FCVT_WU_S,        /* Convert a 32-bit floating-point number to
                                    a 32-bit unsigned integer. */
@@ -207,7 +269,7 @@ typedef enum {
 
 /* RISCV64in_FpCompare sub-types. */
 typedef enum {
-   RISCV64fpc_FEQ_S = 0x600, /* Equality comparison of two 32-bit floating-point
+   RISCV64fpc_FEQ_S = 0x800, /* Equality comparison of two 32-bit floating-point
                                 registers. */
    RISCV64fpc_FLT_S,         /* Less-than comparison of two 32-bit
                                 floating-point registers. */
@@ -219,7 +281,7 @@ typedef enum {
 
 /* RISCV64in_FpLdSt sub-types. */
 typedef enum {
-   RISCV64fpm_FLW = 0x700, /* 32-bit floating-point load. */
+   RISCV64fpm_FLW = 0x900, /* 32-bit floating-point load. */
    RISCV64fpm_FLD,         /* 64-bit floating-point load. */
    RISCV64fpm_FSW,         /* 32-bit floating-point store. */
    RISCV64fpm_FSD,         /* 64-bit floating-point store. */
@@ -229,63 +291,11 @@ typedef enum {
 typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
    RISCV64in_MV,              /* Copy one register to another. */
-   RISCV64in_ADD,             /* Addition of two registers. */
-   RISCV64in_ADDI,            /* Addition of a register and a sx-12-bit
-                                 immediate. */
-   RISCV64in_ADDW,            /* 32-bit addition of two registers. */
-   RISCV64in_ADDIW,           /* 32-bit addition of a register and a sx-12-bit
-                                 immediate. */
-   RISCV64in_SUB,             /* Subtraction of one register from another. */
-   RISCV64in_SUBW,            /* 32-bit subtraction of one register from
-                                 another. */
-   RISCV64in_XOR,             /* Bitwise XOR of two registers. */
-   RISCV64in_XORI,            /* Bitwise XOR of a register and a sx-12-bit
-                                 immediate. */
-   RISCV64in_OR,              /* Bitwise OR of two registers. */
-   RISCV64in_AND,             /* Bitwise AND of two registers. */
-   RISCV64in_ANDI,            /* Bitwise AND of a register and a sx-12-bit
-                                 immediate. */
-   RISCV64in_SLL,             /* Logical left shift on a register. */
-   RISCV64in_SRL,             /* Logical right shift on a register. */
-   RISCV64in_SRA,             /* Arithmetic right shift on a register. */
-   RISCV64in_SLLI,            /* Logical left shift on a register by a 6-bit
-                                 immediate. */
-   RISCV64in_SRLI,            /* Logical right shift on a register by a 6-bit
-                                 immediate. */
-   RISCV64in_SRAI,            /* Arithmetic right shift on a register by a 6-bit
-                                 immediate. */
-   RISCV64in_SLLW,            /* 32-bit logical left shift on a register. */
-   RISCV64in_SRLW,            /* 32-bit logical right shift on a register. */
-   RISCV64in_SRAW,            /* 32-bit arithmetic right shift on a register. */
-   RISCV64in_SLT,             /* Signed comparison of two registers. */
-   RISCV64in_SLTU,            /* Unsigned comparison of two registers. */
-   RISCV64in_SLTIU,           /* Unsigned comparison of a register and
-                                 a sx-12-bit immediate. */
-   RISCV64in_CSRRW,           /* Atomic swap of values in a CSR an integer
+   RISCV64in_ALU,             /* Computational binary instruction. */
+   RISCV64in_ALUImm,          /* Computational binary instruction, with
+                                 an immediate as the second input. */
+   RISCV64in_CSRRW,           /* Atomic swap of values in a CSR and an integer
                                  register. */
-   RISCV64in_MUL,             /* Multiplication of two registers, producing the
-                                 lower 64 bits. */
-   RISCV64in_MULH,            /* Signed multiplication of two registers,
-                                 producing the upper 64 bits. */
-   RISCV64in_MULHU,           /* Unsigned multiplication of two registers,
-                                 producing the upper 64 bits. */
-   RISCV64in_DIV,             /* Signed division of one register by another. */
-   RISCV64in_DIVU,            /* Unsigned division of one register by
-                                 another. */
-   RISCV64in_REM,             /* Remainder from signed division of one register
-                                 by another. */
-   RISCV64in_REMU,            /* Remainder from unsigned division of one
-                                 register by another. */
-   RISCV64in_MULW,            /* 32-bit multiplication of two registers,
-                                 producing the lower 32 bits. */
-   RISCV64in_DIVW,            /* 32-bit signed division of one register by
-                                 another. */
-   RISCV64in_DIVUW,           /* 32-bit unsigned division of one register by
-                                 another. */
-   RISCV64in_REMW,            /* Remainder from 32-bit signed division of one
-                                 register by another. */
-   RISCV64in_REMUW,           /* Remainder from 32-bit unsigned division of one
-                                 register by another. */
    RISCV64in_LD,              /* 64-bit load. */
    RISCV64in_LW,              /* sx-32-to-64-bit load. */
    RISCV64in_LH,              /* sx-16-to-64-bit load. */
@@ -327,223 +337,27 @@ typedef struct {
          HReg dst;
          HReg src;
       } MV;
-      /* Addition of two registers. */
+      /* Computational binary instruction. */
       struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } ADD;
-      /* Addition of a register and a sx-12-bit immediate. */
+         RISCV64ALUOp op;
+         HReg         dst;
+         HReg         src1;
+         HReg         src2;
+      } ALU;
+      /* Computational binary instruction, with an immediate as the second
+         input. */
       struct {
-         HReg dst;
-         HReg src;
-         Int  simm12;
-      } ADDI;
-      /* 32-bit addition of two registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } ADDW;
-      /* 32-bit addition of a register and a sx-12-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         Int  simm12;
-      } ADDIW;
-      /* Subtraction of one register from another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SUB;
-      /* 32-bit subtraction of one register from another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SUBW;
-      /* Bitwise XOR of two registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } XOR;
-      /* Bitwise XOR of a register and a sx-12-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         Int  simm12;
-      } XORI;
-      /* Bitwise OR of two registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } OR;
-      /* Bitwise AND of two registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } AND;
-      /* Bitwise AND of a register and a sx-12-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         Int  simm12;
-      } ANDI;
-      /* Logical left shift on a register. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SLL;
-      /* Logical right shift on a register. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SRL;
-      /* Arithmetic right shift on a register. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SRA;
-      /* Logical left shift on a register by a 6-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         UInt uimm6;
-      } SLLI;
-      /* Logical right shift on a register by a 6-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         UInt uimm6;
-      } SRLI;
-      /* Arithmetic right shift on a register by a 6-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         UInt uimm6;
-      } SRAI;
-      /* 32-bit logical left shift on a register. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SLLW;
-      /* 32-bit logical right shift on a register. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SRLW;
-      /* 32-bit arithmetic right shift on a register. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SRAW;
-      /* Signed comparison of two registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SLT;
-      /* Unsigned comparison of two registers. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } SLTU;
-      /* Unsigned comparison of a register and a sx-12-bit immediate. */
-      struct {
-         HReg dst;
-         HReg src;
-         Int  simm12;
-      } SLTIU;
-      /* Atomic swap of values in a CSR an integer register. */
+         RISCV64ALUImmOp op;
+         HReg            dst;
+         HReg            src;
+         Int             imm12; /* simm12 or uimm6 */
+      } ALUImm;
+      /* Atomic swap of values in a CSR and an integer register. */
       struct {
          HReg dst;
          HReg src;
          UInt csr;
       } CSRRW;
-      /* Multiplication of two registers, producing the lower 64 bits. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } MUL;
-      /* Signed multiplication of two registers, producing the upper 64 bits. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } MULH;
-      /* Unsigned multiplication of two registers, producing the upper 64 bits.
-       */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } MULHU;
-      /* Signed division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } DIV;
-      /* Unsigned division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } DIVU;
-      /* Remainder from signed division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } REM;
-      /* Remainder from unsigned division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } REMU;
-      /* 32-bit multiplication of two registers, producing the lower 32 bits. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } MULW;
-      /* 32-bit signed division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } DIVW;
-      /* 32-bit unsigned division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } DIVUW;
-      /* Remainder from 32-bit signed division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } REMW;
-      /* Remainder from 32-bit unsigned division of one register by another. */
-      struct {
-         HReg dst;
-         HReg src1;
-         HReg src2;
-      } REMUW;
       /* 64-bit load. */
       struct {
          HReg dst;
@@ -725,42 +539,10 @@ typedef struct {
 
 RISCV64Instr* RISCV64Instr_LI(HReg dst, ULong imm64);
 RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src);
-RISCV64Instr* RISCV64Instr_ADD(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_ADDI(HReg dst, HReg src, Int simm12);
-RISCV64Instr* RISCV64Instr_ADDW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_ADDIW(HReg dst, HReg src, Int simm12);
-RISCV64Instr* RISCV64Instr_SUB(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SUBW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_XOR(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_XORI(HReg dst, HReg src, Int simm12);
-RISCV64Instr* RISCV64Instr_OR(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_AND(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_ANDI(HReg dst, HReg src, Int simm12);
-RISCV64Instr* RISCV64Instr_SLL(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SRL(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SRA(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SLLI(HReg dst, HReg src, UInt uimm6);
-RISCV64Instr* RISCV64Instr_SRLI(HReg dst, HReg src, UInt uimm6);
-RISCV64Instr* RISCV64Instr_SRAI(HReg dst, HReg src, UInt uimm6);
-RISCV64Instr* RISCV64Instr_SLLW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SRLW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SRAW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SLT(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SLTU(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_SLTIU(HReg dst, HReg src, Int simm12);
+RISCV64Instr* RISCV64Instr_ALU(RISCV64ALUOp op, HReg dst, HReg src1, HReg src2);
+RISCV64Instr*
+RISCV64Instr_ALUImm(RISCV64ALUImmOp op, HReg dst, HReg src, Int imm12);
 RISCV64Instr* RISCV64Instr_CSRRW(HReg dst, HReg src, UInt csr);
-RISCV64Instr* RISCV64Instr_MUL(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_MULH(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_MULHU(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_DIV(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_DIVU(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_REM(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_REMU(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_MULW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_DIVW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_DIVUW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_REMW(HReg dst, HReg src1, HReg src2);
-RISCV64Instr* RISCV64Instr_REMUW(HReg dst, HReg src1, HReg src2);
 RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
 RISCV64Instr* RISCV64Instr_LH(HReg dst, HReg base, Int soff12);
