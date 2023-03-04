@@ -2207,27 +2207,27 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       case RISCV64fpm_FMV_X_W:
          dst = iregEnc(i->RISCV64in.FpMove.dst);
          src = fregEnc(i->RISCV64in.FpMove.src);
-         p = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1110000);
+         p   = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1110000);
          goto done;
       case RISCV64fpm_FMV_W_X:
          dst = fregEnc(i->RISCV64in.FpMove.dst);
          src = iregEnc(i->RISCV64in.FpMove.src);
-         p = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1111000);
+         p   = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1111000);
          goto done;
       case RISCV64fpm_FMV_D:
          dst = fregEnc(i->RISCV64in.FpMove.dst);
          src = fregEnc(i->RISCV64in.FpMove.src);
-         p = emit_R(p, 0b1010011, dst, 0b000, src, src, 0b0010001);
+         p   = emit_R(p, 0b1010011, dst, 0b000, src, src, 0b0010001);
          goto done;
       case RISCV64fpm_FMV_X_D:
          dst = iregEnc(i->RISCV64in.FpMove.dst);
          src = fregEnc(i->RISCV64in.FpMove.src);
-         p = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1110001);
+         p   = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1110001);
          goto done;
       case RISCV64fpm_FMV_D_X:
          dst = fregEnc(i->RISCV64in.FpMove.dst);
          src = iregEnc(i->RISCV64in.FpMove.src);
-         p = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1111001);
+         p   = emit_R(p, 0b1010011, dst, 0b000, src, 0b00000, 0b1111001);
          goto done;
       }
       break;
@@ -2239,92 +2239,92 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       case RISCV64fpc_FCVT_W_S:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100000);
          goto done;
       case RISCV64fpc_FCVT_WU_S:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100000);
          goto done;
       case RISCV64fpc_FCVT_S_W:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101000);
          goto done;
       case RISCV64fpc_FCVT_S_WU:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101000);
          goto done;
       case RISCV64fpc_FCVT_L_S:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100000);
          goto done;
       case RISCV64fpc_FCVT_LU_S:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100000);
          goto done;
       case RISCV64fpc_FCVT_S_L:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101000);
          goto done;
       case RISCV64fpc_FCVT_S_LU:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101000);
          goto done;
       case RISCV64fpc_FCVT_S_D:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b0100000);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b0100000);
          goto done;
       case RISCV64fpc_FCVT_D_S:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b0100001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b0100001);
          goto done;
       case RISCV64fpc_FCVT_W_D:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1100001);
          goto done;
       case RISCV64fpc_FCVT_WU_D:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1100001);
          goto done;
       case RISCV64fpc_FCVT_D_W:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00000, 0b1101001);
          goto done;
       case RISCV64fpc_FCVT_D_WU:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00001, 0b1101001);
          goto done;
       case RISCV64fpc_FCVT_L_D:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1100001);
          goto done;
       case RISCV64fpc_FCVT_LU_D:
          dst = iregEnc(i->RISCV64in.FpConvert.dst);
          src = fregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1100001);
          goto done;
       case RISCV64fpc_FCVT_D_L:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00010, 0b1101001);
          goto done;
       case RISCV64fpc_FCVT_D_LU:
          dst = fregEnc(i->RISCV64in.FpConvert.dst);
          src = iregEnc(i->RISCV64in.FpConvert.src);
-         p = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101001);
+         p   = emit_R(p, 0b1010011, dst, 0b111, src, 0b00011, 0b1101001);
          goto done;
       }
       break;
