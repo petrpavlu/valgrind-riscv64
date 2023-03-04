@@ -157,9 +157,35 @@ typedef enum {
                                immediate. */
 } RISCV64ALUImmOp;
 
+/* RISCV64in_Load sub-types. */
+typedef enum {
+   RISCV64_LD = 0x300, /* 64-bit load. */
+   RISCV64_LW,         /* sx-32-to-64-bit load. */
+   RISCV64_LH,         /* sx-16-to-64-bit load. */
+   RISCV64_LB,         /* sx-8-to-64-bit load. */
+} RISCV64LoadOp;
+
+/* RISCV64in_Store sub-types. */
+typedef enum {
+   RISCV64_SD = 0x400, /* 64-bit store. */
+   RISCV64_SW,         /* 32-bit store. */
+   RISCV64_SH,         /* 16-bit store. */
+   RISCV64_SB,         /* 8-bit store. */
+} RISCV64StoreOp;
+
+/* RISCV64in_LoadR sub-types. */
+typedef enum {
+   RISCV64_LR_W = 0x500, /* sx-32-to-64-bit load-reserved. */
+} RISCV64LoadROp;
+
+/* RISCV64in_StoreC sub-types. */
+typedef enum {
+   RISCV64_SC_W = 0x600, /* 32-bit store-conditional. */
+} RISCV64StoreCOp;
+
 /* RISCV64in_FpUnary sub-types. */
 typedef enum {
-   RISCV64fpu_FSQRT_S = 0x300, /* Square root of a 32-bit floating-point
+   RISCV64fpu_FSQRT_S = 0x700, /* Square root of a 32-bit floating-point
                                   register. */
    RISCV64fpu_FSQRT_D,         /* Square root of a 64-bit floating-point
                                   register. */
@@ -167,7 +193,7 @@ typedef enum {
 
 /* RISCV64in_FpBinary sub-types. */
 typedef enum {
-   RISCV64fpb_FADD_S = 0x400, /* Addition of two 32-bit floating-point
+   RISCV64fpb_FADD_S = 0x800, /* Addition of two 32-bit floating-point
                                  registers. */
    RISCV64fpb_FMUL_S,         /* Multiplication of two 32-bit floating-point
                                  registers. */
@@ -205,7 +231,7 @@ typedef enum {
 
 /* RISCV64in_FpTernary sub-types. */
 typedef enum {
-   RISCV64fpt_FMADD_S = 0x500, /* Fused multiply-add of 32-bit floating-point
+   RISCV64fpt_FMADD_S = 0x900, /* Fused multiply-add of 32-bit floating-point
                                   registers. */
    RISCV64fpt_FMADD_D,         /* Fused multiply-add of 64-bit floating-point
                                   registers. */
@@ -213,7 +239,7 @@ typedef enum {
 
 /* RISCV64in_FpMove sub-types. */
 typedef enum {
-   RISCV64fpm_FMV_X_W = 0x600, /* Move as-is a 32-bit value from
+   RISCV64fpm_FMV_X_W = 0xa00, /* Move as-is a 32-bit value from
                                   a floating-point register to an integer
                                   register. */
    RISCV64fpm_FMV_W_X,         /* Move as-is a 32-bit value from an integer
@@ -229,7 +255,7 @@ typedef enum {
 
 /* RISCV64in_FpConvert sub-types. */
 typedef enum {
-   RISCV64fpc_FCVT_W_S = 0x700, /* Convert a 32-bit floating-point number to
+   RISCV64fpc_FCVT_W_S = 0xb00, /* Convert a 32-bit floating-point number to
                                    a 32-bit signed integer. */
    RISCV64fpc_FCVT_WU_S,        /* Convert a 32-bit floating-point number to
                                    a 32-bit unsigned integer. */
@@ -269,7 +295,7 @@ typedef enum {
 
 /* RISCV64in_FpCompare sub-types. */
 typedef enum {
-   RISCV64fpc_FEQ_S = 0x800, /* Equality comparison of two 32-bit floating-point
+   RISCV64fpc_FEQ_S = 0xc00, /* Equality comparison of two 32-bit floating-point
                                 registers. */
    RISCV64fpc_FLT_S,         /* Less-than comparison of two 32-bit
                                 floating-point registers. */
@@ -281,7 +307,7 @@ typedef enum {
 
 /* RISCV64in_FpLdSt sub-types. */
 typedef enum {
-   RISCV64fpm_FLW = 0x900, /* 32-bit floating-point load. */
+   RISCV64fpm_FLW = 0xd00, /* 32-bit floating-point load. */
    RISCV64fpm_FLD,         /* 64-bit floating-point load. */
    RISCV64fpm_FSW,         /* 32-bit floating-point store. */
    RISCV64fpm_FSD,         /* 64-bit floating-point store. */
@@ -294,18 +320,12 @@ typedef enum {
    RISCV64in_ALU,             /* Computational binary instruction. */
    RISCV64in_ALUImm,          /* Computational binary instruction, with
                                  an immediate as the second input. */
+   RISCV64in_Load,            /* Load from memory (sign-extended). */
+   RISCV64in_Store,           /* Store to memory. */
+   RISCV64in_LoadR,           /* Load-reserved from memory (sign-extended). */
+   RISCV64in_StoreC,          /* Store-conditional to memory. */
    RISCV64in_CSRRW,           /* Atomic swap of values in a CSR and an integer
                                  register. */
-   RISCV64in_LD,              /* 64-bit load. */
-   RISCV64in_LW,              /* sx-32-to-64-bit load. */
-   RISCV64in_LH,              /* sx-16-to-64-bit load. */
-   RISCV64in_LB,              /* sx-8-to-64-bit load. */
-   RISCV64in_SD,              /* 64-bit store. */
-   RISCV64in_SW,              /* 32-bit store. */
-   RISCV64in_SH,              /* 16-bit store. */
-   RISCV64in_SB,              /* 8-bit store. */
-   RISCV64in_LR_W,            /* sx-32-to-64-bit load-reserved. */
-   RISCV64in_SC_W,            /* 32-bit store-conditional. */
    RISCV64in_FpUnary,         /* Floating-point unary instruction. */
    RISCV64in_FpBinary,        /* Floating-point binary instruction. */
    RISCV64in_FpTernary,       /* Floating-point ternary instruction. */
@@ -352,71 +372,39 @@ typedef struct {
          HReg            src;
          Int             imm12; /* simm12 or uimm6 */
       } ALUImm;
+      /* Load from memory (sign-extended). */
+      struct {
+         RISCV64LoadOp op;
+         HReg          dst;
+         HReg          base;
+         Int           soff12; /* -2048 .. +2047 */
+      } Load;
+      /* Store to memory. */
+      struct {
+         RISCV64StoreOp op;
+         HReg           src;
+         HReg           base;
+         Int            soff12; /* -2048 .. +2047 */
+      } Store;
+      /* Load-reserved from memory (sign-extended). */
+      struct {
+         RISCV64LoadROp op;
+         HReg           dst;
+         HReg           addr;
+      } LoadR;
+      /* Store-conditional to memory. */
+      struct {
+         RISCV64StoreCOp op;
+         HReg            res;
+         HReg            src;
+         HReg            addr;
+      } StoreC;
       /* Atomic swap of values in a CSR and an integer register. */
       struct {
          HReg dst;
          HReg src;
          UInt csr;
       } CSRRW;
-      /* 64-bit load. */
-      struct {
-         HReg dst;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } LD;
-      /* sx-32-to-64-bit load. */
-      struct {
-         HReg dst;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } LW;
-      /* sx-16-to-64-bit load. */
-      struct {
-         HReg dst;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } LH;
-      /* sx-8-to-64-bit load. */
-      struct {
-         HReg dst;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } LB;
-      /* 64-bit store. */
-      struct {
-         HReg src;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } SD;
-      /* 32-bit store. */
-      struct {
-         HReg src;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } SW;
-      /* 16-bit store. */
-      struct {
-         HReg src;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } SH;
-      /* 8-bit store. */
-      struct {
-         HReg src;
-         HReg base;
-         Int  soff12; /* -2048 .. +2047 */
-      } SB;
-      /* sx-32-to-64-bit load-reserved. */
-      struct {
-         HReg dst;
-         HReg addr;
-      } LR_W;
-      /* 32-bit store-conditional. */
-      struct {
-         HReg res;
-         HReg src;
-         HReg addr;
-      } SC_W;
       /* Floating-point unary instruction. */
       struct {
          RISCV64FpUnaryOp op;
@@ -542,16 +530,14 @@ RISCV64Instr* RISCV64Instr_MV(HReg dst, HReg src);
 RISCV64Instr* RISCV64Instr_ALU(RISCV64ALUOp op, HReg dst, HReg src1, HReg src2);
 RISCV64Instr*
 RISCV64Instr_ALUImm(RISCV64ALUImmOp op, HReg dst, HReg src, Int imm12);
+RISCV64Instr*
+RISCV64Instr_Load(RISCV64LoadOp op, HReg dst, HReg base, Int soff12);
+RISCV64Instr*
+RISCV64Instr_Store(RISCV64StoreOp op, HReg src, HReg base, Int soff12);
+RISCV64Instr* RISCV64Instr_LoadR(RISCV64LoadROp op, HReg dst, HReg addr);
+RISCV64Instr*
+RISCV64Instr_StoreC(RISCV64StoreCOp op, HReg res, HReg src, HReg addr);
 RISCV64Instr* RISCV64Instr_CSRRW(HReg dst, HReg src, UInt csr);
-RISCV64Instr* RISCV64Instr_LD(HReg dst, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_LW(HReg dst, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_LH(HReg dst, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_LB(HReg dst, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_SD(HReg src, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_SW(HReg src, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_SH(HReg src, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_SB(HReg src, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_LR_W(HReg dst, HReg addr);
 RISCV64Instr* RISCV64Instr_FpUnary(RISCV64FpUnaryOp op, HReg dst, HReg src);
 RISCV64Instr*
 RISCV64Instr_FpBinary(RISCV64FpBinaryOp op, HReg dst, HReg src1, HReg src2);
@@ -563,7 +549,6 @@ RISCV64Instr*
 RISCV64Instr_FpCompare(RISCV64FpCompareOp op, HReg dst, HReg src1, HReg src2);
 RISCV64Instr*
 RISCV64Instr_FpLdSt(RISCV64FpLdStOp op, HReg reg, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_SC_W(HReg res, HReg src, HReg addr);
 RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);

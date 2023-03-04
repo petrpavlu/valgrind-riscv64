@@ -605,13 +605,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       HReg addr = iselIntExpr_R(env, e->Iex.Load.addr);
 
       if (ty == Ity_I64)
-         addInstr(env, RISCV64Instr_LD(dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LD, dst, addr, 0));
       else if (ty == Ity_I32)
-         addInstr(env, RISCV64Instr_LW(dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LW, dst, addr, 0));
       else if (ty == Ity_I16)
-         addInstr(env, RISCV64Instr_LH(dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LH, dst, addr, 0));
       else if (ty == Ity_I8)
-         addInstr(env, RISCV64Instr_LB(dst, addr, 0));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LB, dst, addr, 0));
       else
          goto irreducible;
       return dst;
@@ -1092,13 +1092,13 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
       vassert(off >= -2048 && off < 2048);
 
       if (ty == Ity_I64)
-         addInstr(env, RISCV64Instr_LD(dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LD, dst, base, off));
       else if (ty == Ity_I32)
-         addInstr(env, RISCV64Instr_LW(dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LW, dst, base, off));
       else if (ty == Ity_I16)
-         addInstr(env, RISCV64Instr_LH(dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LH, dst, base, off));
       else if (ty == Ity_I8)
-         addInstr(env, RISCV64Instr_LB(dst, base, off));
+         addInstr(env, RISCV64Instr_Load(RISCV64_LB, dst, base, off));
       else
          goto irreducible;
       return dst;
@@ -1599,13 +1599,13 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          HReg addr = iselIntExpr_R(env, stmt->Ist.Store.addr);
 
          if (tyd == Ity_I64)
-            addInstr(env, RISCV64Instr_SD(src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SD, src, addr, 0));
          else if (tyd == Ity_I32)
-            addInstr(env, RISCV64Instr_SW(src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SW, src, addr, 0));
          else if (tyd == Ity_I16)
-            addInstr(env, RISCV64Instr_SH(src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SH, src, addr, 0));
          else if (tyd == Ity_I8)
-            addInstr(env, RISCV64Instr_SB(src, addr, 0));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SB, src, addr, 0));
          else
             vassert(0);
          return;
@@ -1636,13 +1636,13 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          vassert(off >= -2048 && off < 2048);
 
          if (tyd == Ity_I64)
-            addInstr(env, RISCV64Instr_SD(src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SD, src, base, off));
          else if (tyd == Ity_I32)
-            addInstr(env, RISCV64Instr_SW(src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SW, src, base, off));
          else if (tyd == Ity_I16)
-            addInstr(env, RISCV64Instr_SH(src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SH, src, base, off));
          else if (tyd == Ity_I8)
-            addInstr(env, RISCV64Instr_SB(src, base, off));
+            addInstr(env, RISCV64Instr_Store(RISCV64_SB, src, base, off));
          else
             vassert(0);
          return;
@@ -1759,7 +1759,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
          if (ty == Ity_I32) {
             HReg r_dst  = lookupIRTemp(env, res);
             HReg r_addr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-            addInstr(env, RISCV64Instr_LR_W(r_dst, r_addr));
+            addInstr(env, RISCV64Instr_LoadR(RISCV64_LR_W, r_dst, r_addr));
             return;
          }
       } else {
@@ -1769,7 +1769,8 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             HReg r_tmp  = newVRegI(env);
             HReg r_src  = iselIntExpr_R(env, stmt->Ist.LLSC.storedata);
             HReg r_addr = iselIntExpr_R(env, stmt->Ist.LLSC.addr);
-            addInstr(env, RISCV64Instr_SC_W(r_tmp, r_src, r_addr));
+            addInstr(env,
+                     RISCV64Instr_StoreC(RISCV64_SC_W, r_tmp, r_src, r_addr));
 
             /* Now r_tmp is non-zero if failed, 0 if success. Change to IR
                conventions (0 is fail, 1 is success). */
