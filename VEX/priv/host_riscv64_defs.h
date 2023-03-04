@@ -313,6 +313,12 @@ typedef enum {
    RISCV64fpm_FSD,         /* 64-bit floating-point store. */
 } RISCV64FpLdStOp;
 
+/* RISCV64in_CAS sub-types. */
+typedef enum {
+   RISCV64op_CAS_D = 0xe00, /* 64-bit compare-and-swap pseudoinstruction. */
+   RISCV64op_CAS_W,         /* 32-bit compare-and-swap pseudoinstruction. */
+} RISCV64CASOp;
+
 /* The kind of instructions. */
 typedef enum {
    RISCV64in_LI = 0x52640000, /* Load immediate pseudoinstruction. */
@@ -333,8 +339,7 @@ typedef enum {
    RISCV64in_FpConvert,       /* Floating-point convert instruction. */
    RISCV64in_FpCompare,       /* Floating-point compare instruction. */
    RISCV64in_FpLdSt,          /* Floating-point load/store instruction. */
-   RISCV64in_CAS_W,           /* 32-bit compare-and-swap pseudoinstruction. */
-   RISCV64in_CAS_D,           /* 64-bit compare-and-swap pseudoinstruction. */
+   RISCV64in_CAS,             /* Compare-and-swap pseudoinstruction. */
    RISCV64in_FENCE,           /* Device I/O and memory fence. */
    RISCV64in_CSEL,            /* Conditional-select pseudoinstruction. */
    RISCV64in_Call,            /* Call pseudoinstruction. */
@@ -452,20 +457,14 @@ typedef struct {
          HReg            base;
          Int             soff12; /* -2048 .. +2047 */
       } FpLdSt;
-      /* 32-bit compare-and-swap pseudoinstruction. */
+      /* Compare-and-swap pseudoinstruction. */
       struct {
-         HReg old;
-         HReg addr;
-         HReg expd;
-         HReg data;
-      } CAS_W;
-      /* 64-bit compare-and-swap pseudoinstruction. */
-      struct {
-         HReg old;
-         HReg addr;
-         HReg expd;
-         HReg data;
-      } CAS_D;
+         RISCV64CASOp op;
+         HReg         old;
+         HReg         addr;
+         HReg         expd;
+         HReg         data;
+      } CAS;
       /* Device I/O and memory fence. */
       struct {
       } FENCE;
@@ -549,8 +548,8 @@ RISCV64Instr*
 RISCV64Instr_FpCompare(RISCV64FpCompareOp op, HReg dst, HReg src1, HReg src2);
 RISCV64Instr*
 RISCV64Instr_FpLdSt(RISCV64FpLdStOp op, HReg reg, HReg base, Int soff12);
-RISCV64Instr* RISCV64Instr_CAS_W(HReg old, HReg addr, HReg expd, HReg data);
-RISCV64Instr* RISCV64Instr_CAS_D(HReg old, HReg addr, HReg expd, HReg data);
+RISCV64Instr*
+RISCV64Instr_CAS(RISCV64CASOp op, HReg old, HReg addr, HReg expd, HReg data);
 RISCV64Instr* RISCV64Instr_FENCE(void);
 RISCV64Instr* RISCV64Instr_CSEL(HReg dst, HReg iftrue, HReg iffalse, HReg cond);
 RISCV64Instr* RISCV64Instr_Call(

@@ -1798,9 +1798,11 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
             HReg expd = iselIntExpr_R(env, cas->expdLo);
             HReg data = iselIntExpr_R(env, cas->dataLo);
             if (tyd == Ity_I64)
-               addInstr(env, RISCV64Instr_CAS_D(old, addr, expd, data));
+               addInstr(env, RISCV64Instr_CAS(RISCV64op_CAS_D, old, addr, expd,
+                                              data));
             else
-               addInstr(env, RISCV64Instr_CAS_W(old, addr, expd, data));
+               addInstr(env, RISCV64Instr_CAS(RISCV64op_CAS_W, old, addr, expd,
+                                              data));
             return;
          }
       }
