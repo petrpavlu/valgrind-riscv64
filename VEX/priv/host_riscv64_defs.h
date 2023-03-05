@@ -344,6 +344,7 @@ typedef enum {
    RISCV64in_XIndir,          /* Indirect transfer to guest address. */
    RISCV64in_XAssisted,       /* Assisted transfer to guest address. */
    RISCV64in_EvCheck,         /* Event check. */
+   RISCV64in_ProfInc          /* 64-bit profile counter increment. */
 } RISCV64InstrTag;
 
 typedef struct {
@@ -518,6 +519,12 @@ typedef struct {
          Int soff12_amFailAddr; /* Offset from the base register to access
                                    host_EvC_FAILADDR. */
       } EvCheck;
+      /* 64-bit profile counter increment. */
+      struct {
+         /* No fields. The address of the counter to inc is installed later,
+            post-translation, by patching it in, as it is not known at
+            translation time. */
+      } ProfInc;
    } RISCV64in;
 } RISCV64Instr;
 
@@ -560,6 +567,7 @@ RISCV64Instr* RISCV64Instr_EvCheck(HReg base_amCounter,
                                    Int  soff12_amCounter,
                                    HReg base_amFailAddr,
                                    Int  soff12_amFailAddr);
+RISCV64Instr* RISCV64Instr_ProfInc(void);
 
 /*------------------------------------------------------------*/
 /*--- Misc helpers                                         ---*/

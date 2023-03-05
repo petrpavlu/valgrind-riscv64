@@ -658,6 +658,13 @@ RISCV64Instr* RISCV64Instr_EvCheck(HReg base_amCounter,
    return i;
 }
 
+RISCV64Instr* RISCV64Instr_ProfInc(void)
+{
+   RISCV64Instr* i = LibVEX_Alloc_inline(sizeof(RISCV64Instr));
+   i->tag          = RISCV64in_ProfInc;
+   return i;
+}
+
 void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
 {
    vassert(mode64 == True);
@@ -877,6 +884,10 @@ void ppRISCV64Instr(const RISCV64Instr* i, Bool mode64)
                  i->RISCV64in.EvCheck.soff12_amFailAddr);
       ppHRegRISCV64(i->RISCV64in.EvCheck.base_amFailAddr);
       vex_printf("); c.jr 0(t0); 1:");
+      return;
+   case RISCV64in_ProfInc:
+      vex_printf("(profInc) li t1, $NotKnownYet; "
+                 "ld t0, 0(t1); c.addi t0, t0, 1; sd t0, 0(t1)");
       return;
    default:
       vpanic("ppRISCV64Instr");
@@ -1169,6 +1180,9 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
       addHRegUse(u, HRmRead, i->RISCV64in.EvCheck.base_amCounter);
       addHRegUse(u, HRmRead, i->RISCV64in.EvCheck.base_amFailAddr);
       return;
+   case RISCV64in_ProfInc:
+      /* Does not use any registers known to RA. */
+      return;
    default:
       ppRISCV64Instr(i, mode64);
       vpanic("getRegUsage_RISCV64Instr");
@@ -1291,6 +1305,9 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
    case RISCV64in_EvCheck:
       mapReg(m, &i->RISCV64in.EvCheck.base_amCounter);
       mapReg(m, &i->RISCV64in.EvCheck.base_amFailAddr);
+      return;
+   case RISCV64in_ProfInc:
+      /* Hardwires x5/t0 and x6/t1 -- nothing to modify. */
       return;
    default:
       ppRISCV64Instr(i, mode64);
@@ -2537,6 +2554,27 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       goto done;
    }
 
+   case RISCV64in_ProfInc: {
+      /* Generate a code template to increment a memory location whose address
+         will be known later as an immediate value. This code template will be
+         patched by LibVEX_PatchProfInc() once the memory location is known. For
+         now do this with address == 0x0000'6555'7555'8566.
+
+         li t1, 0x655575558566
+         ld t0, 0(t1)
+         c.addi t0, t0, 1
+         sd t0, 0(t1)
+       */
+      p = addr48_to_ireg_EXACTLY_18B(p, 6 /*x6/t1*/, 0x655575558566ULL);
+      p = emit_I(p, 0b0000011, 5 /*x5/t0*/, 0b011, 6 /*x6/t1*/, 0);
+      p = emit_CI(p, 0b01, 1, 5 /*x5/t0*/, 0b000);
+      p = emit_S(p, 0b0100011, 0, 0b011, 6 /*x6/t1*/, 5 /*x5/t0*/);
+      /* Tell the caller .. */
+      vassert(!*is_profInc);
+      *is_profInc = True;
+      goto done;
+   }
+
    default:
       goto bad;
    }
@@ -2654,16 +2692,21 @@ VexInvalRange unchainXDirect_RISCV64(VexEndness  endness_host,
 }
 
 /* Patch the counter address into a profile inc point, as previously created by
-   the Ain_ProfInc case for emit_RISCV64Instr(). */
+   the RISCV64in_ProfInc case for emit_RISCV64Instr(). */
 VexInvalRange patchProfInc_RISCV64(VexEndness   endness_host,
                                    void*        place_to_patch,
                                    const ULong* location_of_counter)
 {
+   vassert(sizeof(ULong*) == 8);
    vassert(endness_host == VexEndnessLE);
-
-   vpanic("patchProfInc_RISCV64");
-
-   VexInvalRange vir = {(HWord)place_to_patch, 0};
+   UChar* p = place_to_patch;
+   vassert(((HWord)p & 3) == 0);
+   vassert(is_addr48_to_ireg_EXACTLY_18B(p, 6 /*x6/t1*/, 0x655575558566ULL));
+   vassert(p[18] == 0x83 && p[19] == 0x32 && p[20] == 0x03 && p[21] == 0x00);
+   vassert(p[22] == 0x85 && p[23] == 0x02);
+   vassert(p[24] == 0x23 && p[25] == 0x30 && p[26] == 0x53 && p[27] == 0x00);
+   (void)addr48_to_ireg_EXACTLY_18B(p, 6 /*x6/t1*/, (ULong)location_of_counter);
+   VexInvalRange vir = {(HWord)p, 28};
    return vir;
 }
 

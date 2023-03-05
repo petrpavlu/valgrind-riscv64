@@ -2068,15 +2068,12 @@ HInstrArray* iselSB_RISCV64(const IRSB*        bb,
    addInstr(env, RISCV64Instr_EvCheck(base, soff12_amCounter, base,
                                       soff12_amFailAddr));
 
-   /* TODO */
-#if 0
    /* Possibly a block counter increment (for profiling). At this point we don't
       know the address of the counter, so just pretend it is zero. It will have
       to be patched later, but before this translation is used, by a call to
-      LibVEX_patchProfCtr(). */
+      LibVEX_PatchProfInc(). */
    if (addProfInc)
-      addInstr(env, ARM64Instr_ProfInc());
-#endif
+      addInstr(env, RISCV64Instr_ProfInc());
 
    /* Ok, finally we can iterate over the statements. */
    for (i = 0; i < bb->stmts_used; i++)
