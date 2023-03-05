@@ -451,7 +451,7 @@ typedef struct {
       /* Floating-point load/store instruction. */
       struct {
          RISCV64FpLdStOp op;
-         HReg            reg; /* dst for load, src store */
+         HReg            reg; /* dst for load, src for store */
          HReg            base;
          Int             soff12; /* -2048 .. +2047 */
       } FpLdSt;

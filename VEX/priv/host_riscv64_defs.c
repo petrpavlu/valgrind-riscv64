@@ -1177,6 +1177,8 @@ void getRegUsage_RISCV64Instr(HRegUsage* u, const RISCV64Instr* i, Bool mode64)
          addHRegUse(u, HRmRead, i->RISCV64in.XAssisted.cond);
       return;
    case RISCV64in_EvCheck:
+      /* We expect both amodes only to mention x8/s0, so this is in fact
+         pointless, since the register isn't allocatable, but anyway.. */
       addHRegUse(u, HRmRead, i->RISCV64in.EvCheck.base_amCounter);
       addHRegUse(u, HRmRead, i->RISCV64in.EvCheck.base_amFailAddr);
       return;
@@ -1303,6 +1305,8 @@ void mapRegs_RISCV64Instr(HRegRemap* m, RISCV64Instr* i, Bool mode64)
          mapReg(m, &i->RISCV64in.XAssisted.cond);
       return;
    case RISCV64in_EvCheck:
+      /* We expect both amodes only to mention x8/s0, so this is in fact
+         pointless, since the register isn't allocatable, but anyway.. */
       mapReg(m, &i->RISCV64in.EvCheck.base_amCounter);
       mapReg(m, &i->RISCV64in.EvCheck.base_amFailAddr);
       return;
