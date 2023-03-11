@@ -139,45 +139,48 @@ if [ $# -gt 0 ]; then
 fi
 
 # Generate the patches.
-function header() {
+function patch() {
    local index=$1
    local subject=$2
+   local authors=$3
+   local files=$4
 
    echo "From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001"
    echo "From: Petr Pavlu <petr.pavlu@dagobah.cz>"
    echo "Date: $(date --rfc-email)"
-   echo "Subject: [PATCH $version $index/6] riscv64: $subject"
+   echo "Subject: [PATCH $version $index/6] riscv64: Add initial support: $subject"
    echo ""
+   echo "The following people contributed to the initial RISC-V support:"
+   echo "$authors"
    echo "---"
+   git diff --stat --patch master..riscv64-linux -- $files
 }
 
-{ header 1 "New port-specific Valgrind files";
-   git diff --stat --patch master..riscv64-linux -- $valgrind_new; } \
+authors=$(
+  git log --pretty=format:"%aN <%aE>" --no-merges master..riscv64-linux | \
+  sort | uniq --count | sort --numeric --reverse | cut --characters=9- )
+
+patch 1 "new port-specific Valgrind files" "$authors" "$valgrind_new" \
    > "$version-0001-riscv64-valgrind-new.patch"
 echo "Wrote $version-0001-riscv64-valgrind-new.patch."
 
-{ header 2 "New port-specific VEX files";
-   git diff --stat --patch master..riscv64-linux -- $vex_new; } \
+patch 2 "new port-specific VEX files" "$authors" "$vex_new" \
    > "$version-0002-riscv64-vex-new.patch"
 echo "Wrote $version-0002-riscv64-vex-new.patch."
 
-{ header 3 "New port-specific test files";
-   git diff --stat --patch master..riscv64-linux -- $tests_new; } \
+patch 3 "new port-specific test files" "$authors" "$tests_new" \
    > "$version-0003-riscv64-tests-new.patch"
 echo "Wrote $version-0003-riscv64-tests-new.patch."
 
-{ header 4 "Valgrind modifications";
-   git diff --stat --patch master..riscv64-linux -- $valgrind_mod; } \
+patch 4 "Valgrind modifications" "$authors" "$valgrind_mod" \
    > "$version-0004-riscv64-valgrind-mod.patch"
 echo "Wrote $version-0004-riscv64-valgrind-mod.patch."
 
-{ header 5 "VEX modifications";
-   git diff --stat --patch master..riscv64-linux -- $vex_mod; } \
+patch 5 "VEX modifications" "$authors" "$vex_mod" \
    > "$version-0005-riscv64-vex-mod.patch"
 echo "Wrote $version-0005-riscv64-vex-mod.patch."
 
-{ header 6 "Test modifications";
-   git diff --stat --patch master..riscv64-linux -- $tests_mod; } \
+patch 6 "test modifications" "$authors" "$tests_mod" \
    > "$version-0006-riscv64-tests-mod.patch"
 echo "Wrote $version-0006-riscv64-tests-mod.patch."
 
