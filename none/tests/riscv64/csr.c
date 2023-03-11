@@ -77,16 +77,16 @@ static void test_csr64_shared(void)
    TESTINST_1_1_CSR(4, "csrrs a0, fcsr, zero", 0xff, 0x00, a0, fcsr, zero);
 
    /* ----------------- csrrc rd, csr, rs1 ------------------ */
-   /* TODO Implement. */
+   /* Not currently handled. */
 
    /* -------------- csrrwi rd, csr, uimm[4:0] -------------- */
-   /* TODO Implement. */
+   /* Not currently handled. */
 
    /* -------------- csrrsi rd, csr, uimm[4:0] -------------- */
-   /* TODO Implement. */
+   /* Not currently handled. */
 
    /* -------------- csrrci rd, csr, uimm[4:0] -------------- */
-   /* TODO Implement. */
+   /* Not currently handled. */
 }
 
 int main(void)
