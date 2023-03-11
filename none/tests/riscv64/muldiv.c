@@ -63,33 +63,7 @@ static void test_muldiv_shared(void)
                 zero, a0, a1);
 
    /* ----------------- mulhsu rd, rs1, rs2 ----------------- */
-#if 0 /* TODO Enable. */
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x0000000000005000, 0x0000000000002000,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x7fffffffffffffff, 0x0000000000000002,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x7fffffffffffffff, 0x7fffffffffffffff,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x7fffffffffffffff, 0xffffffffffffffff,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0xffffffffffffffff, 0xffffffffffffffff,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x8000000000000000, 0x0000000000000002,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x8000000000000000, 0xffffffffffffffff,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x8000000000000000, 0x8000000000000000,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0x0000000000000001, 0x0000000000000000,
-                a0, a1, a2);
-   TESTINST_1_2(4, "mulhsu a0, a1, a2", 0xffffffffffffffff, 0x0000000000000000,
-                a0, a1, a2);
-
-   TESTINST_1_2(4, "mulhsu t4, t5, t6", 0x0000000000001000, 0x0000000000002000,
-                t4, t5, t6);
-   TESTINST_1_2(4, "mulhsu zero, a0, a1", 0x0000000000001000,
-                0x0000000000002000, zero, a0, a1);
-#endif
+   /* Not currently handled. */
 
    /* ----------------- mulhu rd, rs1, rs2 ------------------ */
    TESTINST_1_2(4, "mulhu a0, a1, a2", 0x0000000000005000, 0x0000000000002000,
