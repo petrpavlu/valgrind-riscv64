@@ -112,12 +112,14 @@ helgrind/tests/tc11_XCHG.c
 memcheck/tests/Makefile.am
 memcheck/tests/atomic_incs.c
 memcheck/tests/leak-segv-jmp.c
+memcheck/tests/leak-segv-jmp.stderr.exp
 memcheck/tests/leak.h
 none/tests/Makefile.am
 none/tests/allexec_prepare_prereq
 none/tests/faultstatus.c
 none/tests/libvex_test.c
 tests/arch_test.c
+tests/platform_test
 "
 
 # Parse command line arguments.
