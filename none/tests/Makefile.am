@@ -244,7 +244,7 @@ check_PROGRAMS = \
 	floored fork fucomip \
 	ioctl_moans \
 	libvex_test \
-	#libvexmultiarch_test \
+	libvexmultiarch_test \
 	manythreads \
 	mmap_fcntl_bug \
 	munmap_exe map_unaligned map_unmap mq \
@@ -329,6 +329,11 @@ libvex_test_CFLAGS      = $(AM_CFLAGS) @FLAG_FSANITIZE@
 libvex_test_LDADD       = ../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
 			   @LIB_UBSAN@
 libvexmultiarch_test_CFLAGS= $(AM_CFLAGS) @FLAG_FSANITIZE@
+if VGCONF_ARCHS_INCLUDE_RISCV64
+# Disable RISC-V linker relaxation, it takes GNU ld 2.39 tens of minutes to sort
+# it through on this large test.
+libvexmultiarch_test_LDFLAGS = -Wl,--no-relax
+endif
 libvexmultiarch_test_LDADD = \
 	../../VEX/libvexmultiarch-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a \
 	../../VEX/libvex-@VGCONF_ARCH_PRI@-@VGCONF_OS@.a @LIB_UBSAN@
