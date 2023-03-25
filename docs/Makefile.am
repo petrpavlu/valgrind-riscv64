@@ -62,6 +62,7 @@ EXTRA_DIST = \
 	internals/porting-to-ARM.txt \
 	internals/qemu-aarch64-linux-HOWTO.txt \
 	internals/qemu-mips64-linux-HOWTO.txt \
+	internals/qemu-riscv64-linux-HOWTO.txt \
 	internals/register-uses.txt \
 	internals/release-HOWTO.txt \
 	internals/segments-seginfos.txt \

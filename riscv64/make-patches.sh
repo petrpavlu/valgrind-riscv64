@@ -3,12 +3,14 @@
 # Split riscv64 changes into a patch series.
 
 valgrind_new="
+README.riscv64
 coregrind/m_dispatch/dispatch-riscv64-linux.S
 coregrind/m_gdbserver/riscv64-*.xml
 coregrind/m_gdbserver/valgrind-low-riscv64.c
 coregrind/m_sigframe/sigframe-riscv64-linux.c
 coregrind/m_syswrap/syscall-riscv64-linux.S
 coregrind/m_syswrap/syswrap-riscv64-linux.c
+docs/internals/qemu-riscv64-linux-HOWTO.txt
 include/vki/vki-posixtypes-riscv64-linux.h
 include/vki/vki-riscv64-linux.h
 include/vki/vki-scnums-riscv64-linux.h
@@ -32,6 +34,7 @@ none/tests/riscv64/
 valgrind_mod="
 .gitignore
 Makefile.all.am
+Makefile.am
 Makefile.tool.am
 Makefile.vex.am
 cachegrind/cg_arch.c
@@ -79,6 +82,7 @@ coregrind/pub_core_trampoline.h
 coregrind/pub_core_transtab.h
 coregrind/pub_core_transtab_asm.h
 coregrind/vgdb-invoker-ptrace.c
+docs/Makefile.am
 drd/drd_bitmap.h
 drd/drd_load_store.c
 include/Makefile.am
