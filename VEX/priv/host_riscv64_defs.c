@@ -2461,12 +2461,6 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       case Ijk_Sys_syscall:
          trcval = VEX_TRC_JMP_SYS_SYSCALL;
          break;
-      case Ijk_EmWarn:
-         trcval = VEX_TRC_JMP_EMWARN;
-         break;
-      case Ijk_EmFail:
-         trcval = VEX_TRC_JMP_EMFAIL;
-         break;
       case Ijk_NoDecode:
          trcval = VEX_TRC_JMP_NODECODE;
          break;
@@ -2476,20 +2470,8 @@ Int emit_RISCV64Instr(/*MB_MOD*/ Bool*    is_profInc,
       case Ijk_NoRedir:
          trcval = VEX_TRC_JMP_NOREDIR;
          break;
-      case Ijk_SigILL:
-         trcval = VEX_TRC_JMP_SIGILL;
-         break;
       case Ijk_SigTRAP:
          trcval = VEX_TRC_JMP_SIGTRAP;
-         break;
-      case Ijk_SigBUS:
-         trcval = VEX_TRC_JMP_SIGBUS;
-         break;
-      case Ijk_SigFPE_IntDiv:
-         trcval = VEX_TRC_JMP_SIGFPE_INTDIV;
-         break;
-      case Ijk_SigFPE_IntOvf:
-         trcval = VEX_TRC_JMP_SIGFPE_INTOVF;
          break;
       case Ijk_Boring:
          trcval = VEX_TRC_JMP_BORING;

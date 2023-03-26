@@ -1866,9 +1866,7 @@ static void iselStmt(ISelEnv* env, IRStmt* stmt)
       case Ijk_NoRedir:
       case Ijk_Sys_syscall:
       case Ijk_InvalICache:
-      case Ijk_FlushDCache:
-      case Ijk_SigTRAP:
-      case Ijk_Yield: {
+      case Ijk_SigTRAP: {
          HReg r = iselIntExpr_R(env, IRExpr_Const(stmt->Ist.Exit.dst));
          addInstr(env, RISCV64Instr_XAssisted(r, base, soff12, cond,
                                               stmt->Ist.Exit.jk));
@@ -1960,9 +1958,7 @@ static void iselNext(ISelEnv* env, IRExpr* next, IRJumpKind jk, Int offsIP)
    case Ijk_NoRedir:
    case Ijk_Sys_syscall:
    case Ijk_InvalICache:
-   case Ijk_FlushDCache:
-   case Ijk_SigTRAP:
-   case Ijk_Yield: {
+   case Ijk_SigTRAP: {
       HReg r = iselIntExpr_R(env, next);
       addInstr(env, RISCV64Instr_XAssisted(r, base, soff12, INVALID_HREG, jk));
       return;
