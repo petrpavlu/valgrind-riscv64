@@ -235,8 +235,6 @@ typedef
               CFIR_S390X_F5  -> old value of %f5
               CFIR_S390X_F6  -> old value of %f6
               CFIR_S390X_F7  -> old value of %f7
-
-TODO riscv64
 */
 
 #define CFIC_IA_SPREL     ((UChar)1)

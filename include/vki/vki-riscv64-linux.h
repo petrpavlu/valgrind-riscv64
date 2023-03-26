@@ -538,7 +538,6 @@ struct vki_ucontext {
 	struct vki_sigcontext	uc_mcontext;
 };
 
-/* TODO Get rid of this. */
 typedef char vki_modify_ldt_t;
 
 //----------------------------------------------------------------------

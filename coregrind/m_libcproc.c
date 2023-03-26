@@ -1461,7 +1461,6 @@ void VG_(flush_dcache) ( void *ptr, SizeT nbytes )
    }
    __asm__ __volatile__("dsb ish");
 #  endif
-   /* TODO Needed on riscv64? */
 }
 
 /*--------------------------------------------------------------------*/

@@ -546,7 +546,6 @@ get_cache_info(VexArchInfo *vai)
 {
    vai->hwcache_info.icaches_maintain_coherence = False;
 
-   /* TODO Revisit for riscv64. */
    return False;   // not yet
 }
 

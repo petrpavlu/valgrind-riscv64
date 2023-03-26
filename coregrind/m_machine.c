@@ -2422,7 +2422,7 @@ Int VG_(machine_get_size_of_largest_guest_register) ( void )
    return 8;
 
 #  elif defined(VGA_riscv64)
-   /* TODO Correct when SIMD instructions are added. */
+   /* 64-bit integer and floating-point registers, no vector set. */
    return 8;
 
 #  else

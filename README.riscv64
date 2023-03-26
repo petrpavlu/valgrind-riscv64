@@ -38,3 +38,6 @@ Implementation tidying-up/TODO notes
 * Optimize handling of floating-point exceptions. Avoid helpers and calculate
   exception flags using the same instruction which produced an actual result.
 * Review register usage by the codegen.
+* Avoid re-use of Intel-constants CFIC_IA_SPREL and CFIC_IA_BPREL. Generalize
+  them for all architectures or introduce same CFIC_RISCV64_ variants.
+* Get rid of the typedef of vki_modify_ldt_t in include/vki/vki-riscv64-linux.h.

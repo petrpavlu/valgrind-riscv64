@@ -3409,7 +3409,7 @@ void VG_(ppUnwindInfo) (Addr from, Addr to)
 
    For s390, the unwound registers are: R11(FP) R14(LR) R15(SP) F0..F7 PC.
 
-   TODO Add description for riscv64.
+   For riscv64, the unwound registers are: X2(SP) X8(FP) PC
 */
 Bool VG_(use_CF_info) ( /*MOD*/D3UnwindRegs* uregsHere,
                         Addr min_accessible,

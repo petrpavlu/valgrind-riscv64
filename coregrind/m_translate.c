@@ -1751,7 +1751,6 @@ Bool VG_(translate) ( ThreadId tid,
 #  endif
 
 #  if defined(VGP_riscv64_linux)
-   /* TODO Make weaker. */
    vex_abiinfo.guest__use_fallback_LLSC = True;
 #  endif
 

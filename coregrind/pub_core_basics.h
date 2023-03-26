@@ -107,7 +107,6 @@ typedef
          struct {
             ULong r_fp; /* x8 */
             ULong r_ra; /* x1 */
-	    /* TODO Add gp/x3? */
          } RISCV64;
       } misc;
    }
