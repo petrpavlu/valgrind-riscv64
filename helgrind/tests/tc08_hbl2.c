@@ -155,10 +155,12 @@
       : /*trash*/ "$t0", "$t1", "memory"            \
    )
 #elif defined(PLAT_riscv64_linux)
-   /* TODO Implement. */
-#include <assert.h>
 #  define INC(_lval,_lqual)                         \
-     assert(0);
+     __asm__ __volatile__ (                         \
+      "        amoadd.w zero, %1, (%0)\n"           \
+      : /*out*/ : /*in*/ "r"(&(_lval)), "r"(1)      \
+      : /*trash*/ "memory"                          \
+   )
 #else
 #  error "Fix Me for this platform"
 #endif
