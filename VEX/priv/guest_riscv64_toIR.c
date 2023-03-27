@@ -1100,6 +1100,15 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
       }
    }
 
+   /* --------------------- c.ebreak ------------------------ */
+   if (INSN(15, 0) == 0b1001000000000010) {
+      putPC(irsb, mkU64(guest_pc_curr_instr + 2));
+      dres->whatNext    = Dis_StopHere;
+      dres->jk_StopHere = Ijk_SigTRAP;
+      DIP("c.ebreak\n");
+      return True;
+   }
+
    /* --------------------- c.jalr rs1 ---------------------- */
    if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1001) {
       UInt rs1 = INSN(11, 7);
