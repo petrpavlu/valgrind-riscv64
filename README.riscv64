@@ -16,7 +16,7 @@ The following ISA base and extensions are currently supported:
 | RV64D        | Double-precision floating-point   |   32/32 |          |
 | RV64Zicsr    | Control & status register         |     2/6 | (4), (5) |
 | RV64Zifencei | Instruction-fetch fence           |     0/1 | (6)      |
-| RV64C        | Compressed                        |   36/37 | (7)      |
+| RV64C        | Compressed                        |   37/37 |          |
 
 Notes:
 (1) MULHSU is not recognized.
@@ -25,7 +25,6 @@ Notes:
 (4) CSRRC, CSRRWI, CSRRSI and CSRRCI are not recognized.
 (5) Only registers fflags, frm and fcsr are accepted.
 (6) FENCE.I is not recognized.
-(7) C.EBREAK is not recognized.
 
 
 Implementation tidying-up/TODO notes
