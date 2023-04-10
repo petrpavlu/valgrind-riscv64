@@ -33,7 +33,7 @@
 #define VKI_LITTLE_ENDIAN  1
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/int-ll64.h
+// From linux-6.0/include/uapi/asm-generic/int-ll64.h
 //----------------------------------------------------------------------
 
 typedef unsigned char __vki_u8;
@@ -52,7 +52,7 @@ typedef unsigned short vki_u16;
 typedef unsigned int vki_u32;
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/arch/riscv/include/asm/page.h
+// From linux-6.0/arch/riscv/include/asm/page.h
 //----------------------------------------------------------------------
 
 #define VKI_PAGE_SHIFT	(12)
@@ -61,13 +61,13 @@ typedef unsigned int vki_u32;
 #define VKI_MAX_PAGE_SIZE	VKI_PAGE_SIZE
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/asm-generic/shmparam.h
+// From linux-6.0/include/asm-generic/shmparam.h
 //----------------------------------------------------------------------
 
 #define VKI_SHMLBA VKI_PAGE_SIZE	/* attach addr a multiple of this */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/signal-defs.h
+// From linux-6.0/include/uapi/asm-generic/signal-defs.h
 //----------------------------------------------------------------------
 
 #define VKI_SIG_BLOCK          0	/* for blocking signals */
@@ -81,7 +81,7 @@ typedef __vki_signalfn_t __user *__vki_sighandler_t;
 #define VKI_SIG_IGN	((__vki_sighandler_t)1)	/* ignore signal */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/signal.h
+// From linux-6.0/include/uapi/asm-generic/signal.h
 //----------------------------------------------------------------------
 
 #define _VKI_NSIG	64
@@ -159,14 +159,14 @@ typedef struct vki_sigaltstack {
 } vki_stack_t;
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/linux/signal.h
+// From linux-6.0/include/uapi/linux/signal.h
 //----------------------------------------------------------------------
 
 #define VKI_SS_ONSTACK	1
 #define VKI_SS_DISABLE	2
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/mman-common.h
+// From linux-6.0/include/uapi/asm-generic/mman-common.h
 //----------------------------------------------------------------------
 
 #define VKI_PROT_READ	0x1		/* page can be read */
@@ -180,20 +180,20 @@ typedef struct vki_sigaltstack {
 #define VKI_MAP_ANONYMOUS	0x20	/* don't use a file */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/mman.h
+// From linux-6.0/include/uapi/asm-generic/mman.h
 //----------------------------------------------------------------------
 
 #define VKI_MAP_NORESERVE       0x4000  /* don't check for reservations */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/linux/mman.h
+// From linux-6.0/include/uapi/linux/mman.h
 //----------------------------------------------------------------------
 
 #define VKI_MAP_SHARED	0x01		/* Share changes */
 #define VKI_MAP_PRIVATE	0x02		/* Changes are private */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/fcntl.h
+// From linux-6.0/include/uapi/asm-generic/fcntl.h
 //----------------------------------------------------------------------
 
 #define VKI_O_ACCMODE	     03
@@ -238,13 +238,13 @@ struct vki_f_owner_ex {
 #define VKI_F_LINUX_SPECIFIC_BASE	1024
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/linux/fcntl.h
+// From linux-6.0/include/uapi/linux/fcntl.h
 //----------------------------------------------------------------------
 
 #define VKI_AT_FDCWD		-100
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/resource.h
+// From linux-6.0/include/uapi/asm-generic/resource.h
 //----------------------------------------------------------------------
 
 #define VKI_RLIMIT_DATA		2	/* max data size */
@@ -253,7 +253,7 @@ struct vki_f_owner_ex {
 #define VKI_RLIMIT_NOFILE	7	/* max number of open files */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/socket.h
+// From linux-6.0/include/uapi/asm-generic/socket.h
 //----------------------------------------------------------------------
 
 #define VKI_SOL_SOCKET	1
@@ -263,7 +263,7 @@ struct vki_f_owner_ex {
 #define VKI_SO_ATTACH_FILTER	26
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/sockios.h
+// From linux-6.0/include/uapi/asm-generic/sockios.h
 //----------------------------------------------------------------------
 
 #define VKI_SIOCSPGRP		0x8902
@@ -273,7 +273,7 @@ struct vki_f_owner_ex {
 #define VKI_SIOCGSTAMPNS	0x8907		/* Get stamp (timespec) */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/stat.h
+// From linux-6.0/include/uapi/asm-generic/stat.h
 //----------------------------------------------------------------------
 
 struct vki_stat {
@@ -300,7 +300,7 @@ struct vki_stat {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/statfs.h
+// From linux-6.0/include/uapi/asm-generic/statfs.h
 //----------------------------------------------------------------------
 
 struct vki_statfs {
@@ -319,7 +319,7 @@ struct vki_statfs {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/termios.h
+// From linux-6.0/include/uapi/asm-generic/termios.h
 //----------------------------------------------------------------------
 
 struct vki_winsize {
@@ -340,7 +340,7 @@ struct vki_termio {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/termbits.h
+// From linux-6.0/include/uapi/asm-generic/termbits.h
 //----------------------------------------------------------------------
 
 typedef unsigned char	vki_cc_t;
@@ -357,7 +357,7 @@ struct vki_termios {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/ioctl.h
+// From linux-6.0/include/uapi/asm-generic/ioctl.h
 //----------------------------------------------------------------------
 
 #define _VKI_IOC_NRBITS		8
@@ -434,7 +434,7 @@ struct vki_termios {
 #define VKI_TIOCGICOUNT	0x545D	/* read serial port inline interrupt counts */
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/poll.h
+// From linux-6.0/include/uapi/asm-generic/poll.h
 //----------------------------------------------------------------------
 
 #define VKI_POLLIN		0x0001
@@ -446,7 +446,7 @@ struct vki_pollfd {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/arch/riscv/include/uapi/asm/ptrace.h
+// From linux-6.0/arch/riscv/include/uapi/asm/ptrace.h
 //----------------------------------------------------------------------
 
 struct vki_user_regs_struct {
@@ -507,7 +507,7 @@ union __vki_riscv_fp_state {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/arch/riscv/include/uapi/asm/sigcontext.h
+// From linux-6.0/arch/riscv/include/uapi/asm/sigcontext.h
 //----------------------------------------------------------------------
 
 struct vki_sigcontext {
@@ -516,7 +516,7 @@ struct vki_sigcontext {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/arch/riscv/include/uapi/asm/elf.h
+// From linux-6.0/arch/riscv/include/uapi/asm/elf.h
 //----------------------------------------------------------------------
 
 typedef unsigned long vki_elf_greg_t;
@@ -526,7 +526,7 @@ typedef struct vki_user_regs_struct vki_elf_gregset_t;
 typedef union __vki_riscv_fp_state vki_elf_fpregset_t;
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/arch/riscv/include/uapi/asm/ucontext.h
+// From linux-6.0/arch/riscv/include/uapi/asm/ucontext.h
 //----------------------------------------------------------------------
 
 struct vki_ucontext {
@@ -541,7 +541,7 @@ struct vki_ucontext {
 typedef char vki_modify_ldt_t;
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/ipcbuf.h
+// From linux-6.0/include/uapi/asm-generic/ipcbuf.h
 //----------------------------------------------------------------------
 
 struct vki_ipc64_perm {
@@ -559,7 +559,7 @@ struct vki_ipc64_perm {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/sembuf.h
+// From linux-6.0/include/uapi/asm-generic/sembuf.h
 //----------------------------------------------------------------------
 
 struct vki_semid64_ds {
@@ -572,7 +572,7 @@ struct vki_semid64_ds {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/msgbuf.h
+// From linux-6.0/include/uapi/asm-generic/msgbuf.h
 //----------------------------------------------------------------------
 
 struct vki_msqid64_ds {
@@ -590,7 +590,7 @@ struct vki_msqid64_ds {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/shmbuf.h
+// From linux-6.0/include/uapi/asm-generic/shmbuf.h
 //----------------------------------------------------------------------
 
 struct vki_shmid64_ds {
@@ -619,7 +619,7 @@ struct vki_shminfo64 {
 };
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/errno.h
+// From linux-6.0/include/uapi/asm-generic/errno.h
 //----------------------------------------------------------------------
 
 #define	VKI_ENOSYS		38	/* Invalid system call number */

@@ -30,9 +30,9 @@
 #ifndef __VKI_SCNUMS_RISCV64_LINUX_H
 #define __VKI_SCNUMS_RISCV64_LINUX_H
 
-// From linux-5.10.4/arch/riscv/include/uapi/asm/unistd.h
+// From linux-6.0/arch/riscv/include/uapi/asm/unistd.h
 // is a #include of
-//      linux-5.10.4/include/uapi/asm-generic/unistd.h
+//      linux-6.0/include/uapi/asm-generic/unistd.h
 
 #define __NR_io_setup 0
 #define __NR_io_destroy 1

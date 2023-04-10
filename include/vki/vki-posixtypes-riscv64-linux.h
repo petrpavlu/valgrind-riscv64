@@ -31,7 +31,7 @@
 #define __VKI_POSIXTYPES_RISCV64_LINUX_H
 
 //----------------------------------------------------------------------
-// From linux-5.10.4/include/uapi/asm-generic/posix_types.h
+// From linux-6.0/include/uapi/asm-generic/posix_types.h
 //----------------------------------------------------------------------
 
 typedef unsigned int	__vki_kernel_mode_t;
