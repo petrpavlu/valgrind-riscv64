@@ -83,6 +83,7 @@ coregrind/pub_core_transtab.h
 coregrind/pub_core_transtab_asm.h
 coregrind/vgdb-invoker-ptrace.c
 docs/Makefile.am
+docs/xml/dist-docs.xml
 drd/drd_bitmap.h
 drd/drd_load_store.c
 include/Makefile.am
