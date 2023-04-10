@@ -1026,9 +1026,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 /* Notify the debuginfo system about a new mapping.  This is the way
    new debug information gets loaded.
 
-   redelf -e will output something like
-
-   readelf -e says
+   readelf -e will output something like
 
    Program Headers:
   Type           Offset             VirtAddr           PhysAddr
@@ -1063,7 +1061,7 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
    "HOST TRIGGERED"
 
-   1a. For the tool exe and tool/core shared libs. These are already
+   1a. For the tool exe, called from valgrind_main. This is already
        mmap'd when the host starts so we look at something like the
        /proc filesystem to get the mapping after the event and build
        up the NSegments from that.
@@ -1071,9 +1069,10 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
    1b. Then the host loads ld.so and the guest exe. This is done in
        the sequence
           load_client -> VG_(do_exec) -> VG_(do_exec_inner) ->
-          exe_handlers->load_fn ( == VG_(load_ELF) ).
+          exe_handlers->load_fn ( == VG_(load_ELF) )
+          [or load_MACHO].
 
-       This does the mmap'ing and creats the associated NSegments.
+       This does the mmap'ing and creates the associated NSegments.
 
        The NSegments may get merged, (see maybe_merge_nsegments)
        so there could be more PT_LOADs than there are NSegments.
@@ -1082,14 +1081,16 @@ static ULong di_notify_ACHIEVE_ACCEPT_STATE ( struct _DebugInfo* di )
 
    "GUEST TRIGGERED"
 
-   2.  When the guest loads any further shared libs (libc,
-       other dependencies, dlopens) using mmap.
+   2.  When the guest loads any further shared libs (valgrind core and
+       tool preload shared libraries, libc, other dependencies, dlopens)
+       using mmap. The call will be from ML_(generic_PRE_sys_mmap) or
+       a platform-specific variation.
 
        There are a few variations for syswraps/platforms.
 
        In this case the NSegment could possibly be merged,
        but that is irrelevant because di_notify_mmap is being
-       called directy on the mmap result.
+       called directly on the mmap result.
 
    If allow_SkFileV is True, it will try load debug info if the
    mapping at 'a' belongs to Valgrind; whereas normally (False)

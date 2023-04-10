@@ -10,6 +10,94 @@ AMD64/macOS 10.13 and nanoMIPS/Linux.
 
 * ==================== CORE CHANGES ===================
 
+* When GDB is used to debug a program running under valgrind using
+  the valgrind gdbserver, GDB will automatically load some
+  python code provided in valgrind defining GDB front end commands
+  corresponding to the valgrind monitor commands.
+  These GDB front end commands accept the same format as
+  the monitor commands directly sent to the Valgrind gdbserver.
+  These GDB front end commands provide a better integration
+  in the GDB command line interface, so as to use for example
+  GDB auto-completion, command specific help, searching for
+  a command or command help matching a regexp, ...
+  For relevant monitor commands, GDB will evaluate arguments
+  to make the use of monitor commands easier.
+  For example, instead of having to print the address of a variable
+  to pass it to a subsequent monitor command, the GDB front end
+  command will evaluate the address argument. It is for example
+  possible to do:
+    (gdb) memcheck who_point_at &some_struct sizeof(some_struct)
+  instead of:
+    (gdb) p &some_struct
+    $2 = (some_struct_type *) 0x1130a0 <some_struct>
+    (gdb) p sizeof(some_struct)
+    $3 = 40
+    (gdb) monitor who_point_at 0x1130a0 40
+
+* The behaviour of realloc with a size of zero can now
+  be changed for tools that intercept malloc. Those
+  tools are memcheck, helgrind, drd, massif and dhat.
+  Realloc implementations generally do one of two things
+     - free the memory like free() and return NULL
+       (GNU libc and ptmalloc).
+     - either free the memory and then allocate a
+       minumum siized block or just return the
+       original pointer. Return NULL if the
+       allocation of the minimum sized block fails
+       (jemalloc, musl, snmalloc, Solaris, macOS).
+  When Valgrind is configured and built it will
+  try to match the OS and libc behaviour. However
+  if you are using a non-default library to replace
+  malloc and family (e.g., musl on a glibc Linux or
+  tcmalloc on FreeBSD) then you can use a command line
+  option to change the behaviour of Valgrind:
+    --realloc-zero-bytes-frees=yes|no [yes on Linux glibc, no otherwise]
+
+* ================== PLATFORM CHANGES =================
+
+* Make the address space limit on FreeBSD amd64 128Gbytes
+  (the same as Linux and Solaris, it was 32Gbytes)
+
+* ==================== TOOL CHANGES ===================
+
+* Memcheck:
+  - When doing a delta leak_search, it is now possible to only
+    output the new loss records compared to the previous leak search.
+    This is available in the memcheck monitor command 'leak_search'
+    by specifying the "new" keyword or in your program by using
+    the client request VALGRIND_DO_NEW_LEAK_CHECK.
+    Whenever a "delta" leak search is done (i.e. when specifying
+    "new" or "increased" or "changed" in the monitor command),
+    the new loss records have a "new" marker.
+  - Valgrind now contains python code that defines GDB memcheck
+    front end monitor commands. See CORE CHANGES.
+  - Performs checks for the use of realloc with a size of zero.
+    This is non-portable and a source of errors. If memcheck
+    detects such a usage it will generate an error
+      realloc() with size 0
+    followed by the usual callstacks.
+    A switch has been added to allow this to be turned off:
+      --show-realloc-size-zero=yes|no [yes]
+
+* Helgrind:
+  - The option ---history-backtrace-size=<number> allows to configure
+    the number of entries to record in the stack traces of "old"
+    accesses. Previously, this number was hardcoded to 8.
+  - Valgrind now contains python code that defines GDB helgrind
+    front end monitor commands. See CORE CHANGES.
+
+* Cachegrind:
+  - `cg_annotate` has been rewritten from Perl into Python. The new
+    version is twice as fast, has more flexible argument parsing, and
+    will make future improvements easier.
+
+* Callgrind:
+  - Valgrind now contains python code that defines GDB callgrind
+    front end monitor commands. See CORE CHANGES.
+
+* Massif:
+  - Valgrind now contains python code that defines GDB massif
+    front end monitor commands. See CORE CHANGES.
 
 * ==================== FIXED BUGS ====================
 
@@ -21,9 +109,32 @@ than mailing the developers (or mailing lists) directly -- bugs that
 are not entered into bugzilla tend to get forgotten about or ignored.
 
 170510  Don't warn about ioctl of size 0 without direction hint
+241072  List tools in --help output
+327548  false positive while destroying mutex
+382034  Testcases build fixes for musl
 351857  confusing error message about valid command line option
+392331  Spurious lock not held error from inside pthread_cond_timedwait
+400793  pthread_rwlock_timedwrlock false positive
+433873  openat2 syscall unimplemented on Linux
+435441  valgrind fails to interpose malloc on musl 1.2.2 due to weak symbol name and no libc soname
 444110  priv/guest_ppc_toIR.c:36198:31: warning: duplicated 'if' condition.
+444488  Use glibc.pthread.stack_cache_size tunable
+444568  drd/tests/pth_barrier_thr_cr fails on Fedora 38
+445743  "The impossible happened: mutex is locked simultaneously by two threads"
+        while using mutexes with priority inheritance and signals
+449309  Missing loopback device ioctl(s) 
 459476  vgdb: allow address reuse to avoid "address already in use" errorsuse" errors
+460356  s390: Sqrt32Fx4 -- cannot reduce tree
+462830  WARNING: unhandled amd64-freebsd syscall: 474
+463027  broken check for MPX instruction support in assembler
+464476  Firefox fails to start under Valgrind
+464680  Show issues caused by memory policies like selinux deny_execmem
+464859  Build failures with GCC-13 (drd tsan_unittest)
+464969  D language demangling
+465435  m_libcfile.c:66 (vgPlain_safe_fd): Assertion 'newfd >= VG_(fd_hard_limit)' failed.
+466104  aligned_alloc problems, part 1
+467482  Build failure on aarch64 Alpine
+n-i-bz  FreeBSD rfork syscall fail with EINVAL or ENOSYS rather than VG_(unimplemented)
 
 To see details of a given bug, visit
   https://bugs.kde.org/show_bug.cgi?id=XXXXXX
