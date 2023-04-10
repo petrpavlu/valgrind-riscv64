@@ -184,7 +184,7 @@ VG_(disp_cp_xindir):
 	   a handcoded version of VG_(lookupInFastCache). */
 
 	/* Compute t6 = VG_TT_FAST_HASH(guest). */
-	srli t6, t0, 2                       /* g2 = guest >> 2 */
+	srli t6, t0, 1                       /* g2 = guest >> 1 */
 	srli t4, t6, VG_TT_FAST_BITS         /* g2 >> VG_TT_FAST_BITS */
 	xor t6, t4, t6                       /* (g2 >> VG_TT_FAST_BITS) ^ g2 */
 	li t4, VG_TT_FAST_MASK               /* VG_TT_FAST_MASK */
