@@ -163,8 +163,8 @@ function patch() {
 }
 
 authors=$(
-  git log --pretty=format:"%aN <%aE>" --no-merges master..riscv64-linux | \
-  sort | uniq --count | sort --numeric --reverse | cut --characters=9- )
+   git log --pretty=format:"%aN <%aE>" --no-merges master..riscv64-linux | \
+   sort | uniq --count | sort --numeric --reverse | cut --characters=9- )
 
 patch 1 "new port-specific Valgrind files" "$authors" "$valgrind_new" \
    > "$version-0001-riscv64-valgrind-new.patch"

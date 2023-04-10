@@ -49,7 +49,7 @@
 
         The syscall number is taken from the argument, even though it
         should also be in guest_state->guest_x17.  The syscall result
-	is written back to guest_state->guest_x10 on completion.
+        is written back to guest_state->guest_x10 on completion.
 
         Returns 0 if the syscall was successfully called (even if the
         syscall itself failed), or a nonzero error code in the lowest
