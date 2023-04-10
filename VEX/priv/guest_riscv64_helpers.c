@@ -99,14 +99,17 @@
 /* No simulated version is currently implemented. */
 #define CALCULATE_FFLAGS_UNARY64_F(inst)                                       \
    do {                                                                        \
+      (void)rm_RISCV;                                                          \
       return 0;                                                                \
    } while (0)
 #define CALCULATE_FFLAGS_UNARY64_IF(inst)                                      \
    do {                                                                        \
+      (void)rm_RISCV;                                                          \
       return 0;                                                                \
    } while (0)
 #define CALCULATE_FFLAGS_UNARY64_FI(inst)                                      \
    do {                                                                        \
+      (void)rm_RISCV;                                                          \
       return 0;                                                                \
    } while (0)
 #endif
@@ -218,10 +221,12 @@ UInt riscv64g_calculate_fflags_fcvt_d_lu(ULong a1, UInt rm_RISCV)
 /* No simulated version is currently implemented. */
 #define CALCULATE_FFLAGS_BINARY64(inst)                                        \
    do {                                                                        \
+      (void)rm_RISCV;                                                          \
       return 0;                                                                \
    } while (0)
 #define CALCULATE_FFLAGS_BINARY64_IFF(inst)                                    \
    do {                                                                        \
+      (void)rm_RISCV;                                                          \
       return 0;                                                                \
    } while (0)
 #endif
@@ -324,6 +329,7 @@ UInt riscv64g_calculate_fflags_fle_d(Double a1, Double a2)
 /* No simulated version is currently implemented. */
 #define CALCULATE_FFLAGS_TERNARY64(inst)                                       \
    do {                                                                        \
+      (void)rm_RISCV;                                                          \
       return 0;                                                                \
    } while (0)
 #endif
