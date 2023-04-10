@@ -88,6 +88,8 @@ typedef __vki_signalfn_t __user *__vki_sighandler_t;
 #define _VKI_NSIG_BPW	64
 #define _VKI_NSIG_WORDS	(_VKI_NSIG / _VKI_NSIG_BPW)
 
+typedef unsigned long vki_old_sigset_t;
+
 typedef struct {
 	unsigned long sig[_VKI_NSIG_WORDS];
 } vki_sigset_t;

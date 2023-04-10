@@ -4248,9 +4248,6 @@ PRE(sys_readahead)
    sig* wrappers
    ------------------------------------------------------------------ */
 
-/* TODO Review which Linux platforms actually have this syscall and invert the
-   condition. */
-#if !defined(VGP_riscv64_linux)
 PRE(sys_sigpending)
 {
    PRINT( "sys_sigpending ( %#" FMT_REGWORD "x )", ARG1 );
@@ -4261,7 +4258,6 @@ POST(sys_sigpending)
 {
    POST_MEM_WRITE( ARG1, sizeof(vki_old_sigset_t) ) ;
 }
-#endif
 
 // This syscall is not used on amd64/Linux -- it only provides
 // sys_rt_sigprocmask, which uses sigset_t rather than old_sigset_t.
