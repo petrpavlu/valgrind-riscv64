@@ -2920,9 +2920,7 @@ static Int copy_convert_CfiExpr_tree ( XArray*        dstxa,
          if (dwreg == srcuc->ra_reg)
             return ML_(CfiExpr_CfiReg)( dstxa, Creg_ARM64_X30 );
 #        elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
-            || defined(VGA_ppc64le)
-#        elif defined(VGA_riscv64)
-         I_die_here;
+            || defined(VGA_ppc64le) || defined(VGA_riscv64)
 #        else
 #           error "Unknown arch"
 #        endif

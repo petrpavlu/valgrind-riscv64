@@ -2991,14 +2991,12 @@ UWord evalCfiExpr ( const XArray* exprs, Int ix,
             case Creg_IA_SP: return eec->uregs->sp;
             case Creg_IA_BP: return eec->uregs->fp;
             case Creg_MIPS_RA: return eec->uregs->ra;
-#           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
-               || defined(VGA_ppc64le)
 #           elif defined(VGP_arm64_linux)
             case Creg_ARM64_SP: return eec->uregs->sp;
             case Creg_ARM64_X30: return eec->uregs->x30;
             case Creg_ARM64_X29: return eec->uregs->x29;
-#           elif defined(VGP_riscv64_linux)
-            I_die_here;
+#           elif defined(VGA_ppc32) || defined(VGA_ppc64be) \
+               || defined(VGA_ppc64le) || defined(VGP_riscv64_linux)
 #           else
 #             error "Unsupported arch"
 #           endif
