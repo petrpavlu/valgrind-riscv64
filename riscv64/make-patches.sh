@@ -98,7 +98,6 @@ memcheck/mc_machine.c
 "
 
 vex_mod="
-VEX/Makefile-gcc
 VEX/auxprogs/genoffsets.c
 VEX/priv/host_generic_regs.h
 VEX/priv/main_main.c
