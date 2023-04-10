@@ -67,13 +67,9 @@
    sets to ever be used.  So instead the function is
    (address ^ (address >>u VG_TT_FAST_BITS))[VG_TT_FAST_BITS-1+2 : 0+2]'.
 
-   On arm32, the minimum instruction size is 2, so we discard only the least
-   significant bit of the address, hence:
-   (address ^ (address >>u VG_TT_FAST_BITS))[VG_TT_FAST_BITS-1+1 : 0+1]'.
-
-   On s390x the rightmost bit of an instruction address is zero, so the arm32
-   scheme is used. */
-/* TODO Comment on riscv64. */
+   On arm32/s390x/riscv64, the minimum instruction size is 2, so we discard only
+   the least significant bit of the address, hence:
+   (address ^ (address >>u VG_TT_FAST_BITS))[VG_TT_FAST_BITS-1+1 : 0+1]'. */
 
 #define VG_TT_FAST_BITS 13
 #define VG_TT_FAST_SETS (1 << VG_TT_FAST_BITS)

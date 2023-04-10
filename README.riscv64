@@ -40,3 +40,6 @@ Implementation tidying-up/TODO notes
 * Avoid re-use of Intel-constants CFIC_IA_SPREL and CFIC_IA_BPREL. Generalize
   them for all architectures or introduce same CFIC_RISCV64_ variants.
 * Get rid of the typedef of vki_modify_ldt_t in include/vki/vki-riscv64-linux.h.
+* Review if setup_client_stack() should expose AT_SYSINFO_EHDR to clients.
+* Make sure that the final exit sequence in run_a_thread_NORETURN() is not racy
+  in regards to accessing the thread state.

@@ -897,10 +897,8 @@ Addr setup_client_stack( void*  init_sp,
          case AT_SYSINFO_EHDR: {
             /* Trash this, because we don't reproduce it */
             /* riscv64-linux: Keep the VDSO mapping on this platform present.
-               It contains __kernel_rt_sigreturn() which the kernel sets the ra
+               It contains __vdso_rt_sigreturn() which the kernel sets the ra
                register to point to on a signal delivery. */
-            /* TODO (riscv64-linux): Export this mapping to the client? Can its
-               code be translated? */
             const NSegment* ehdrseg = VG_(am_find_nsegment)((Addr)auxv->u.a_ptr);
             vg_assert(ehdrseg);
             VG_(am_munmap_valgrind)(ehdrseg->start, ehdrseg->end - ehdrseg->start);

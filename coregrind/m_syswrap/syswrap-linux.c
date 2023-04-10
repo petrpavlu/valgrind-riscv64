@@ -311,8 +311,6 @@ static void run_a_thread_NORETURN ( Word tidW )
          : "memory" , "$t4", "$a0"
       );
 #elif defined(VGP_riscv64_linux)
-      /* TODO Isn't this and other implementations racy because they load
-         tst->os_state.exitcode after setting VgTs_Empty? */
       asm volatile (
          "sw   %1, %0\n"      /* set tst->status = VgTs_Empty */
          "li   a7, %2\n"      /* set a7 = __NR_exit */

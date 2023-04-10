@@ -912,7 +912,6 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
    RRegUniverse__init(ru);
 
    /* Add the registers that are available to the register allocator. */
-   /* TODO */
    ru->allocable_start[HRcInt64] = ru->size;
    ru->regs[ru->size++]          = hregRISCV64_x18(); /* s2 */
    ru->regs[ru->size++]          = hregRISCV64_x19(); /* s3 */
@@ -960,7 +959,6 @@ const RRegUniverse* getRRegUniverse_RISCV64(void)
    ru->allocable                 = ru->size;
 
    /* Add the registers that are not available for allocation. */
-   /* TODO */
    ru->regs[ru->size++] = hregRISCV64_x0(); /* zero */
    ru->regs[ru->size++] = hregRISCV64_x2(); /* sp */
    ru->regs[ru->size++] = hregRISCV64_x8(); /* s0 */
@@ -1672,9 +1670,6 @@ static UChar* imm64_to_ireg(UChar* p, UInt dst, ULong imm64)
    the Sv48 format, that is bits [63:48] must be all equal to bit 47.
    Utilizing the fact that the address is only 48-bits in size allows to save 2
    instructions compared to materializing a full 64-bit address.
-
-   TODO Review if generating instead 'c.ld dst, 1f; c.j 2f; .align 3;
-   1: .quad imm; 2:' is possible and would be better.
    */
 static UChar* addr48_to_ireg_EXACTLY_18B(UChar* p, UInt dst, ULong imm48)
 {

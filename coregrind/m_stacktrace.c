@@ -1532,8 +1532,6 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
       stopping when the trail goes cold, which we guess to be
       when FP is not a reasonable stack location. */
 
-   /* TODO Is this needed? It shouldn't. */
-   /* fp_max = VG_PGROUNDUP(fp_max_orig); */
    fp_max = fp_max_orig;
    if (fp_max >= sizeof(Addr))
       fp_max -= sizeof(Addr);
