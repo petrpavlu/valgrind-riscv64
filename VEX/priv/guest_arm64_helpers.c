@@ -203,6 +203,13 @@ ULong arm64g_calculate_flag_n ( ULong cc_op, ULong cc_dep1,
          ULong nf  = res >> 63;
          return nf;
       }
+      /* TODO ARM64G_CC_OP_PRED32 */
+      case ARM64G_CC_OP_PRED64: {
+         /* (res, unused, unused) */
+         ULong res = cc_dep1;
+         ULong nf  = res != 0;
+         return nf;
+      }
 //ZZ       case ARMG_CC_OP_MUL: {
 //ZZ          /* (res, unused, oldC:oldV) */
 //ZZ          UInt res  = cc_dep1;
@@ -321,6 +328,13 @@ ULong arm64g_calculate_flag_z ( ULong cc_op, ULong cc_dep1,
          ULong zf   = res == 0;
          return zf;
       }
+      /* TODO ARM64G_CC_OP_PRED32 */
+      case ARM64G_CC_OP_PRED64: {
+         /* (res, unused, unused) */
+         ULong res = cc_dep1;
+         ULong zf  = res == 0;
+         return zf;
+      }
 //ZZ       case ARMG_CC_OP_MUL: {
 //ZZ          /* (res, unused, oldC:oldV) */
 //ZZ          UInt res  = cc_dep1;
@@ -428,6 +442,14 @@ ULong arm64g_calculate_flag_c ( ULong cc_op, ULong cc_dep1,
       case ARM64G_CC_OP_LOGIC64: {
          /* (res, unused, unused) */
          return 0; // C after logic is zero on arm64
+      }
+      /* TODO ARM64G_CC_OP_PRED32 */
+      case ARM64G_CC_OP_PRED64: {
+         /* TODO Fix. */
+         /* (res, unused, unused) */
+         ULong res = cc_dep1;
+         ULong cf  = res == 0;
+         return cf;
       }
 //ZZ       case ARMG_CC_OP_MUL: {
 //ZZ          /* (res, unused, oldC:oldV) */
@@ -542,6 +564,11 @@ ULong arm64g_calculate_flag_v ( ULong cc_op, ULong cc_dep1,
       case ARM64G_CC_OP_LOGIC64: {
          /* (res, unused, unused) */
          return 0; // V after logic is zero on arm64
+      }
+      /* TODO ARM64G_CC_OP_PRED32 */
+      case ARM64G_CC_OP_PRED64: {
+         /* (res, unused, unused) */
+         return 0; // V after pred is zero on arm64
       }
 //ZZ       case ARMG_CC_OP_MUL: {
 //ZZ          /* (res, unused, oldC:oldV) */
@@ -1534,6 +1561,12 @@ IRExpr* guest_arm64_spechelper ( const HChar* function_name,
          return unop(Iop_1Uto64,
                      binop(Iop_CmpNE64, cc_dep1, mkU64(0)));
       }
+
+      /*---------------- PRED32 ----------------*/
+      /* TODO */
+
+      /*---------------- PRED64 ----------------*/
+      /* TODO */
 
 //ZZ       if (isU32(cond_n_op, (ARMCondNE << 4) | ARMG_CC_OP_LOGIC)) {
 //ZZ          /* NE after LOGIC --> test res != 0 */

@@ -256,6 +256,9 @@ enum {
    ARM64G_CC_OP_LOGIC32,  /* DEP1 = result, DEP2 = 0, DEP3 = 0 */
    ARM64G_CC_OP_LOGIC64,  /* DEP1 = result, DEP2 = 0, DEP3 = 0 */
 
+   ARM64G_CC_OP_PRED32,   /* DEP1 = result, DEP2 = 0, DEP3 = 0 */
+   ARM64G_CC_OP_PRED64,   /* DEP1 = result, DEP2 = 0, DEP3 = 0 */
+
 //ZZ    ARMG_CC_OP_MUL,     /* DEP1 = result, DEP2 = 0, DEP3 = oldC:old_V
 //ZZ                           (in bits 1:0) */
 //ZZ 

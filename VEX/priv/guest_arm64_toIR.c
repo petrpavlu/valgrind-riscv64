@@ -2087,6 +2087,25 @@ void setFlags_LOGIC ( Bool is64, IRTemp res )
    setFlags_D1_D2_ND(cc_op, res64, z64, z64);
 }
 
+/* Build IR to set the flags thunk after a predicate calculation. */
+static
+void setFlags_PRED ( Bool is64, IRTemp res )
+{
+   IRTemp res64 = IRTemp_INVALID;
+   IRTemp z64   = newTemp(Ity_I64);
+   UInt   cc_op = ARM64G_CC_OP_NUMBER;
+   if (is64) {
+      res64 = res;
+      cc_op = ARM64G_CC_OP_PRED64;
+   } else {
+      res64 = newTemp(Ity_I64);
+      assign(res64, unop(Iop_32Uto64, mkexpr(res)));
+      cc_op = ARM64G_CC_OP_PRED32;
+   }
+   assign(z64, mkU64(0));
+   setFlags_D1_D2_ND(cc_op, res64, z64, z64);
+}
+
 /* Build IR to set the flags thunk to a given NZCV value.  NZCV is
    located in bits 31:28 of the supplied value. */
 static
@@ -15946,6 +15965,57 @@ Bool dis_SVE_predicate_initialize(/*MB_OUT*/DisResult* dres, UInt insn,
 
 
 static
+Bool dis_SVE_integer_compare_scalar_count_and_limit(/*MB_OUT*/DisResult* dres,
+                                                    UInt insn,
+                                                    const VexArchInfo* archinfo)
+{
+   /* 31       23   21 20 15  12 11 10 9  4  3
+      00100101 size 1  Rm 000 sf U  lt Rn eq Pd
+      Decode fields: U,lt,eq
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,1,0,0,1,0,1) || INSN(21,21) != 1
+       || INSN(15,13) != BITS3(0,0,0))
+      return False;
+
+   UInt sz = INSN(23,22);
+   UInt rM = INSN(20,16);
+   UInt sf = INSN(12,12);
+   UInt bU = INSN(11,11);
+   UInt lt = INSN(10,10);
+   UInt rN = INSN(9,5);
+   UInt eq = INSN(4,4);
+   UInt pD = INSN(3,0);
+
+   UInt   szB  = 1 << sz;
+   Bool   is64 = sf == 1;
+   IRType ty   = is64 ? Ity_I64 : Ity_I32;
+
+   switch (bU << 2 | lt << 1 | eq) {
+      case BITS3(1,1,0): {
+         IRTemp argL = newTemp(ty);
+         assign(argL, getIRegOrZR(is64, rM));
+         IRTemp argR = newTemp(ty);
+         assign(argR, getIRegOrZR(is64, rN));
+         IRTemp diff = newTemp(ty);
+         assign(diff, binop(mkSUB(ty), mkexpr(argL), mkexpr(argR)));
+
+         const IROp ops[4] = { Iop_PTrue1x8xN, Iop_PTrue1x4xN, Iop_PTrue1x2xN,
+                               Iop_PTrue1x1xN };
+         putPRegVL(pD, unop(ops[sz], mkexpr(diff)));
+         setFlags_PRED(is64, diff);
+         DIP("whilelo %s.%s, %s, %s\n", namePRegVL(pD), nameElementSize(szB),
+             nameIRegOrZR(is64, rN), nameIRegOrZR(is64, rM));
+         return True;
+      }
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
 Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
                    const VexArchInfo* archinfo, Bool sigill_diag)
 {
@@ -15955,6 +16025,8 @@ Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
       return False;
 
    ok = dis_SVE_predicate_initialize(dres, insn, archinfo);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_SVE_integer_compare_scalar_count_and_limit(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    return False;
 }
