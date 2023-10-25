@@ -104,6 +104,8 @@ typedef  struct { UInt u32; }  HReg;
       HRcVec64     64 bits
       HRcVec128    128 bits
 
+      TODO Add scalable types.
+
    If you add another regclass, you must remember to update
    host_generic_reg_alloc*.c and RRegUniverse accordingly.
 
@@ -118,7 +120,9 @@ typedef
       HRcFlt64=6,     /* 64-bit float */
       HRcVec64=7,     /* 64-bit SIMD */
       HRcVec128=8,    /* 128-bit SIMD */
-      HrcLAST=HRcVec128
+      HRcVec8xN=9,    /* 8-bit x N scalable vector (predicate) */
+      HRcVec64xN=10,  /* 64-bit x N scalable vector (data) */
+      HrcLAST=HRcVec64xN
    }
    HRegClass;
 

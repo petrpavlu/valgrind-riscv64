@@ -170,6 +170,14 @@ UInt ppHRegARM64 ( HReg reg )  {
          r = hregEncoding(reg);
          vassert(r >= 0 && r < 32);
          return vex_printf("q%d", r);
+      case HRcVec8xN:
+         r = hregEncoding(reg);
+         vassert(r >= 0 && r < 16);
+         return vex_printf("p%d", r);
+      case HRcVec64xN:
+         r = hregEncoding(reg);
+         vassert(r >= 0 && r < 32);
+         return vex_printf("z%d", r);
       default:
          vpanic("ppHRegARM64");
    }
