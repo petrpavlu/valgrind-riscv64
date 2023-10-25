@@ -15772,6 +15772,22 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
 
 
 /*------------------------------------------------------------*/
+/*--- Scalable Vector Extension instructions               ---*/
+/*------------------------------------------------------------*/
+
+static
+Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
+                   const VexArchInfo* archinfo, Bool sigill_diag)
+{
+   Bool ok;
+
+   if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SVE) == 0)
+      return False;
+
+   return False;
+}
+
+/*------------------------------------------------------------*/
 /*--- Disassemble a single ARM64 instruction               ---*/
 /*------------------------------------------------------------*/
 
@@ -15931,8 +15947,12 @@ Bool disInstr_ARM64_WRK (
          // Data processing - SIMD and floating point
          ok = dis_ARM64_simd_and_fp(dres, insn, archinfo, sigill_diag);
          break;
+      case BITS4(0,0,1,0):
+         // Scalable Vector Extension
+         ok = dis_ARM64_sve(dres, insn, archinfo, sigill_diag);
+         break;
       case BITS4(0,0,0,0): case BITS4(0,0,0,1):
-      case BITS4(0,0,1,0): case BITS4(0,0,1,1):
+      case BITS4(0,0,1,1):
          // UNALLOCATED
          break;
       default:
@@ -15984,6 +16004,10 @@ DisResult disInstr_ARM64 ( IRSB*        irsb_IN,
    /* (x::UInt - 2) <= 15   ===   x >= 2 && x <= 17 (I hope) */
    vassert((archinfo->arm64_dMinLine_lg2_szB - 2) <= 15);
    vassert((archinfo->arm64_iMinLine_lg2_szB - 2) <= 15);
+
+   if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SVE) != 0)
+      vassert(archinfo->arm64_sve_vl_szB >= 16 &&
+              archinfo->arm64_sve_vl_szB <= 256);
 
    /* Try to decode */
    Bool ok = disInstr_ARM64_WRK( &dres,

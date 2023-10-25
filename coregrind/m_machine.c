@@ -1816,11 +1816,11 @@ Bool VG_(machine_get_hwcaps)( void )
 
      Bool have_fhm, have_dp, have_sm4, have_sm3, have_sha3, have_rdm;
      Bool have_atomics, have_i8mm, have_bf16, have_dpbcvap, have_dpbcvadp;
-     Bool have_vfp16, have_fp16;
+     Bool have_vfp16, have_fp16, have_sve;
 
      have_fhm = have_dp = have_sm4 = have_sm3 = have_sha3 = have_rdm
               = have_atomics = have_i8mm = have_bf16 = have_dpbcvap
-              = have_dpbcvadp = have_vfp16 = have_fp16 = False;
+              = have_dpbcvadp = have_vfp16 = have_fp16 = have_sve = False;
 
      /* Some baseline v8.0 kernels do not allow reads of these registers. Use
       * the same SIGILL handling algorithm as other architectures for such
@@ -1922,9 +1922,11 @@ Bool VG_(machine_get_hwcaps)( void )
      #define ID_AA64ISAR1_DPBCVADP_SUPPORTED   0x2
 
      /* ID_AA64PFR0_EL1 Processor feature register 0 fields */
+     #define ID_AA64PFR0_SVE_SHIFT             32
      #define ID_AA64PFR0_VFP16_SHIFT           20
      #define ID_AA64PFR0_FP16_SHIFT            16
      /* Field values */
+     #define ID_AA64PFR0_SVE_SUPPORTED         0x1
      #define ID_AA64PFR0_VFP16_SUPPORTED       0x1
      #define ID_AA64PFR0_FP16_SUPPORTED        0x1
 
@@ -2019,6 +2021,12 @@ Bool VG_(machine_get_hwcaps)( void )
 
      /* Read ID_AA64PFR0_EL1 attributes */
 
+     /* SVE indicates support for Scalable Vector Extension.
+      * Optional for v8.2 onwards.
+      */
+     get_ftr(ID_AA64PFR0_EL1, ID_AA64PFR0_SVE_SHIFT,
+             ID_AA64PFR0_SVE_SUPPORTED, have_sve);
+
      /* VFP16 indicates support for half-precision vector arithmetic.
       * Optional for v8.2. Must be the same value as FP16.
       */
@@ -2043,9 +2051,24 @@ Bool VG_(machine_get_hwcaps)( void )
      if (have_bf16)       vai.hwcaps |= VEX_HWCAPS_ARM64_BF16;
      if (have_fp16)       vai.hwcaps |= VEX_HWCAPS_ARM64_FP16;
      if (have_vfp16)      vai.hwcaps |= VEX_HWCAPS_ARM64_VFP16;
+     if (have_sve)        vai.hwcaps |= VEX_HWCAPS_ARM64_SVE;
 
      #undef get_cpu_ftr
      #undef get_ftr
+
+     if (have_sve) {
+        ULong vl;
+
+        vg_assert(vai.arm64_sve_vl_szB == 0);
+        __asm__ __volatile__(".word 0x04BF5020; " /* rdvl x0, #1 */
+                             "mov %0, x0"
+                             : "=r"(vl)
+                             :
+                             : "x0");
+        vai.arm64_sve_vl_szB = vl;
+        VG_(debugLog)(1, "machine", "ARM64: sve_vl_szB = %u\n",
+                      vai.arm64_sve_vl_szB);
+     }
 
      return True;
    }

@@ -222,6 +222,7 @@ typedef
 #define VEX_HWCAPS_ARM64_BF16        (1 << 13)
 #define VEX_HWCAPS_ARM64_FP16        (1 << 14)
 #define VEX_HWCAPS_ARM64_VFP16       (1 << 15)
+#define VEX_HWCAPS_ARM64_SVE         (1 << 16)
 
 /* MIPS baseline capability */
 /* Assigned Company values for bits 23:16 of the PRId Register
@@ -374,6 +375,8 @@ typedef
       /* ARM64: does the host require us to use the fallback LLSC
          implementation? */
       Bool arm64_requires_fallback_LLSC;
+      /* ARM64: SVE vector length */
+      UInt arm64_sve_vl_szB;
    }
    VexArchInfo;
 
