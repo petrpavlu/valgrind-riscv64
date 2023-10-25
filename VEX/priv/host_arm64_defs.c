@@ -111,6 +111,22 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    ru->regs[ru->size++] = hregARM64_D13();
    ru->allocable_end[HRcFlt64] = ru->size - 1;
 
+   // predicate regs, all of which are callee-saved
+   ru->allocable_start[HRcVec8xN] = ru->size;
+   ru->regs[ru->size++] = hregARM64_P4();
+   ru->regs[ru->size++] = hregARM64_P5();
+   ru->regs[ru->size++] = hregARM64_P6();
+   ru->regs[ru->size++] = hregARM64_P7();
+   ru->regs[ru->size++] = hregARM64_P8();
+   ru->regs[ru->size++] = hregARM64_P9();
+   ru->regs[ru->size++] = hregARM64_P10();
+   ru->regs[ru->size++] = hregARM64_P11();
+   ru->regs[ru->size++] = hregARM64_P12();
+   ru->regs[ru->size++] = hregARM64_P13();
+   ru->regs[ru->size++] = hregARM64_P14();
+   ru->regs[ru->size++] = hregARM64_P15();
+   ru->allocable_end[HRcVec8xN] = ru->size - 1;
+
    ru->allocable = ru->size;
    /* And other regs, not available to the allocator. */
 

@@ -1178,6 +1178,23 @@ static IRExpr* narrowFrom64 ( IRType dstTy, IRExpr* e )
 #define OFFB_Q30      offsetof(VexGuestARM64State,guest_Q30)
 #define OFFB_Q31      offsetof(VexGuestARM64State,guest_Q31)
 
+#define OFFB_P0       offsetof(VexGuestARM64State,guest_P0)
+#define OFFB_P1       offsetof(VexGuestARM64State,guest_P1)
+#define OFFB_P2       offsetof(VexGuestARM64State,guest_P2)
+#define OFFB_P3       offsetof(VexGuestARM64State,guest_P3)
+#define OFFB_P4       offsetof(VexGuestARM64State,guest_P4)
+#define OFFB_P5       offsetof(VexGuestARM64State,guest_P5)
+#define OFFB_P6       offsetof(VexGuestARM64State,guest_P6)
+#define OFFB_P7       offsetof(VexGuestARM64State,guest_P7)
+#define OFFB_P8       offsetof(VexGuestARM64State,guest_P8)
+#define OFFB_P9       offsetof(VexGuestARM64State,guest_P9)
+#define OFFB_P10      offsetof(VexGuestARM64State,guest_P10)
+#define OFFB_P11      offsetof(VexGuestARM64State,guest_P11)
+#define OFFB_P12      offsetof(VexGuestARM64State,guest_P12)
+#define OFFB_P13      offsetof(VexGuestARM64State,guest_P13)
+#define OFFB_P14      offsetof(VexGuestARM64State,guest_P14)
+#define OFFB_P15      offsetof(VexGuestARM64State,guest_P15)
+
 #define OFFB_FPCR     offsetof(VexGuestARM64State,guest_FPCR)
 #define OFFB_QCFLAG   offsetof(VexGuestARM64State,guest_QCFLAG)
 
@@ -1604,6 +1621,48 @@ static IRExpr* getQRegLane ( UInt qregNo, UInt laneNo, IRType laneTy )
          vassert(0); // Other cases are ATC
    }
    return IRExpr_Get(off, laneTy);
+}
+
+
+/* -------------- Predicate (P) registers --------------- */
+
+static Int offsetPRegVL ( UInt pregNo )
+{
+   switch (pregNo) {
+      case 0:  return OFFB_P0;
+      case 1:  return OFFB_P1;
+      case 2:  return OFFB_P2;
+      case 3:  return OFFB_P3;
+      case 4:  return OFFB_P4;
+      case 5:  return OFFB_P5;
+      case 6:  return OFFB_P6;
+      case 7:  return OFFB_P7;
+      case 8:  return OFFB_P8;
+      case 9:  return OFFB_P9;
+      case 10: return OFFB_P10;
+      case 11: return OFFB_P11;
+      case 12: return OFFB_P12;
+      case 13: return OFFB_P13;
+      case 14: return OFFB_P14;
+      case 15: return OFFB_P15;
+      default: vassert(0);
+   }
+}
+
+static const HChar* namePRegVL ( UInt pregNo )
+{
+   vassert(pregNo < 16);
+   static const HChar* names[16]
+      = { "p0",  "p1",  "p2",  "p3",  "p4",  "p5",  "p6",  "p7",
+          "p8",  "p9",  "p10", "p11", "p12", "p13", "p14", "p15" };
+   return names[pregNo];
+}
+
+static void putPRegVL ( UInt pregNo, IRExpr* e )
+{
+   vassert(pregNo < 16);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_V8xN);
+   stmt( IRStmt_Put(offsetPRegVL(pregNo), e) );
 }
 
 

@@ -87,7 +87,7 @@ typedef
       /* User-space thread register? */
       ULong guest_TPIDR_EL0;
 
-      /* FP/SIMD state */
+      /* FP/SIMD/SVE state */
       U128 guest_Q0;
       U128 guest_Q1;
       U128 guest_Q2;
@@ -120,6 +120,24 @@ typedef
       U128 guest_Q29;
       U128 guest_Q30;
       U128 guest_Q31;
+
+      /* SVE predicates */
+      UShort guest_P0;
+      UShort guest_P1;
+      UShort guest_P2;
+      UShort guest_P3;
+      UShort guest_P4;
+      UShort guest_P5;
+      UShort guest_P6;
+      UShort guest_P7;
+      UShort guest_P8;
+      UShort guest_P9;
+      UShort guest_P10;
+      UShort guest_P11;
+      UShort guest_P12;
+      UShort guest_P13;
+      UShort guest_P14;
+      UShort guest_P15;
 
       /* A 128-bit value which is used to represent the FPSR.QC (sticky
          saturation) flag, when necessary.  If the value stored here

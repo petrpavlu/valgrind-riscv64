@@ -4676,6 +4676,12 @@ HInstrArray* iselSB_ARM64 ( const IRSB* bb,
             hreg   = mkHReg(True, HRcVec128, 0, j++);
             hregHI = mkHReg(True, HRcVec128, 0, j++);
             break;
+         case Ity_V8xN:
+            hreg = mkHReg(True, HRcVec8xN, 0, j++);
+            break;
+         case Ity_V64xN:
+            hreg = mkHReg(True, HRcVec64xN, 0, j++);
+            break;
          default:
             ppIRType(bb->tyenv->types[i]);
             vpanic("iselBB(arm64): IRTemp type");

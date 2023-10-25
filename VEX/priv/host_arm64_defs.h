@@ -67,16 +67,29 @@ ST_IN HReg hregARM64_D11 ( void ) { return mkHReg(False, HRcFlt64,  11, 23); }
 ST_IN HReg hregARM64_D12 ( void ) { return mkHReg(False, HRcFlt64,  12, 24); }
 ST_IN HReg hregARM64_D13 ( void ) { return mkHReg(False, HRcFlt64,  13, 25); }
 
-ST_IN HReg hregARM64_X8  ( void ) { return mkHReg(False, HRcInt64,  8,  26); }
-ST_IN HReg hregARM64_X9  ( void ) { return mkHReg(False, HRcInt64,  9,  27); }
-ST_IN HReg hregARM64_X21 ( void ) { return mkHReg(False, HRcInt64, 21,  28); }
+ST_IN HReg hregARM64_P4  ( void ) { return mkHReg(False, HRcVec8xN, 4,  26); }
+ST_IN HReg hregARM64_P5  ( void ) { return mkHReg(False, HRcVec8xN, 5,  27); }
+ST_IN HReg hregARM64_P6  ( void ) { return mkHReg(False, HRcVec8xN, 6,  28); }
+ST_IN HReg hregARM64_P7  ( void ) { return mkHReg(False, HRcVec8xN, 7,  29); }
+ST_IN HReg hregARM64_P8  ( void ) { return mkHReg(False, HRcVec8xN, 8,  30); }
+ST_IN HReg hregARM64_P9  ( void ) { return mkHReg(False, HRcVec8xN, 9,  31); }
+ST_IN HReg hregARM64_P10 ( void ) { return mkHReg(False, HRcVec8xN, 10, 32); }
+ST_IN HReg hregARM64_P11 ( void ) { return mkHReg(False, HRcVec8xN, 11, 33); }
+ST_IN HReg hregARM64_P12 ( void ) { return mkHReg(False, HRcVec8xN, 12, 34); }
+ST_IN HReg hregARM64_P13 ( void ) { return mkHReg(False, HRcVec8xN, 13, 35); }
+ST_IN HReg hregARM64_P14 ( void ) { return mkHReg(False, HRcVec8xN, 14, 36); }
+ST_IN HReg hregARM64_P15 ( void ) { return mkHReg(False, HRcVec8xN, 15, 37); }
+
+ST_IN HReg hregARM64_X8  ( void ) { return mkHReg(False, HRcInt64,  8,  38); }
+ST_IN HReg hregARM64_X9  ( void ) { return mkHReg(False, HRcInt64,  9,  39); }
+ST_IN HReg hregARM64_X21 ( void ) { return mkHReg(False, HRcInt64, 21,  40); }
 
 // This is the integer register with encoding 31.  Be *very* careful how you
 // use it, since its meaning is dependent on the instruction and indeed even
 // the position within an instruction, that it appears.  It denotes either the
 // zero register or the stack pointer.
 ST_IN HReg hregARM64_XZR_XSP ( void ) { return mkHReg(False,
-                                                      HRcInt64, 31, 29); }
+                                                      HRcInt64, 31, 41); }
 #undef ST_IN
 
 extern UInt ppHRegARM64 ( HReg );
