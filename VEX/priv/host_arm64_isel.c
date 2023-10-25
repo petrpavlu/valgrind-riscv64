@@ -218,6 +218,9 @@ static void        iselV256Expr_wrk       ( /*OUT*/HReg* rHi, HReg* rLo,
 static void        iselV256Expr           ( /*OUT*/HReg* rHi, HReg* rLo, 
                                             ISelEnv* env, IRExpr* e );
 
+static HReg        iselV8xNExpr_wrk       ( ISelEnv* env, IRExpr* e );
+static HReg        iselV8xNExpr           ( ISelEnv* env, IRExpr* e );
+
 static ARM64RIL* mb_mkARM64RIL_I ( ULong imm64 );
 
 
@@ -3957,6 +3960,31 @@ static void iselV256Expr_wrk ( /*OUT*/HReg* rHi, /*OUT*/HReg* rLo,
 
 
 /*---------------------------------------------------------*/
+/*--- ISEL: Scalable Vector expressions (8xN bit)       ---*/
+/*---------------------------------------------------------*/
+
+static HReg iselV8xNExpr ( ISelEnv* env, IRExpr* e )
+{
+   HReg r = iselV8xNExpr_wrk( env, e );
+   vassert(hregClass(r) == HRcVec8xN);
+   vassert(hregIsVirtual(r));
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY */
+static HReg iselV8xNExpr_wrk ( ISelEnv* env, IRExpr* e )
+{
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(e);
+   vassert(ty == Ity_V8xN);
+
+  /* TODO */
+  //v8xn_expr_bad:
+   ppIRExpr(e);
+   vpanic("iselV8xNExpr_wrk");
+}
+
+/*---------------------------------------------------------*/
 /*--- ISEL: Statements                                  ---*/
 /*---------------------------------------------------------*/
 
@@ -4081,6 +4109,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg hD   = iselF16Expr(env, stmt->Ist.Put.data);
          HReg bbp  = get_baseblock_register();
          addInstr(env, ARM64Instr_VLdStH(False/*!isLoad*/, hD, bbp, offs));
+         return;
+      }
+      if (tyd == Ity_V8xN && offs < (1<<12)) {
+         HReg pD   = iselV8xNExpr(env, stmt->Ist.Put.data);
+         HReg addr = mk_baseblock_128bit_access_addr(env, offs);
+         addInstr(env, ARM64Instr_VLdStP(False/*!isLoad*/, pD, addr));
          return;
       }
 

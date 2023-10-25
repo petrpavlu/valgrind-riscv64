@@ -1155,6 +1155,14 @@ ARM64Instr* ARM64Instr_VLdStQ ( Bool isLoad, HReg rQ, HReg rN ) {
    i->ARM64in.VLdStQ.rN     = rN;
    return i;
 }
+ARM64Instr* ARM64Instr_VLdStP ( Bool isLoad, HReg rP, HReg rN ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                   = ARM64in_VLdStP;
+   i->ARM64in.VLdStP.isLoad = isLoad;
+   i->ARM64in.VLdStP.rP     = rP;
+   i->ARM64in.VLdStP.rN     = rN;
+   return i;
+}
 ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VCvtI2F;
@@ -1809,6 +1817,16 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64(i->ARM64in.VLdStQ.rN);
          vex_printf("]");
          return;
+      case ARM64in_VLdStP:
+         if (i->ARM64in.VLdStP.isLoad)
+            vex_printf("ldr ");
+         else
+            vex_printf("str ");
+         ppHRegARM64(i->ARM64in.VLdStP.rP);
+         vex_printf(", [");
+         ppHRegARM64(i->ARM64in.VLdStP.rN);
+         vex_printf("]");
+         return;
       case ARM64in_VCvtI2F: {
          HChar syn  = '?';
          UInt  fszB = 0;
@@ -2360,6 +2378,13 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          else
             addHRegUse(u, HRmRead, i->ARM64in.VLdStQ.rQ);
          return;
+      case ARM64in_VLdStP:
+         addHRegUse(u, HRmRead, i->ARM64in.VLdStP.rN);
+         if (i->ARM64in.VLdStP.isLoad)
+            addHRegUse(u, HRmWrite, i->ARM64in.VLdStP.rP);
+         else
+            addHRegUse(u, HRmRead, i->ARM64in.VLdStP.rP);
+         return;
       case ARM64in_VCvtI2F:
          addHRegUse(u, HRmRead, i->ARM64in.VCvtI2F.rS);
          addHRegUse(u, HRmWrite, i->ARM64in.VCvtI2F.rD);
@@ -2651,6 +2676,10 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VLdStQ.rQ = lookupHRegRemap(m, i->ARM64in.VLdStQ.rQ);
          i->ARM64in.VLdStQ.rN = lookupHRegRemap(m, i->ARM64in.VLdStQ.rN);
          return;
+      case ARM64in_VLdStP:
+         i->ARM64in.VLdStP.rP = lookupHRegRemap(m, i->ARM64in.VLdStP.rP);
+         i->ARM64in.VLdStP.rN = lookupHRegRemap(m, i->ARM64in.VLdStP.rN);
+         return;
       case ARM64in_VCvtI2F:
          i->ARM64in.VCvtI2F.rS = lookupHRegRemap(m, i->ARM64in.VCvtI2F.rS);
          i->ARM64in.VCvtI2F.rD = lookupHRegRemap(m, i->ARM64in.VCvtI2F.rD);
@@ -2855,6 +2884,7 @@ void genSpill_ARM64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          *i2 = ARM64Instr_VLdStQ(False/*!isLoad*/, rreg, x9);
          return;
       }
+      // TODO Scalable vectors.
       default:
          ppHRegClass(rclass);
          vpanic("genSpill_ARM: unimplemented regclass");
@@ -2896,6 +2926,7 @@ void genReload_ARM64 ( /*OUT*/HInstr** i1, /*OUT*/HInstr** i2,
          *i2 = ARM64Instr_VLdStQ(True/*isLoad*/, rreg, x9);
          return;
       }
+      // TODO Scalable vectors.
       default:
          ppHRegClass(rclass);
          vpanic("genReload_ARM: unimplemented regclass");
@@ -2962,6 +2993,16 @@ static inline UInt qregEnc ( HReg r )
    vassert(!hregIsVirtual(r));
    n = hregEncoding(r);
    vassert(n <= 31);
+   return n;
+}
+
+static inline UInt pregEnc ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcVec8xN);
+   vassert(!hregIsVirtual(r));
+   n = hregEncoding(r);
+   vassert(n <= 15);
    return n;
 }
 
@@ -4429,6 +4470,24 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = 0x4C407C00 | (rN << 5) | rQ;
          } else {
             *p++ = 0x4C007C00 | (rN << 5) | rQ;
+         }
+         goto done;
+      }
+      case ARM64in_VLdStP: {
+         /* 31         21    15  12    9  4 3
+            1110010110 imm9h 000 imm9l Rn 0 Pt
+               STR <Pt> [<Xn|SP>{, #<imm>, MUL VL}]
+            1000010110 imm9h 000 imm9l Rn 0 Pt
+               LDR <Pt> [<Xn|SP>{, #<imm>, MUL VL}]
+         */
+         UInt rP = pregEnc(i->ARM64in.VLdStP.rP);
+         UInt rN = iregEnc(i->ARM64in.VLdStP.rN);
+         vassert(rP < 16);
+         vassert(rN < 31);
+         if (i->ARM64in.VLdStP.isLoad) {
+            *p++ = 0x85800000 | (rN << 5) | rP;
+         } else {
+            *p++ = 0xE5800000 | (rN << 5) | rP;
          }
          goto done;
       }
