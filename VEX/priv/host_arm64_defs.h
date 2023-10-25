@@ -499,6 +499,14 @@ typedef
 
 typedef
    enum {
+      ARM64vecpt_WHILELO1x8xN=500, ARM64vecpt_WHILELO1x4xN,
+      ARM64vecpt_WHILELO1x2xN,     ARM64vecpt_WHILELO1x1xN,
+      ARM64vecpt_INVALID
+   }
+   ARM64VecWhileLoOp;
+
+typedef
+   enum {
       /* baseline */
       ARM64in_Arith=1220,
       ARM64in_Cmp,
@@ -569,6 +577,8 @@ typedef
       ARM64in_VXfromQ,    /* Move half a Qreg to an Xreg */
       ARM64in_VXfromDorS, /* Move Dreg or Sreg(ZX) to an Xreg */
       ARM64in_VMov,       /* vector reg-reg move, 16, 8 or 4 bytes */
+      /* ARM64in_P*: ops on scalable vector predicate registers */
+      ARM64in_WhileLo,
       /* infrastructure */
       ARM64in_EvCheck,    /* Event check */
       ARM64in_ProfInc     /* 64-bit profile counter increment */
@@ -1021,6 +1031,12 @@ typedef
             HReg src;
          } VMov;
          struct {
+           ARM64VecWhileLoOp op;
+           HReg              dst;
+           HReg              arg1;
+           HReg              arg2;
+         } WhileLo;
+         struct {
             ARM64AMode* amCounter;
             ARM64AMode* amFailAddr;
          } EvCheck;
@@ -1118,6 +1134,8 @@ extern ARM64Instr* ARM64Instr_VQfromXX( HReg rQ, HReg rXhi, HReg rXlo );
 extern ARM64Instr* ARM64Instr_VXfromQ ( HReg rX, HReg rQ, UInt laneNo );
 extern ARM64Instr* ARM64Instr_VXfromDorS ( HReg rX, HReg rDorS, Bool fromD );
 extern ARM64Instr* ARM64Instr_VMov    ( UInt szB, HReg dst, HReg src );
+extern ARM64Instr* ARM64Instr_WhileLo ( ARM64VecWhileLoOp op, HReg dst,
+                                        HReg arg1, HReg arg2 );
 
 extern ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,
                                         ARM64AMode* amFailAddr );

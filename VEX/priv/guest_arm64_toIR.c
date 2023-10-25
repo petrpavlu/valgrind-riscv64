@@ -15834,6 +15834,117 @@ Bool dis_ARM64_simd_and_fp(/*MB_OUT*/DisResult* dres, UInt insn,
 /*--- Scalable Vector Extension instructions               ---*/
 /*------------------------------------------------------------*/
 
+static const HChar* nameElementSize ( UInt szB )
+{
+   switch (szB) {
+      case 1: return "b";
+      case 2: return "h";
+      case 4: return "s";
+      case 8: return "d";
+      default: vassert(0);
+   }
+}
+
+static
+UInt decodePredCount(UInt pattern, UInt szB, const VexArchInfo *archinfo)
+{
+   UInt elements = archinfo->arm64_sve_vl_szB / szB;
+
+   switch (pattern) {
+      case BITS5(0,0,0,0,0):
+         return 1 << (8 * sizeof(int) - __builtin_clz(elements) - 1);
+      case BITS5(0,0,0,0,1): return elements >= 1 ? 1 : 0;
+      case BITS5(0,0,0,1,0): return elements >= 2 ? 2 : 0;
+      case BITS5(0,0,0,1,1): return elements >= 3 ? 3 : 0;
+      case BITS5(0,0,1,0,0): return elements >= 4 ? 4 : 0;
+      case BITS5(0,0,1,0,1): return elements >= 5 ? 5 : 0;
+      case BITS5(0,0,1,1,0): return elements >= 6 ? 6 : 0;
+      case BITS5(0,0,1,1,1): return elements >= 7 ? 7 : 0;
+      case BITS5(0,1,0,0,0): return elements >= 8 ? 8 : 0;
+      case BITS5(0,1,0,0,1): return elements >= 16 ? 16 : 0;
+      case BITS5(0,1,0,1,0): return elements >= 32 ? 32 : 0;
+      case BITS5(0,1,0,1,1): return elements >= 64 ? 64 : 0;
+      case BITS5(0,1,1,0,0): return elements >= 128 ? 128 : 0;
+      case BITS5(0,1,1,0,1): return elements >= 256 ? 256 : 0;
+      case BITS5(1,1,1,0,1): return elements - elements % 4;
+      case BITS5(1,1,1,1,0): return elements - elements % 3;
+      case BITS5(1,1,1,1,1): return elements;
+      default: return 0;
+   }
+}
+
+static
+const HChar *namePredPattern(UInt pattern)
+{
+   switch (pattern) {
+      case BITS5(0,0,0,0,0): return "pow2";
+      case BITS5(0,0,0,0,1): return "vl1";
+      case BITS5(0,0,0,1,0): return "vl2";
+      case BITS5(0,0,0,1,1): return "vl3";
+      case BITS5(0,0,1,0,0): return "vl4";
+      case BITS5(0,0,1,0,1): return "vl5";
+      case BITS5(0,0,1,1,0): return "vl6";
+      case BITS5(0,0,1,1,1): return "vl7";
+      case BITS5(0,1,0,0,0): return "vl8";
+      case BITS5(0,1,0,0,1): return "vl16";
+      case BITS5(0,1,0,1,0): return "vl32";
+      case BITS5(0,1,0,1,1): return "vl64";
+      case BITS5(0,1,1,0,0): return "vl128";
+      case BITS5(0,1,1,0,1): return "vl256";
+      case BITS5(0,1,1,1,0): return "#14";
+      case BITS5(0,1,1,1,1): return "#15";
+      case BITS5(1,0,0,0,0): return "#16";
+      case BITS5(1,0,0,0,1): return "#17";
+      case BITS5(1,0,0,1,0): return "#18";
+      case BITS5(1,0,0,1,1): return "#19";
+      case BITS5(1,0,1,0,0): return "#20";
+      case BITS5(1,0,1,0,1): return "#21";
+      case BITS5(1,0,1,1,0): return "#22";
+      case BITS5(1,0,1,1,1): return "#23";
+      case BITS5(1,1,0,0,0): return "#24";
+      case BITS5(1,1,0,0,1): return "#25";
+      case BITS5(1,1,0,1,0): return "#26";
+      case BITS5(1,1,0,1,1): return "#27";
+      case BITS5(1,1,1,0,0): return "#28";
+      case BITS5(1,1,1,0,1): return "mul4";
+      case BITS5(1,1,1,1,0): return "mul3";
+      case BITS5(1,1,1,1,1): return "all";
+      default: vassert(0);
+   }
+}
+
+static
+Bool dis_SVE_predicate_initialize(/*MB_OUT*/DisResult* dres, UInt insn,
+                                  const VexArchInfo* archinfo)
+{
+   /* 31       23   21    16 15     9       4 3
+      00100101 size 01100 S  111000 pattern 0 Pd
+      Decode fields: S
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,1,0,0,1,0,1) || INSN(21,17) != BITS5(0,1,1,0,0)
+       || INSN(15,10) != BITS6(1,1,1,0,0,0) || INSN(4,4) != 0)
+      return False;
+
+   UInt sz      = INSN(23,22);
+   UInt bS      = INSN(16,16); /* set flags? */
+   UInt pattern = INSN(9,5);
+   UInt pD      = INSN(3,0);
+
+   const IROp ops[4] = { Iop_PTrue1x8xN, Iop_PTrue1x4xN, Iop_PTrue1x2xN,
+                         Iop_PTrue1x1xN };
+   UInt szB = 1 << sz;
+   putPRegVL(pD, unop(ops[sz], mkU64(decodePredCount(pattern, szB, archinfo))));
+   // TODO Implement bS == 1.
+   vassert(bS == 0);
+   DIP("ptrue%s %s.%s, %s\n", bS ? "s" : "", namePRegVL(pD),
+       nameElementSize(szB), namePredPattern(pattern));
+
+   return True;
+#  undef INSN
+}
+
+
 static
 Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
                    const VexArchInfo* archinfo, Bool sigill_diag)
@@ -15843,6 +15954,8 @@ Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
    if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SVE) == 0)
       return False;
 
+   ok = dis_SVE_predicate_initialize(dres, insn, archinfo);
+   if (UNLIKELY(ok)) return True;
    return False;
 }
 

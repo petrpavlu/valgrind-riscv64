@@ -1506,6 +1506,16 @@ ARM64Instr* ARM64Instr_VMov ( UInt szB, HReg dst, HReg src ) {
    }
    return i;
 }
+ARM64Instr* ARM64Instr_WhileLo ( ARM64VecWhileLoOp op, HReg dst, HReg arg1,
+                                 HReg arg2 ) {
+   ARM64Instr* i           = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                  = ARM64in_WhileLo;
+   i->ARM64in.WhileLo.op   = op;
+   i->ARM64in.WhileLo.dst  = dst;
+   i->ARM64in.WhileLo.arg1 = arg1;
+   i->ARM64in.WhileLo.arg2 = arg2;
+   return i;
+}
 ARM64Instr* ARM64Instr_EvCheck ( ARM64AMode* amCounter,
                                  ARM64AMode* amFailAddr ) {
    ARM64Instr* i                 = LibVEX_Alloc_inline(sizeof(ARM64Instr));
@@ -2123,6 +2133,23 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64(i->ARM64in.VMov.src);
          return;
       }
+      case ARM64in_WhileLo: {
+         HChar size = '?';
+         switch (i->ARM64in.WhileLo.op) {
+            case ARM64vecpt_WHILELO1x8xN: size = 'b'; break;
+            case ARM64vecpt_WHILELO1x4xN: size = 'h'; break;
+            case ARM64vecpt_WHILELO1x2xN: size = 's'; break;
+            case ARM64vecpt_WHILELO1x1xN: size = 'd'; break;
+            default: break;
+         }
+         vex_printf("whilelo ");
+         ppHRegARM64(i->ARM64in.WhileLo.dst);
+         vex_printf(".%c, ", size);
+         ppHRegARM64(i->ARM64in.WhileLo.arg1);
+         vex_printf(", ");
+         ppHRegARM64(i->ARM64in.WhileLo.arg2);
+         return;
+      }
       case ARM64in_EvCheck:
          vex_printf("(evCheck) ldr w9,");
          ppARM64AMode(i->ARM64in.EvCheck.amCounter);
@@ -2531,6 +2558,11 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          u->regMoveSrc   = i->ARM64in.VMov.src;
          u->regMoveDst   = i->ARM64in.VMov.dst;
          return;
+      case ARM64in_WhileLo:
+         addHRegUse(u, HRmWrite, i->ARM64in.WhileLo.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.WhileLo.arg1);
+         addHRegUse(u, HRmRead, i->ARM64in.WhileLo.arg2);
+         return;
       case ARM64in_EvCheck:
          /* We expect both amodes only to mention x21, so this is in
             fact pointless, since x21 isn't allocatable, but
@@ -2828,6 +2860,11 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_VMov:
          i->ARM64in.VMov.dst = lookupHRegRemap(m, i->ARM64in.VMov.dst);
          i->ARM64in.VMov.src = lookupHRegRemap(m, i->ARM64in.VMov.src);
+         return;
+      case ARM64in_WhileLo:
+         i->ARM64in.WhileLo.dst = lookupHRegRemap(m, i->ARM64in.WhileLo.dst);
+         i->ARM64in.WhileLo.arg1 = lookupHRegRemap(m, i->ARM64in.WhileLo.arg1);
+         i->ARM64in.WhileLo.arg2 = lookupHRegRemap(m, i->ARM64in.WhileLo.arg2);
          return;
       case ARM64in_EvCheck:
          /* We expect both amodes only to mention x21, so this is in
@@ -6073,6 +6110,29 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
               break;
         }
         goto bad;
+      }
+
+      case ARM64in_WhileLo: {
+         /* 31       23   21 20 15     9  4 3
+            00100101 size 1  Rm 000111 Rn 0 Pd
+               WHILELO <Pd>.<T>, <R><n>, <R><m>
+         */
+         UInt pD = pregEnc(i->ARM64in.WhileLo.dst);
+         UInt rN = iregEncOr31(i->ARM64in.WhileLo.arg1);
+         UInt rM = iregEncOr31(i->ARM64in.WhileLo.arg2);
+         UInt size;
+         switch (i->ARM64in.WhileLo.op) {
+            case ARM64vecpt_WHILELO1x8xN: size = 0; break;
+            case ARM64vecpt_WHILELO1x4xN: size = 1; break;
+            case ARM64vecpt_WHILELO1x2xN: size = 2; break;
+            case ARM64vecpt_WHILELO1x1xN: size = 3; break;
+            default: goto bad;
+         }
+         vassert(pD < 16);
+         vassert(rN < 32);
+         vassert(rM < 32);
+         *p++ = 0x25201C00 | (size << 22) | (rM << 16) | (rN << 5) | pD;
+         goto done;
       }
 
       case ARM64in_EvCheck: {

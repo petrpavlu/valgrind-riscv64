@@ -2056,6 +2056,14 @@ typedef
       Iop_Max32Fx8, Iop_Min32Fx8,
       Iop_Max64Fx4, Iop_Min64Fx4,
       Iop_Rotx32, Iop_Rotx64,
+
+      /* ------------------ Scalable SIMD ------------------ */
+
+      /* :: U64 -> 1x?xN
+         Build a predicate which has set to true all elements with index lower
+         than the count in arg1. */
+      Iop_PTrue1x8xN, Iop_PTrue1x4xN, Iop_PTrue1x2xN, Iop_PTrue1x1xN,
+
       Iop_LAST      /* must be the last enumerator */
    }
    IROp;

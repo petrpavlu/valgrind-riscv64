@@ -1189,6 +1189,10 @@ static irop_t irops[] = {
   { DEFOP(Iop_ReinterpI128asF128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_ReinterpV128asI128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
   { DEFOP(Iop_ReinterpI128asV128, UNDEF_ALL_64x2), .ppc64 = 1, .ppc32 = 1 },
+  { DEFOP(Iop_PTrue1x8xN, UNDEF_UNKNOWN), .arm64 = 1 },
+  { DEFOP(Iop_PTrue1x4xN, UNDEF_UNKNOWN), .arm64 = 1 },
+  { DEFOP(Iop_PTrue1x2xN, UNDEF_UNKNOWN), .arm64 = 1 },
+  { DEFOP(Iop_PTrue1x1xN, UNDEF_UNKNOWN), .arm64 = 1 },
 };
 
 /* Force compile time failure in case libvex_ir.h::IROp was updated

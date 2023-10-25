@@ -157,6 +157,13 @@ static HReg newVRegV ( ISelEnv* env )
    return reg;
 }
 
+static HReg newVRegP ( ISelEnv* env )
+{
+   HReg reg = mkHReg(True/*virtual reg*/, HRcVec8xN, 0, env->vreg_ctr);
+   env->vreg_ctr++;
+   return reg;
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Forward declarations                        ---*/
@@ -3977,6 +3984,34 @@ static HReg iselV8xNExpr_wrk ( ISelEnv* env, IRExpr* e )
    IRType ty = typeOfIRExpr(env->type_env, e);
    vassert(e);
    vassert(ty == Ity_V8xN);
+
+   if (e->tag == Iex_Unop) {
+      switch (e->Iex.Unop.op) {
+         case Iop_PTrue1x8xN:
+         case Iop_PTrue1x4xN:
+         case Iop_PTrue1x2xN:
+         case Iop_PTrue1x1xN: {
+            HReg src = iselIntExpr_R(env, e->Iex.Unop.arg);
+
+            ARM64VecWhileLoOp op;
+            switch (e->Iex.Unop.op) {
+               case Iop_PTrue1x8xN: op = ARM64vecpt_WHILELO1x8xN; break;
+               case Iop_PTrue1x4xN: op = ARM64vecpt_WHILELO1x4xN; break;
+               case Iop_PTrue1x2xN: op = ARM64vecpt_WHILELO1x2xN; break;
+               case Iop_PTrue1x1xN: op = ARM64vecpt_WHILELO1x1xN; break;
+               default: vassert(0);
+            }
+
+            HReg res = newVRegP(env);
+            addInstr(env,
+                     ARM64Instr_WhileLo(op, res, hregARM64_XZR_XSP(), src));
+            return res;
+         }
+         /* ... */
+         default:
+            break;
+      } /* switch on the unop */
+   } /* if (e->tag == Iex_Unop) */
 
   /* TODO */
   //v8xn_expr_bad:
