@@ -231,7 +231,9 @@ typedef
       Ity_D128,  /* 128-bit Decimal floating point */
       Ity_F128,  /* 128-bit floating point; implementation defined */
       Ity_V128,  /* 128-bit SIMD */
-      Ity_V256   /* 256-bit SIMD */
+      Ity_V256,  /* 256-bit SIMD */
+      Ity_V8xN,  /* 8-bit x N scalable vector (predicate) */
+      Ity_V64xN, /* 64-bit x N scalable vector (data) */
    }
    IRType;
 

@@ -61,6 +61,8 @@ void ppIRType ( IRType ty )
       case Ity_D128:    vex_printf( "D128"); break;
       case Ity_V128:    vex_printf( "V128"); break;
       case Ity_V256:    vex_printf( "V256"); break;
+      case Ity_V8xN:    vex_printf( "V8xN"); break;
+      case Ity_V64xN:   vex_printf( "V64xN"); break;
       default: vex_printf("ty = 0x%x\n", (UInt)ty);
                vpanic("ppIRType");
    }
@@ -4327,6 +4329,7 @@ Bool isPlausibleIRType ( IRType ty )
       case Ity_F16: case Ity_F32: case Ity_F64: case Ity_F128:
       case Ity_D32: case Ity_D64: case Ity_D128:
       case Ity_V128: case Ity_V256:
+      case Ity_V8xN: case Ity_V64xN:
          return True;
       default: 
          return False;
@@ -5386,6 +5389,9 @@ Int sizeofIRType ( IRType ty )
       case Ity_D128: return 16;
       case Ity_V128: return 16;
       case Ity_V256: return 32;
+      /* TODO Fix the size for scalable types. */
+      case Ity_V8xN: return 2;
+      case Ity_V64xN: return 16;
       default: vex_printf("\n"); ppIRType(ty); vex_printf("\n");
                vpanic("sizeofIRType");
    }
