@@ -235,6 +235,9 @@ static void        iselV256Expr           ( /*OUT*/HReg* rHi, HReg* rLo,
 static HReg        iselV8xNExpr_wrk       ( ISelEnv* env, IRExpr* e );
 static HReg        iselV8xNExpr           ( ISelEnv* env, IRExpr* e );
 
+static HReg        iselV64xNExpr_wrk      ( ISelEnv* env, IRExpr* e );
+static HReg        iselV64xNExpr          ( ISelEnv* env, IRExpr* e );
+
 static ARM64RIL* mb_mkARM64RIL_I ( ULong imm64 );
 
 
@@ -4026,6 +4029,40 @@ static HReg iselV8xNExpr_wrk ( ISelEnv* env, IRExpr* e )
    vpanic("iselV8xNExpr_wrk");
 }
 
+
+/*---------------------------------------------------------*/
+/*--- ISEL: Scalable Vector expressions (64xN bit)      ---*/
+/*---------------------------------------------------------*/
+
+static HReg iselV64xNExpr ( ISelEnv* env, IRExpr* e )
+{
+   HReg r = iselV64xNExpr_wrk( env, e );
+   vassert(hregClass(r) == HRcVec64xN);
+   vassert(hregIsVirtual(r));
+   return r;
+}
+
+/* DO NOT CALL THIS DIRECTLY */
+static HReg iselV64xNExpr_wrk ( ISelEnv* env, IRExpr* e )
+{
+   IRType ty = typeOfIRExpr(env->type_env, e);
+   vassert(e);
+   vassert(ty == Ity_V64xN);
+
+   if (e->tag == Iex_Load && e->Iex.Load.end == Iend_LE) {
+      HReg addr = iselIntExpr_R(env, e->Iex.Load.addr);
+      HReg res  = newVRegZ(env);
+      addInstr(env, ARM64Instr_VLdStZ(True/*isLoad*/, res, addr));
+      return res;
+   }
+
+  /* TODO */
+  //v64xn_expr_bad:
+   ppIRExpr(e);
+   vpanic("iselV64xNExpr_wrk");
+}
+
+
 /*---------------------------------------------------------*/
 /*--- ISEL: Statements                                  ---*/
 /*---------------------------------------------------------*/
@@ -4157,6 +4194,12 @@ static void iselStmt ( ISelEnv* env, IRStmt* stmt )
          HReg pD   = iselV8xNExpr(env, stmt->Ist.Put.data);
          HReg addr = mk_baseblock_128bit_access_addr(env, offs);
          addInstr(env, ARM64Instr_VLdStP(False/*!isLoad*/, pD, addr));
+         return;
+      }
+      if (tyd == Ity_V64xN && offs < (1<<12)) {
+         HReg zD   = iselV64xNExpr(env, stmt->Ist.Put.data);
+         HReg addr = mk_baseblock_128bit_access_addr(env, offs);
+         addInstr(env, ARM64Instr_VLdStZ(False/*!isLoad*/, zD, addr));
          return;
       }
 

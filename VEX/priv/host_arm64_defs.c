@@ -1175,6 +1175,14 @@ ARM64Instr* ARM64Instr_VLdStP ( Bool isLoad, HReg rP, HReg rN ) {
    i->ARM64in.VLdStP.rN     = rN;
    return i;
 }
+ARM64Instr* ARM64Instr_VLdStZ ( Bool isLoad, HReg rZ, HReg rN ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                   = ARM64in_VLdStZ;
+   i->ARM64in.VLdStZ.isLoad = isLoad;
+   i->ARM64in.VLdStZ.rZ     = rZ;
+   i->ARM64in.VLdStZ.rN     = rN;
+   return i;
+}
 ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
    i->tag                 = ARM64in_VCvtI2F;
@@ -1849,6 +1857,16 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64(i->ARM64in.VLdStP.rN);
          vex_printf("]");
          return;
+      case ARM64in_VLdStZ:
+         if (i->ARM64in.VLdStZ.isLoad)
+            vex_printf("ldr ");
+         else
+            vex_printf("str ");
+         ppHRegARM64(i->ARM64in.VLdStZ.rZ);
+         vex_printf(", [");
+         ppHRegARM64(i->ARM64in.VLdStZ.rN);
+         vex_printf("]");
+         return;
       case ARM64in_VCvtI2F: {
          HChar syn  = '?';
          UInt  fszB = 0;
@@ -2293,8 +2311,9 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          /* This is a bit subtle. */
          /* First off, claim it trashes all the caller-saved regs
             which fall within the register allocator's jurisdiction.
-            These I believe to be x0 to x7 and the 128-bit vector
-            registers in use, q16 .. q20. */
+            These I believe to be x0 to x7, the 128-bit vector
+            registers in use, q16 .. q20, and the 64xN-bit scalable vector
+            registers in use, z24 .. z31. */
          addHRegUse(u, HRmWrite, hregARM64_X0());
          addHRegUse(u, HRmWrite, hregARM64_X1());
          addHRegUse(u, HRmWrite, hregARM64_X2());
@@ -2308,6 +2327,14 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          addHRegUse(u, HRmWrite, hregARM64_Q18());
          addHRegUse(u, HRmWrite, hregARM64_Q19());
          addHRegUse(u, HRmWrite, hregARM64_Q20());
+         addHRegUse(u, HRmWrite, hregARM64_Z24());
+         addHRegUse(u, HRmWrite, hregARM64_Z25());
+         addHRegUse(u, HRmWrite, hregARM64_Z26());
+         addHRegUse(u, HRmWrite, hregARM64_Z27());
+         addHRegUse(u, HRmWrite, hregARM64_Z28());
+         addHRegUse(u, HRmWrite, hregARM64_Z29());
+         addHRegUse(u, HRmWrite, hregARM64_Z30());
+         addHRegUse(u, HRmWrite, hregARM64_Z31());
          /* Now we have to state any parameter-carrying registers
             which might be read.  This depends on nArgRegs. */
             switch (i->ARM64in.Call.nArgRegs) {
@@ -2423,6 +2450,13 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
             addHRegUse(u, HRmWrite, i->ARM64in.VLdStP.rP);
          else
             addHRegUse(u, HRmRead, i->ARM64in.VLdStP.rP);
+         return;
+      case ARM64in_VLdStZ:
+         addHRegUse(u, HRmRead, i->ARM64in.VLdStZ.rN);
+         if (i->ARM64in.VLdStZ.isLoad)
+            addHRegUse(u, HRmWrite, i->ARM64in.VLdStZ.rZ);
+         else
+            addHRegUse(u, HRmRead, i->ARM64in.VLdStZ.rZ);
          return;
       case ARM64in_VCvtI2F:
          addHRegUse(u, HRmRead, i->ARM64in.VCvtI2F.rS);
@@ -2723,6 +2757,10 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
       case ARM64in_VLdStP:
          i->ARM64in.VLdStP.rP = lookupHRegRemap(m, i->ARM64in.VLdStP.rP);
          i->ARM64in.VLdStP.rN = lookupHRegRemap(m, i->ARM64in.VLdStP.rN);
+         return;
+      case ARM64in_VLdStZ:
+         i->ARM64in.VLdStZ.rZ = lookupHRegRemap(m, i->ARM64in.VLdStZ.rZ);
+         i->ARM64in.VLdStZ.rN = lookupHRegRemap(m, i->ARM64in.VLdStZ.rN);
          return;
       case ARM64in_VCvtI2F:
          i->ARM64in.VCvtI2F.rS = lookupHRegRemap(m, i->ARM64in.VCvtI2F.rS);
@@ -3052,6 +3090,16 @@ static inline UInt pregEnc ( HReg r )
    vassert(!hregIsVirtual(r));
    n = hregEncoding(r);
    vassert(n <= 15);
+   return n;
+}
+
+static inline UInt zregEnc ( HReg r )
+{
+   UInt n;
+   vassert(hregClass(r) == HRcVec64xN);
+   vassert(!hregIsVirtual(r));
+   n = hregEncoding(r);
+   vassert(n <= 31);
    return n;
 }
 
@@ -4537,6 +4585,24 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
             *p++ = 0x85800000 | (rN << 5) | rP;
          } else {
             *p++ = 0xE5800000 | (rN << 5) | rP;
+         }
+         goto done;
+      }
+      case ARM64in_VLdStZ: {
+         /* 31         21    15  12    9  4 3
+            1110010110 imm9h 010 imm9l Rn 0 Zt
+               STR <Zt> [<Xn|SP>{, #<imm>, MUL VL}]
+            1000010110 imm9h 010 imm9l Rn 0 Zt
+               LDR <Zt> [<Xn|SP>{, #<imm>, MUL VL}]
+         */
+         UInt rZ = zregEnc(i->ARM64in.VLdStZ.rZ);
+         UInt rN = iregEnc(i->ARM64in.VLdStZ.rN);
+         vassert(rZ < 32);
+         vassert(rN < 31);
+         if (i->ARM64in.VLdStZ.isLoad) {
+            *p++ = 0x85804000 | (rN << 5) | rZ;
+         } else {
+            *p++ = 0xE5804000 | (rN << 5) | rZ;
          }
          goto done;
       }

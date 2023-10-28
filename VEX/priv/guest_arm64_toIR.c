@@ -16113,6 +16113,45 @@ Bool dis_SVE_integer_compare_scalar_count_and_limit(/*MB_OUT*/DisResult* dres,
 
 
 static
+Bool dis_SVE_contiguous_load__scalar_plus_scalar(/*MB_OUT*/DisResult* dres,
+                                                 UInt insn,
+                                                 const VexArchInfo* archinfo)
+{
+   /* 31      24    20 15  12 9  4
+      1010010 dtype Rm 010 Pg Rn Zt
+      Decode fields: dtype
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,25) != BITS7(1,0,1,0,0,1,0) || INSN(15,13) != BITS3(0,1,0))
+      return False;
+
+   UInt dtype = INSN(24, 21);
+   UInt rM    = INSN(20, 16);
+   UInt pG    = INSN(12, 10);
+   UInt rN    = INSN(9, 5);
+   UInt zT    = INSN(4, 0);
+
+   switch (dtype) {
+      case BITS4(1,0,1,0): {
+         IRTemp ea = newTemp(Ity_I64);
+         assign(ea, binop(Iop_Add64, getIReg64orSP(rN),
+                          binop(Iop_Shl64, getIReg64orZR(rM), mkU8(2))));
+
+         // TODO Implement correct predication.
+         putZRegVL(zT, loadLE(Ity_V64xN, mkexpr(ea)));
+         DIP("ld1w {%s.%s}, %s/z, [%s, %s, lsl #2]\n", nameZRegVL(zT),
+             nameElementSize(4), namePRegVL(pG), nameIRegOrSP(True, rN),
+             nameIRegOrZR(True, rM));
+         return True;
+      }
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
 Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
                    const VexArchInfo* archinfo, Bool sigill_diag)
 {
@@ -16126,6 +16165,8 @@ Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
    ok = dis_SVE_predicate_initialize(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_SVE_integer_compare_scalar_count_and_limit(dres, insn, archinfo);
+   if (UNLIKELY(ok)) return True;
+   ok = dis_SVE_contiguous_load__scalar_plus_scalar(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    return False;
 }

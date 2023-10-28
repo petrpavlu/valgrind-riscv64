@@ -553,6 +553,7 @@ typedef
       ARM64in_VLdStD,   /* ld/st to/from low 64 bits of vec reg, imm offset */
       ARM64in_VLdStQ,   /* ld/st to/from all 128 bits of vec reg, no offset */
       ARM64in_VLdStP,   /* ld/st to/from all 8xN bits of pred reg, no offset */
+      ARM64in_VLdStZ,   /* ld/st to/from all 64xN bits of vec reg, no offset */
       ARM64in_VCvtI2F,
       ARM64in_VCvtF2I,
       ARM64in_VCvtSD,   /* scalar 32 bit FP <--> 64 bit FP */
@@ -840,6 +841,12 @@ typedef
             HReg rP; // data
             HReg rN; // address
          } VLdStP;
+         /* ld/st to/from all 64xN bits of vec reg, no offset */
+         struct {
+            Bool isLoad;
+            HReg rZ; // data
+            HReg rN; // address
+         } VLdStZ;
          /* Scalar conversion of int to float. */
          struct {
             ARM64CvtOp how;
@@ -1104,6 +1111,7 @@ extern ARM64Instr* ARM64Instr_VLdStD  ( Bool isLoad, HReg dD, HReg rN,
                                         UInt uimm12 /* 0 .. 32760, 0 % 8 */ );
 extern ARM64Instr* ARM64Instr_VLdStQ  ( Bool isLoad, HReg rQ, HReg rN );
 extern ARM64Instr* ARM64Instr_VLdStP  ( Bool isLoad, HReg rP, HReg rN );
+extern ARM64Instr* ARM64Instr_VLdStZ  ( Bool isLoad, HReg rZ, HReg rN );
 extern ARM64Instr* ARM64Instr_VCvtI2F ( ARM64CvtOp how, HReg rD, HReg rS );
 extern ARM64Instr* ARM64Instr_VCvtF2I ( ARM64CvtOp how, HReg rD, HReg rS,
                                         UChar armRM );
