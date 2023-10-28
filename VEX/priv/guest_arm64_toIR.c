@@ -15933,6 +15933,42 @@ const HChar *namePredPattern(UInt pattern)
 }
 
 static
+Bool dis_SVE_element_count(/*MB_OUT*/DisResult* dres, UInt insn,
+                           const VexArchInfo* archinfo)
+{
+   /* 31       23   21 19   15    10 9       4
+      00000100 size 10 imm4 11100 op pattern Rd
+      Decode fields: size,op
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,0,0,0,1,0,0) || INSN(21,20) != BITS2(1,0)
+       || INSN(15,11) != BITS5(1,1,1,0,0))
+      return False;
+
+   UInt sz      = INSN(23,22);
+   UInt imm4    = INSN(19,16);
+   UInt op      = INSN(10,10);
+   UInt pattern = INSN(9,5);
+   UInt rD      = INSN(4,0);
+
+   switch (op) {
+      case 0: {
+         UInt szB = 1 << sz;
+         UInt imm = imm4 + 1;
+         putIReg64orZR(rD,
+                       mkU64(decodePredCount(pattern, szB, archinfo) * imm));
+         DIP("cnt%s %s, %s, #%u\n", nameElementSize(szB),
+             nameIRegOrZR(True, rD), namePredPattern(pattern), imm);
+         return True;
+      }
+   }
+
+   return False;
+#  undef INSN
+}
+
+
+static
 Bool dis_SVE_predicate_initialize(/*MB_OUT*/DisResult* dres, UInt insn,
                                   const VexArchInfo* archinfo)
 {
@@ -16024,6 +16060,8 @@ Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
    if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SVE) == 0)
       return False;
 
+   ok = dis_SVE_element_count(dres, insn, archinfo);
+   if (UNLIKELY(ok)) return True;
    ok = dis_SVE_predicate_initialize(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_SVE_integer_compare_scalar_count_and_limit(dres, insn, archinfo);
