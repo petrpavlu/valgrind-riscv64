@@ -127,6 +127,18 @@ const RRegUniverse* getRRegUniverse_ARM64 ( void )
    ru->regs[ru->size++] = hregARM64_P15();
    ru->allocable_end[HRcVec8xN] = ru->size - 1;
 
+   // scalable vector regs.  Unfortunately not callee-saved.
+   ru->allocable_start[HRcVec64xN] = ru->size;
+   ru->regs[ru->size++] = hregARM64_Z24();
+   ru->regs[ru->size++] = hregARM64_Z25();
+   ru->regs[ru->size++] = hregARM64_Z26();
+   ru->regs[ru->size++] = hregARM64_Z27();
+   ru->regs[ru->size++] = hregARM64_Z28();
+   ru->regs[ru->size++] = hregARM64_Z29();
+   ru->regs[ru->size++] = hregARM64_Z30();
+   ru->regs[ru->size++] = hregARM64_Z31();
+   ru->allocable_end[HRcVec64xN] = ru->size - 1;
+
    ru->allocable = ru->size;
    /* And other regs, not available to the allocator. */
 

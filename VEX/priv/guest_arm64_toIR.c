@@ -1624,6 +1624,67 @@ static IRExpr* getQRegLane ( UInt qregNo, UInt laneNo, IRType laneTy )
 }
 
 
+/* ----------- Scalable Vector (Z) registers ------------ */
+
+static Int offsetZRegVL ( UInt zregNo )
+{
+   switch (zregNo) {
+      // TODO Support bigger than 128-bit Z registers.
+      case 0:  return OFFB_Q0;
+      case 1:  return OFFB_Q1;
+      case 2:  return OFFB_Q2;
+      case 3:  return OFFB_Q3;
+      case 4:  return OFFB_Q4;
+      case 5:  return OFFB_Q5;
+      case 6:  return OFFB_Q6;
+      case 7:  return OFFB_Q7;
+      case 8:  return OFFB_Q8;
+      case 9:  return OFFB_Q9;
+      case 10: return OFFB_Q10;
+      case 11: return OFFB_Q11;
+      case 12: return OFFB_Q12;
+      case 13: return OFFB_Q13;
+      case 14: return OFFB_Q14;
+      case 15: return OFFB_Q15;
+      case 16: return OFFB_Q16;
+      case 17: return OFFB_Q17;
+      case 18: return OFFB_Q18;
+      case 19: return OFFB_Q19;
+      case 20: return OFFB_Q20;
+      case 21: return OFFB_Q21;
+      case 22: return OFFB_Q22;
+      case 23: return OFFB_Q23;
+      case 24: return OFFB_Q24;
+      case 25: return OFFB_Q25;
+      case 26: return OFFB_Q26;
+      case 27: return OFFB_Q27;
+      case 28: return OFFB_Q28;
+      case 29: return OFFB_Q29;
+      case 30: return OFFB_Q30;
+      case 31: return OFFB_Q31;
+      default: vassert(0);
+   }
+}
+
+static const HChar* nameZRegVL ( UInt zregNo )
+{
+   vassert(zregNo < 32);
+   static const HChar* names[32]
+      = { "z0",  "z1",  "z2",  "z3",  "z4",  "z5",  "z6",  "z7",
+          "z8",  "z9",  "z10", "z11", "z12", "z13", "z14", "z15",
+          "z16", "z17", "z18", "z19", "z20", "z21", "z22", "z23",
+          "z24", "z25", "z26", "z27", "z28", "z29", "z30", "z31" };
+   return names[zregNo];
+}
+
+static void putZRegVL ( UInt zregNo, IRExpr* e )
+{
+   vassert(zregNo < 32);
+   vassert(typeOfIRExpr(irsb->tyenv, e) == Ity_V64xN);
+   stmt( IRStmt_Put(offsetZRegVL(zregNo), e) );
+}
+
+
 /* -------------- Predicate (P) registers --------------- */
 
 static Int offsetPRegVL ( UInt pregNo )

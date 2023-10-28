@@ -164,6 +164,13 @@ static HReg newVRegP ( ISelEnv* env )
    return reg;
 }
 
+static HReg newVRegZ ( ISelEnv* env )
+{
+   HReg reg = mkHReg(True/*virtual reg*/, HRcVec64xN, 0, env->vreg_ctr);
+   env->vreg_ctr++;
+   return reg;
+}
+
 
 /*---------------------------------------------------------*/
 /*--- ISEL: Forward declarations                        ---*/
