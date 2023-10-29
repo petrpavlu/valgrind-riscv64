@@ -2064,6 +2064,13 @@ typedef
          than the count in arg1. */
       Iop_PTrue1x8xN, Iop_PTrue1x4xN, Iop_PTrue1x2xN, Iop_PTrue1x1xN,
 
+      /* ::  8x8xN x  8x8xN ->  8x8xN
+         :: 16x4xN x 16x4xN -> 16x4xN
+         :: 32x2xN x 32x2xN -> 32x2xN
+         :: 64x1xN x 64x1xN -> 64x1xN
+         Add integer elements of two scalable vectors. */
+      Iop_Add8x8xN, Iop_Add16x4xN, Iop_Add32x2xN, Iop_Add64x1xN,
+
       Iop_LAST      /* must be the last enumerator */
    }
    IROp;

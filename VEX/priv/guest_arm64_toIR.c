@@ -1677,6 +1677,12 @@ static const HChar* nameZRegVL ( UInt zregNo )
    return names[zregNo];
 }
 
+static IRExpr* getZRegVL ( UInt zregNo )
+{
+   vassert(zregNo < 32);
+   return IRExpr_Get(offsetZRegVL(zregNo), Ity_V64xN);
+}
+
 static void putZRegVL ( UInt zregNo, IRExpr* e )
 {
    vassert(zregNo < 32);
@@ -15993,6 +15999,44 @@ const HChar *namePredPattern(UInt pattern)
    }
 }
 
+
+static
+Bool dis_SVE_integer_add_substract_vectors__unpredicated(
+   /*MB_OUT*/DisResult* dres, UInt insn, const VexArchInfo* archinfo)
+{
+   /* 31       23   21 20 15  12  9  4
+      00000100 size 1  Zm 000 opc Zn Zd
+      Decode fields: opc
+   */
+#  define INSN(_bMax,_bMin)  SLICE_UInt(insn, (_bMax), (_bMin))
+   if (INSN(31,24) != BITS8(0,0,0,0,0,1,0,0) || INSN(21,21) != 1
+       || INSN(15,13) != BITS3(0,0,0))
+      return False;
+
+   UInt sz  = INSN(23, 22);
+   UInt zM  = INSN(20, 16);
+   UInt opc = INSN(12, 10);
+   UInt zN  = INSN(9, 5);
+   UInt zD  = INSN(4, 0);
+
+   switch (opc) {
+      case BITS3(0,0,0): {
+         const IROp ops[4] = { Iop_Add8x8xN, Iop_Add16x4xN, Iop_Add32x2xN,
+                               Iop_Add64x1xN };
+         UInt szB = 1 << sz;
+         putZRegVL(zD, binop(ops[sz], getZRegVL(zN), getZRegVL(zM)));
+         DIP("add %s.%s, %s.%s, %s.%s\n", nameZRegVL(zD), nameElementSize(szB),
+             nameZRegVL(zN), nameElementSize(szB), nameZRegVL(zM),
+             nameElementSize(szB));
+         return True;
+      }
+   }
+
+   return False;
+#  undef INSN
+}
+
+
 static
 Bool dis_SVE_element_count(/*MB_OUT*/DisResult* dres, UInt insn,
                            const VexArchInfo* archinfo)
@@ -16160,6 +16204,9 @@ Bool dis_ARM64_sve(/*MB_OUT*/DisResult* dres, UInt insn,
    if ((archinfo->hwcaps & VEX_HWCAPS_ARM64_SVE) == 0)
       return False;
 
+   ok =
+      dis_SVE_integer_add_substract_vectors__unpredicated(dres, insn, archinfo);
+   if (UNLIKELY(ok)) return True;
    ok = dis_SVE_element_count(dres, insn, archinfo);
    if (UNLIKELY(ok)) return True;
    ok = dis_SVE_predicate_initialize(dres, insn, archinfo);

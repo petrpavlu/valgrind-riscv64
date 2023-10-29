@@ -1371,6 +1371,11 @@ void ppIROp ( IROp op )
       case Iop_PTrue1x2xN: vex_printf("PTrue1x2xN"); return;
       case Iop_PTrue1x1xN: vex_printf("PTrue1x1xN"); return;
 
+      case Iop_Add8x8xN: vex_printf("Add8x8xN"); return;
+      case Iop_Add16x4xN: vex_printf("Add16x4xN"); return;
+      case Iop_Add32x2xN: vex_printf("Add32x2xN"); return;
+      case Iop_Add64x1xN: vex_printf("Add64x1xN"); return;
+
       default: vpanic("ppIROp(1)");
    }
 
@@ -1819,6 +1824,8 @@ Bool primopMightTrap ( IROp op )
    case Iop_2xMultU64Add128CarryOut:
    case Iop_PTrue1x8xN: case Iop_PTrue1x4xN: case Iop_PTrue1x2xN:
    case Iop_PTrue1x1xN:
+   case Iop_Add8x8xN: case Iop_Add16x4xN: case Iop_Add32x2xN:
+   case Iop_Add64x1xN:
       return False;
 
    case Iop_INVALID: case Iop_LAST:
@@ -4169,6 +4176,10 @@ void typeOfPrimop ( IROp op,
       case Iop_PTrue1x8xN: case Iop_PTrue1x4xN: case Iop_PTrue1x2xN:
       case Iop_PTrue1x1xN:
          UNARY(Ity_I64, Ity_V8xN);
+
+      case Iop_Add8x8xN: case Iop_Add16x4xN: case Iop_Add32x2xN:
+      case Iop_Add64x1xN:
+         BINARY(Ity_V64xN, Ity_V64xN, Ity_V64xN);
 
       default:
          ppIROp(op);

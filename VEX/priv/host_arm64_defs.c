@@ -885,6 +885,17 @@ static const HChar* showARM64VecNarrowOp(ARM64VecNarrowOp op) {
    }
 }
 
+static void showARM64ZVecBinOp(/*OUT*/const HChar** nm,
+                               /*OUT*/const HChar** ar, ARM64ZVecBinOp op ) {
+   switch (op) {
+      case ARM64zvecb_ADD8x8xN:  *nm = "add   "; *ar = "b"; return;
+      case ARM64zvecb_ADD16x4xN: *nm = "add   "; *ar = "h"; return;
+      case ARM64zvecb_ADD32x2xN: *nm = "add   "; *ar = "s"; return;
+      case ARM64zvecb_ADD64x1xN: *nm = "add   "; *ar = "d"; return;
+      default: vpanic("showARM64ZVecBinOp");
+   }
+}
+
 ARM64Instr* ARM64Instr_Arith ( HReg dst,
                                HReg argL, ARM64RIA* argR, Bool isAdd ) {
    ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
@@ -1526,6 +1537,16 @@ ARM64Instr* ARM64Instr_VMov ( UInt szB, HReg dst, HReg src ) {
    }
    return i;
 }
+ARM64Instr* ARM64Instr_VBinZ ( ARM64ZVecBinOp op,
+                               HReg dst, HReg argL, HReg argR ) {
+   ARM64Instr* i = LibVEX_Alloc_inline(sizeof(ARM64Instr));
+   i->tag                = ARM64in_VBinZ;
+   i->ARM64in.VBinZ.op   = op;
+   i->ARM64in.VBinZ.dst  = dst;
+   i->ARM64in.VBinZ.argL = argL;
+   i->ARM64in.VBinZ.argR = argR;
+   return i;
+}
 ARM64Instr* ARM64Instr_WhileLo ( ARM64VecWhileLoOp op, HReg dst, HReg arg1,
                                  HReg arg2 ) {
    ARM64Instr* i           = LibVEX_Alloc_inline(sizeof(ARM64Instr));
@@ -2163,6 +2184,19 @@ void ppARM64Instr ( const ARM64Instr* i ) {
          ppHRegARM64(i->ARM64in.VMov.src);
          return;
       }
+      case ARM64in_VBinZ: {
+         const HChar* nm = "??";
+         const HChar* ar = "??";
+         showARM64ZVecBinOp(&nm, &ar, i->ARM64in.VBinZ.op);
+         vex_printf("%s ", nm);
+         ppHRegARM64(i->ARM64in.VBinZ.dst);
+         vex_printf(".%s, ", ar);
+         ppHRegARM64(i->ARM64in.VBinZ.argL);
+         vex_printf(".%s, ", ar);
+         ppHRegARM64(i->ARM64in.VBinZ.argR);
+         vex_printf(".%s", ar);
+         return;
+      }
       case ARM64in_WhileLo: {
          HChar size = '?';
          switch (i->ARM64in.WhileLo.op) {
@@ -2604,6 +2638,11 @@ void getRegUsage_ARM64Instr ( HRegUsage* u, const ARM64Instr* i, Bool mode64 )
          u->regMoveSrc   = i->ARM64in.VMov.src;
          u->regMoveDst   = i->ARM64in.VMov.dst;
          return;
+      case ARM64in_VBinZ:
+         addHRegUse(u, HRmWrite, i->ARM64in.VBinZ.dst);
+         addHRegUse(u, HRmRead, i->ARM64in.VBinZ.argL);
+         addHRegUse(u, HRmRead, i->ARM64in.VBinZ.argR);
+         return;
       case ARM64in_WhileLo:
          addHRegUse(u, HRmWrite, i->ARM64in.WhileLo.dst);
          addHRegUse(u, HRmRead, i->ARM64in.WhileLo.arg1);
@@ -2911,6 +2950,11 @@ void mapRegs_ARM64Instr ( HRegRemap* m, ARM64Instr* i, Bool mode64 )
          i->ARM64in.VMov.dst = lookupHRegRemap(m, i->ARM64in.VMov.dst);
          i->ARM64in.VMov.src = lookupHRegRemap(m, i->ARM64in.VMov.src);
          return;
+      case ARM64in_VBinZ:
+         i->ARM64in.VBinZ.dst  = lookupHRegRemap(m, i->ARM64in.VBinZ.dst);
+         i->ARM64in.VBinZ.argL = lookupHRegRemap(m, i->ARM64in.VBinZ.argL);
+         i->ARM64in.VBinZ.argR = lookupHRegRemap(m, i->ARM64in.VBinZ.argR);
+         return;
       case ARM64in_WhileLo:
          i->ARM64in.WhileLo.dst = lookupHRegRemap(m, i->ARM64in.WhileLo.dst);
          i->ARM64in.WhileLo.arg1 = lookupHRegRemap(m, i->ARM64in.WhileLo.arg1);
@@ -3193,6 +3237,7 @@ static inline UInt zregEnc ( HReg r )
 #define X0100000  BITS8(0, 0,1,0,0,0,0,0)
 #define X1000000  BITS8(0, 1,0,0,0,0,0,0)
 
+#define X00000100  BITS8(0,0,0,0,0,1,0,0)
 #define X00100000  BITS8(0,0,1,0,0,0,0,0)
 #define X00100001  BITS8(0,0,1,0,0,0,0,1)
 #define X00100010  BITS8(0,0,1,0,0,0,1,0)
@@ -6188,6 +6233,33 @@ Int emit_ARM64Instr ( /*MB_MOD*/Bool* is_profInc,
               break;
         }
         goto bad;
+      }
+
+      case ARM64in_VBinZ: {
+         /* 31       23   21 20 15     9  4
+            00000100 size 1  Zm 000000 Zn Zd  ADD <Zd>.<T>, <Zn>.<T>, <Zm>.<T>
+         */
+         UInt zD = zregEnc(i->ARM64in.VBinZ.dst);
+         UInt zN = zregEnc(i->ARM64in.VBinZ.argL);
+         UInt zM = zregEnc(i->ARM64in.VBinZ.argR);
+         switch (i->ARM64in.VBinZ.op) {
+            case ARM64zvecb_ADD8x8xN:
+               *p++ = X_8_2_1_5_6_5_5(X00000100, X00, 1, zM, X000000, zN, zD);
+               break;
+            case ARM64zvecb_ADD16x4xN:
+               *p++ = X_8_2_1_5_6_5_5(X00000100, X01, 1, zM, X000000, zN, zD);
+               break;
+            case ARM64zvecb_ADD32x2xN:
+               *p++ = X_8_2_1_5_6_5_5(X00000100, X10, 1, zM, X000000, zN, zD);
+               break;
+            case ARM64zvecb_ADD64x1xN:
+               *p++ = X_8_2_1_5_6_5_5(X00000100, X11, 1, zM, X000000, zN, zD);
+               break;
+
+            default:
+               goto bad;
+         }
+         goto done;
       }
 
       case ARM64in_WhileLo: {

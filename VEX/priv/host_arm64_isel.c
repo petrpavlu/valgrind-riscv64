@@ -4056,8 +4056,46 @@ static HReg iselV64xNExpr_wrk ( ISelEnv* env, IRExpr* e )
       return res;
    }
 
-  /* TODO */
-  //v64xn_expr_bad:
+   if (e->tag == Iex_Get) {
+      UInt offs = (UInt)e->Iex.Get.offset;
+      if (offs < (1<<12)) {
+         HReg addr = mk_baseblock_128bit_access_addr(env, offs);
+         HReg res  = newVRegZ(env);
+         addInstr(env, ARM64Instr_VLdStZ(True/*isLoad*/, res, addr));
+         return res;
+      }
+      goto v64xn_expr_bad;
+   }
+
+   if (e->tag == Iex_Binop) {
+      switch (e->Iex.Binop.op) {
+         case Iop_Add8x8xN:
+         case Iop_Add16x4xN:
+         case Iop_Add32x2xN:
+         case Iop_Add64x1xN: {
+            HReg argL = iselV64xNExpr(env, e->Iex.Binop.arg1);
+            HReg argR = iselV64xNExpr(env, e->Iex.Binop.arg2);
+
+            ARM64ZVecBinOp op;
+            switch (e->Iex.Binop.op) {
+               case Iop_Add8x8xN:  op = ARM64zvecb_ADD8x8xN;  break;
+               case Iop_Add16x4xN: op = ARM64zvecb_ADD16x4xN; break;
+               case Iop_Add32x2xN: op = ARM64zvecb_ADD32x2xN; break;
+               case Iop_Add64x1xN: op = ARM64zvecb_ADD64x1xN; break;
+               default: vassert(0);
+            }
+
+            HReg res = newVRegZ(env);
+            addInstr(env, ARM64Instr_VBinZ(op, res, argL, argR));
+            return res;
+         }
+         /* ... */
+         default:
+            break;
+      } /* switch on the binop */
+   } /* if (e->tag == Iex_Binop) */
+
+  v64xn_expr_bad:
    ppIRExpr(e);
    vpanic("iselV64xNExpr_wrk");
 }
