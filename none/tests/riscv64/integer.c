@@ -615,6 +615,7 @@ static void test_integer_shared(void)
 
    /* ------------------------ fence ------------------------ */
    TESTINST_0_0(4, "fence");
+   TESTINST_0_0(4, "fence.tso");
 
    /* ------------------------ ecall ------------------------ */
    /* Not tested here. */

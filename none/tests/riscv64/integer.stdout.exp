@@ -1421,6 +1421,7 @@ and zero, a0, a1 ::
   inputs: a0=0x0000ffff0000ffff, a1=0x00000000ffffffff
   output: zero=0x0000000000000000
 fence ::
+fence.tso ::
 
 RV64I base instruction set, additions
 lwu a0, 0(a1) ::
