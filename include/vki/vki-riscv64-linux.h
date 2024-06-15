@@ -198,16 +198,17 @@ typedef struct vki_sigaltstack {
 // From linux-6.0/include/uapi/asm-generic/fcntl.h
 //----------------------------------------------------------------------
 
-#define VKI_O_ACCMODE	     03
-#define VKI_O_RDONLY	     00
-#define VKI_O_WRONLY	     01
-#define VKI_O_RDWR	     02
-#define VKI_O_CREAT	   0100	/* not fcntl */
-#define VKI_O_EXCL	   0200	/* not fcntl */
-#define VKI_O_TRUNC	  01000	/* not fcntl */
-#define VKI_O_APPEND	  02000
-#define VKI_O_NONBLOCK	  04000
-#define VKI_O_LARGEFILE	0100000
+#define VKI_O_ACCMODE	00000003
+#define VKI_O_RDONLY	00000000
+#define VKI_O_WRONLY	00000001
+#define VKI_O_RDWR	00000002
+#define VKI_O_CREAT	00000100	/* not fcntl */
+#define VKI_O_EXCL	00000200	/* not fcntl */
+#define VKI_O_TRUNC	00001000	/* not fcntl */
+#define VKI_O_APPEND	00002000
+#define VKI_O_NONBLOCK	00004000
+#define VKI_O_DIRECT	00040000	/* direct disk access hint */
+#define VKI_O_LARGEFILE	00100000
 
 #define VKI_F_DUPFD		0	/* dup */
 #define VKI_F_GETFD		1	/* get close_on_exec */

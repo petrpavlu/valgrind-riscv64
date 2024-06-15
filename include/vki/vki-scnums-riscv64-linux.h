@@ -293,6 +293,7 @@
 #define __NR_execveat 281
 #define __NR_userfaultfd 282
 #define __NR_membarrier 283
+#define __NR_mlock2 284
 #define __NR_copy_file_range 285
 #define __NR_preadv2 286
 #define __NR_pwritev2 287

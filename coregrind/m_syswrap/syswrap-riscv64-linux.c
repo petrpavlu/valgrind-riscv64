@@ -365,7 +365,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINX_(__NR_fchownat, sys_fchownat),                             /* 54 */
    GENX_(__NR_fchown, sys_fchown),                                 /* 55 */
    LINXY(__NR_openat, sys_openat),                                 /* 56 */
-   GENXY(__NR_close, sys_close),                                   /* 57 */
+   GENX_(__NR_close, sys_close),                                   /* 57 */
    LINX_(__NR_vhangup, sys_vhangup),                               /* 58 */
    LINXY(__NR_pipe2, sys_pipe2),                                   /* 59 */
    LINX_(__NR_quotactl, sys_quotactl),                             /* 60 */
@@ -568,6 +568,7 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_bpf, sys_bpf),                                       /* 280 */
    LINX_(__NR_execveat, sys_execveat),                             /* 281 */
    LINX_(__NR_membarrier, sys_membarrier),                         /* 283 */
+   GENX_(__NR_mlock2, sys_mlock2),                                 /* 284 */
    LINX_(__NR_copy_file_range, sys_copy_file_range),               /* 285 */
    LINXY(__NR_preadv2, sys_preadv2),                               /* 286 */
    LINX_(__NR_pwritev2, sys_pwritev2),                             /* 287 */
@@ -576,10 +577,15 @@ static SyscallTableEntry syscall_main_table[] = {
    LINXY(__NR_io_uring_setup, sys_io_uring_setup),                 /* 425 */
    LINXY(__NR_io_uring_enter, sys_io_uring_enter),                 /* 426 */
    LINXY(__NR_io_uring_register, sys_io_uring_register),           /* 427 */
+   LINXY(__NR_pidfd_open, sys_pidfd_open),                         /* 434 */
    GENX_(__NR_clone3, sys_ni_syscall),                             /* 435 */
    LINXY(__NR_close_range, sys_close_range),                       /* 436 */
+   LINXY(__NR_openat2, sys_openat2),                               /* 437 */
+   LINXY(__NR_pidfd_getfd, sys_pidfd_getfd),                       /* 438 */
    LINX_(__NR_faccessat2, sys_faccessat2),                         /* 439 */
+   LINXY(__NR_epoll_pwait2, sys_epoll_pwait2),                     /* 441 */
    LINXY(__NR_memfd_secret, sys_memfd_secret),                     /* 447 */
+   LINX_(__NR_fchmodat2, sys_fchmodat2),                           /* 452 */
 };
 
 SyscallTableEntry* ML_(get_linux_syscall_entry)(UInt sysno)

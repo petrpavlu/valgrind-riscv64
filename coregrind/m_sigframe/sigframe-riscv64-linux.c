@@ -263,9 +263,10 @@ void VG_(sigframe_create)(ThreadId                   tid,
    VG_(set_IP)(tid, (Addr)handler);
 
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg,
-                   "sigframe_create (thread %u): next pc=%#lx, next sp=%#lx\n",
-                   tid, (Addr)handler, sp);
+      VG_(message)(
+         Vg_DebugMsg,
+         "VG_(sigframe_create) (thread %u): next pc=%#lx, next sp=%#lx\n", tid,
+         (Addr)handler, sp);
 }
 
 /*------------------------------------------------------------*/
@@ -408,8 +409,8 @@ void VG_(sigframe_destroy)(ThreadId tid, Bool isRT)
 
    /* Returning from a signal handler. */
    if (VG_(clo_trace_signals))
-      VG_(message)(Vg_DebugMsg, "sigframe_return (thread %u): pc=%#lx\n", tid,
-                   VG_(get_IP)(tid));
+      VG_(message)(Vg_DebugMsg, "VG_(sigframe_destroy) (thread %u): pc=%#lx\n",
+                   tid, VG_(get_IP)(tid));
 
    /* Tell the tools. */
    VG_TRACK(post_deliver_signal, tid, sigNo);
