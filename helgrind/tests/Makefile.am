@@ -1,7 +1,7 @@
 
 include $(top_srcdir)/Makefile.tool-tests.am
 
-dist_noinst_SCRIPTS = filter_stderr   \
+dist_noinst_SCRIPTS = \
 		      filter_stderr_solaris \
 		      filter_helgrind \
 		      filter_xml \
@@ -9,6 +9,8 @@ dist_noinst_SCRIPTS = filter_stderr   \
 		      filter_stderr_freebsd \
 		      filter_bug392331
 
+noinst_SCRIPTS = \
+	filter_stderr
 
 EXTRA_DIST = \
 	annotate_hbefore.vgtest annotate_hbefore.stdout.exp \
@@ -22,6 +24,7 @@ EXTRA_DIST = \
 	bug392331.vgtest bug392331.stdout.exp bug392331.stderr.exp \
 	bug392331_supp.vgtest bug392331_supp.stdout.exp bug392331_supp.stderr.exp \
 	bug392331.supp \
+	bug484480.vgtest bug484480.stderr.exp bug484480.stdout.exp \
 	cond_init_destroy.vgtest cond_init_destroy.stderr.exp \
 	cond_timedwait_invalid.vgtest cond_timedwait_invalid.stdout.exp \
 		cond_timedwait_invalid.stderr.exp \
@@ -33,6 +36,7 @@ EXTRA_DIST = \
 	bar_trivial.vgtest bar_trivial.stdout.exp bar_trivial.stderr.exp \
 	free_is_write.vgtest free_is_write.stdout.exp \
 		free_is_write.stderr.exp \
+	getaddrinfo.vgtest getaddrinfo.stderr.exp \
 	hg01_all_ok.vgtest hg01_all_ok.stdout.exp hg01_all_ok.stderr.exp \
 	hg02_deadlock.vgtest hg02_deadlock.stdout.exp hg02_deadlock.stderr.exp \
 	hg03_inherit.vgtest hg03_inherit.stdout.exp hg03_inherit.stderr.exp \
@@ -68,6 +72,9 @@ EXTRA_DIST = \
 	pth_spinlock.vgtest pth_spinlock.stdout.exp pth_spinlock.stderr.exp \
 	rwlock_race.vgtest rwlock_race.stdout.exp rwlock_race.stderr.exp \
 	rwlock_test.vgtest rwlock_test.stdout.exp rwlock_test.stderr.exp \
+	sem_clockwait_np.vgtest sem_clockwait_np.stdout.exp \
+		sem_clockwait_np.stderr.exp \
+	sem_timedwait.vgtest sem_timedwait.stdout.exp sem_timedwait.stderr.exp \
 	shared_timed_mutex.vgtest shared_timed_mutex.stderr.exp \
 	shmem_abits.vgtest shmem_abits.stdout.exp shmem_abits.stderr.exp \
 	stackteardown.vgtest stackteardown.stdout.exp stackteardown.stderr.exp \
@@ -149,6 +156,7 @@ noinst_HEADERS = safe-pthread.h safe-semaphore.h
 check_PROGRAMS = \
 	annotate_hbefore \
 	bug327548 \
+	bug484480 \
 	cond_init_destroy \
 	cond_timedwait_invalid \
 	cond_timedwait_test \
@@ -235,6 +243,18 @@ endif
 if HAVE_BUILTIN_ATOMIC
 check_PROGRAMS += annotate_rwlock
 annotate_rwlock_CFLAGS = $(AM_CFLAGS) @FLAG_W_NO_UNUSED_BUT_SET_VARIABLE@
+endif
+
+if HAVE_GETADDRINFO
+check_PROGRAMS += getaddrinfo
+endif
+
+if HAVE_SEM_CLOCKWAIT_NP
+check_PROGRAMS += sem_clockwait_np
+endif
+
+if HAVE_SEM_TIMEDWAIT
+check_PROGRAMS += sem_timedwait
 endif
 
 AM_CFLAGS   += $(AM_FLAG_M3264_PRI)

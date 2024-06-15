@@ -1,0 +1,3 @@
+prereq: test -e getaddrinfo
+prog: getaddrinfo
+vgopts: -q

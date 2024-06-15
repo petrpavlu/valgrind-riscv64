@@ -42,6 +42,7 @@
 #include "host_generic_simd64.h"
 #include "host_generic_simd128.h"
 #include "host_generic_simd256.h"
+#include "host_amd64_maddf.h"
 #include "host_generic_maddf.h"
 #include "host_amd64_defs.h"
 
@@ -165,7 +166,6 @@ typedef
 
 static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    return env->vregmap[tmp];
 }
@@ -173,7 +173,6 @@ static HReg lookupIRTemp ( ISelEnv* env, IRTemp tmp )
 static void lookupIRTempPair ( HReg* vrHI, HReg* vrLO, 
                                ISelEnv* env, IRTemp tmp )
 {
-   vassert(tmp >= 0);
    vassert(tmp < env->n_vregmap);
    vassert(! hregIsInvalid(env->vregmapHI[tmp]));
    *vrLO = env->vregmap[tmp];
@@ -574,7 +573,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       never see IRExpr_VECRET() at this point, since the return-type
       check above should ensure all those cases use the slow scheme
       instead. */
-   vassert(n_args >= 0 && n_args <= 6);
+   vassert(n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
       if (LIKELY(!is_IRExpr_VECRET_or_GSPTR(arg))) {
@@ -620,7 +619,7 @@ void doHelperCall ( /*OUT*/UInt*   stackAdjustAfterCall,
       addInstr(env, mk_iMOVsd_RR( hregAMD64_RSP(), r_vecRetAddr ));
    }
 
-   vassert(n_args >= 0 && n_args <= 6);
+   vassert(n_args <= 6);
    for (i = 0; i < n_args; i++) {
       IRExpr* arg = args[i];
       if (UNLIKELY(arg->tag == Iex_GSPTR)) {
@@ -2611,8 +2610,11 @@ static HReg iselCondCode_R_wrk ( ISelEnv* env, const IRExpr* e )
    addInstr(env, AMD64Instr_Set64(cc, res));
    return res;
 
+   // PJF old debug code? - unreachable
+   /*
    ppIRExpr(e);
    vpanic("iselCondCode_R(amd64)");
+   */
 }
 
 
@@ -2831,6 +2833,13 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
       HReg argX = iselFltExpr(env, qop->arg2);
       HReg argY = iselFltExpr(env, qop->arg3);
       HReg argZ = iselFltExpr(env, qop->arg4);
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA3) {
+         vassert(dst.u32 != argY.u32 && dst.u32 != argZ.u32);
+         if (dst.u32 != argX.u32)
+            addInstr(env, AMD64Instr_SseReRg(Asse_MOV, argX, dst));
+         addInstr(env, AMD64Instr_Avx32FLo(Asse_VFMADD213, argY, argZ, dst));
+         return dst;
+      }
       /* XXXROUNDINGFIXME */
       /* set roundingmode here */
       /* subq $16, %rsp         -- make a space*/
@@ -2860,10 +2869,22 @@ static HReg iselFltExpr_wrk ( ISelEnv* env, const IRExpr* e )
                                        AMD64AMode_IR(0, hregAMD64_RDX())));
       addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 4, argZ,
                                        AMD64AMode_IR(0, hregAMD64_RCX())));
-      /* call the helper */
-      addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
-                                     (ULong)(HWord)h_generic_calc_MAddF32,
-                                     4, mk_RetLoc_simple(RLPri_None) ));
+
+      /* call the helper with priority order : fma4 -> fallback generic
+         remark: the fma3 case is handled before without helper*/
+#if defined(VGA_amd64)
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA4) {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_amd64_calc_MAddF32_fma4,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }else
+#endif
+      {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_generic_calc_MAddF32,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }
+
       /* fetch the result from memory, using %r_argp, which the
          register allocator will keep alive across the call. */
       addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 4, dst,
@@ -3023,6 +3044,14 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e )
       HReg argX = iselDblExpr(env, qop->arg2);
       HReg argY = iselDblExpr(env, qop->arg3);
       HReg argZ = iselDblExpr(env, qop->arg4);
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA3) {
+         vassert(dst.u32 != argY.u32 && dst.u32 != argZ.u32);
+         if (dst.u32 != argX.u32)
+            addInstr(env, AMD64Instr_SseReRg(Asse_MOV, argX, dst));
+         addInstr(env, AMD64Instr_Avx64FLo(Asse_VFMADD213, argY, argZ, dst));
+         return dst;
+      }
+
       /* XXXROUNDINGFIXME */
       /* set roundingmode here */
       /* subq $32, %rsp         -- make a space*/
@@ -3052,10 +3081,22 @@ static HReg iselDblExpr_wrk ( ISelEnv* env, const IRExpr* e )
                                        AMD64AMode_IR(0, hregAMD64_RDX())));
       addInstr(env, AMD64Instr_SseLdSt(False/*!isLoad*/, 8, argZ,
                                        AMD64AMode_IR(0, hregAMD64_RCX())));
-      /* call the helper */
-      addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
-                                     (ULong)(HWord)h_generic_calc_MAddF64,
-                                     4, mk_RetLoc_simple(RLPri_None) ));
+
+      /* call the helper with priority order : fma4 -> fallback generic
+         remark: the fma3 case is handled before without helper*/
+#if defined(VGA_amd64)
+      if (env->hwcaps & VEX_HWCAPS_AMD64_FMA4) {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_amd64_calc_MAddF64_fma4,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }else
+#endif
+      {
+         addInstr(env, AMD64Instr_Call( Acc_ALWAYS,
+                                        (ULong)(HWord)h_generic_calc_MAddF64,
+                                        4, mk_RetLoc_simple(RLPri_None) ));
+      }
+
       /* fetch the result from memory, using %r_argp, which the
          register allocator will keep alive across the call. */
       addInstr(env, AMD64Instr_SseLdSt(True/*isLoad*/, 8, dst,
@@ -3721,6 +3762,7 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          return dst;
       }
 
+      case Iop_ShlN8x16: laneBits = 8;  op = Asse_SHL16; goto do_SseShift;
       case Iop_ShlN16x8: laneBits = 16; op = Asse_SHL16; goto do_SseShift;
       case Iop_ShlN32x4: laneBits = 32; op = Asse_SHL32; goto do_SseShift;
       case Iop_ShlN64x2: laneBits = 64; op = Asse_SHL64; goto do_SseShift;
@@ -3739,6 +3781,46 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
             vassert(c->tag == Ico_U8);
             UInt shift = c->Ico.U8;
             if (shift < laneBits) {
+               if (laneBits == 8) {
+                  /* This instruction doesn't exist so we need to fake it using
+                     Asse_SHL16 and Asse_SHR16.
+
+                     We'd like to shift every byte in the 16-byte register to
+                     the left by some amount.
+
+                     Instead, we will make a copy and shift all the 16-bit words
+                     to the *right* by 8 and then to the left by 8 plus the
+                     shift amount.  That will get us the correct answer for the
+                     upper 8 bits of each 16-bit word and zero elsewhere.
+
+                     Then we will shift all the 16-bit words in the original to
+                     the left by 8 plus the shift amount and then to the right
+                     by 8.  This will get the correct answer for the lower 8
+                     bits of each 16-bit word and zero elsewhere.
+
+                     Finally, we will OR those two results together.
+
+                     Because we don't have a shift by constant in x86, we store
+                     the constant 8 into a register and shift by that as needed.
+                  */
+                  AMD64SseOp reverse_op = op;
+                  switch (op) {
+                     case Asse_SHL16:
+                        reverse_op = Asse_SHR16;
+                        break;
+                     default:
+                        vpanic("Iop_ShlN8x16");
+                  }
+                  HReg hi  = newVRegV(env);
+                  addInstr(env, mk_vMOVsd_RR(greg, hi));
+                  addInstr(env, AMD64Instr_SseShiftN(reverse_op, 8, hi));
+                  addInstr(env, AMD64Instr_SseShiftN(op, 8+shift, hi));
+                  addInstr(env, mk_vMOVsd_RR(greg, dst));
+                  addInstr(env, AMD64Instr_SseShiftN(op, 8+shift, dst));
+                  addInstr(env, AMD64Instr_SseShiftN(reverse_op, 8, dst));
+                  addInstr(env, AMD64Instr_SseReRg(Asse_OR, hi, dst));
+                  return dst;
+               }
                addInstr(env, mk_vMOVsd_RR(greg, dst));
                addInstr(env, AMD64Instr_SseShiftN(op, shift, dst));
                return dst;
@@ -3751,6 +3833,30 @@ static HReg iselVecExpr_wrk ( ISelEnv* env, const IRExpr* e )
          addInstr(env, AMD64Instr_Push(AMD64RMI_Imm(0)));
          addInstr(env, AMD64Instr_Push(rmi));
          addInstr(env, AMD64Instr_SseLdSt(True/*load*/, 16, ereg, rsp0));
+         if (laneBits == 8) {
+            /* This instruction doesn't exist so we need to fake it, in the same
+               way as above.
+            */
+            AMD64SseOp reverse_op = op;
+            switch (op) {
+               case Asse_SHL16:
+                  reverse_op = Asse_SHR16;
+                  break;
+               default:
+                  vpanic("Iop_ShlN8x16");
+            }
+            HReg hi  = newVRegV(env);
+            addInstr(env, mk_vMOVsd_RR(greg, hi));
+            addInstr(env, AMD64Instr_SseShiftN(reverse_op, 8, hi));
+            addInstr(env, AMD64Instr_SseShiftN(op, 8, hi));
+            addInstr(env, AMD64Instr_SseReRg(op, ereg, hi));
+            addInstr(env, mk_vMOVsd_RR(greg, dst));
+            addInstr(env, AMD64Instr_SseShiftN(op, 8, dst));
+            addInstr(env, AMD64Instr_SseReRg(op, ereg, dst));
+            addInstr(env, AMD64Instr_SseShiftN(reverse_op, 8, dst));
+            addInstr(env, AMD64Instr_SseReRg(Asse_OR, hi, dst));
+            return dst;
+         }
          addInstr(env, mk_vMOVsd_RR(greg, dst));
          addInstr(env, AMD64Instr_SseReRg(op, ereg, dst));
          add_to_rsp(env, 16);
@@ -5306,7 +5412,9 @@ HInstrArray* iselSB_AMD64 ( const IRSB* bb,
                      | VEX_HWCAPS_AMD64_AVX2
                      | VEX_HWCAPS_AMD64_F16C
                      | VEX_HWCAPS_AMD64_RDRAND
-                     | VEX_HWCAPS_AMD64_RDSEED)));
+                     | VEX_HWCAPS_AMD64_RDSEED
+                     | VEX_HWCAPS_AMD64_FMA3
+                     | VEX_HWCAPS_AMD64_FMA4)));
 
    /* Check that the host's endianness is as expected. */
    vassert(archinfo_host->endness == VexEndnessLE);

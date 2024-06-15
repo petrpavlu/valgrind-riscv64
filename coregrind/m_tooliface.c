@@ -221,8 +221,12 @@ Bool VG_(finish_needs_init)(const HChar** failmsg)
 // These ones don't require any tool-supplied functions
 NEEDS(libc_freeres)
 NEEDS(cxx_freeres)
-NEEDS(core_errors)
 NEEDS(var_info)
+
+void VG_(needs_core_errors)( Bool need )
+{
+   VG_(needs).core_errors = need;
+}
 
 void VG_(needs_superblock_discards)(
    void (*discard)(Addr, VexGuestExtents)
@@ -336,10 +340,10 @@ void VG_(needs_info_location) (
 void VG_(needs_malloc_replacement)(
    void* (*malloc)               ( ThreadId, SizeT ),
    void* (*__builtin_new)        ( ThreadId, SizeT ),
-   void* (*__builtin_new_aligned)( ThreadId, SizeT, SizeT ),
+   void* (*__builtin_new_aligned)( ThreadId, SizeT, SizeT, SizeT ),
    void* (*__builtin_vec_new)    ( ThreadId, SizeT ),
-   void* (*__builtin_vec_new_aligned)( ThreadId, SizeT, SizeT ),
-   void* (*memalign)             ( ThreadId, SizeT, SizeT ),
+   void* (*__builtin_vec_new_aligned)( ThreadId, SizeT, SizeT, SizeT ),
+   void* (*memalign)             ( ThreadId, SizeT, SizeT, SizeT ),
    void* (*calloc)               ( ThreadId, SizeT, SizeT ),
    void  (*free)                 ( ThreadId, void* ),
    void  (*__builtin_delete)     ( ThreadId, void* ),

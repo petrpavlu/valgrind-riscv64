@@ -45,6 +45,7 @@
 #include "dhat.h"
 
 #define HISTOGRAM_SIZE_LIMIT 1024
+#define USER_HISTOGRAM_SIZE_LIMIT 25*HISTOGRAM_SIZE_LIMIT
 
 //------------------------------------------------------------//
 //--- Globals                                              ---//
@@ -762,7 +763,7 @@ static void* dh___builtin_new ( ThreadId tid, SizeT szB )
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* dh___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* dh___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB, SizeT orig_alignB )
 {
    return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
 }
@@ -772,7 +773,7 @@ static void* dh___builtin_vec_new ( ThreadId tid, SizeT szB )
    return new_block( tid, NULL, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* dh___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* dh___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB, SizeT orig_alignB )
 {
    return new_block( tid, NULL, szB, alignB, /*is_zeroed*/False );
 }
@@ -782,7 +783,7 @@ static void* dh_calloc ( ThreadId tid, SizeT m, SizeT szB )
    return new_block( tid, NULL, m*szB, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-static void *dh_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
+static void *dh_memalign ( ThreadId tid, SizeT alignB, SizeT orig_alignB, SizeT szB)
 {
    return new_block( tid, NULL, szB, alignB, False );
 }
@@ -1210,6 +1211,9 @@ IRSB* dh_instrument ( VgCallbackClosure* closure,
 
 static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
 {
+   if (!VG_IS_TOOL_USERREQ('D','H',arg[0]))
+      return False;
+
    switch (arg[0]) {
    case VG_USERREQ__DHAT_AD_HOC_EVENT: {
       if (clo_mode != AdHoc) {
@@ -1225,6 +1229,46 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
       bk.ec      = VG_(record_ExeContext)(tid, 0/*first word delta*/);
 
       intro_Block(&bk);
+
+      return True;
+   }
+
+   case VG_USERREQ__DHAT_HISTOGRAM_MEMORY: {
+      Addr address = (Addr)arg[1];
+
+      Block* bk = find_Block_containing( address );
+      // bogus address
+      if (!bk) {
+         VG_(message)(
+            Vg_UserMsg,
+            "Warning: address for user histogram request not found %llx\n", (ULong)address
+         );
+         return False;
+      }
+
+      // already histogrammed
+      if (bk->req_szB <= HISTOGRAM_SIZE_LIMIT) {
+         VG_(message)(
+            Vg_UserMsg,
+            "Warning: request for user histogram of size %lu is smaller than the normal histogram limit, request ignored\n",
+            bk->req_szB
+         );
+         return False;
+      }
+
+      // too big
+      if (bk->req_szB > USER_HISTOGRAM_SIZE_LIMIT) {
+         VG_(message)(
+            Vg_UserMsg,
+            "Warning: request for user histogram of size %lu is larger than the maximum user request limit, request ignored\n",
+            bk->req_szB
+         );
+         return False;
+      }
+
+
+      bk->histoW = VG_(malloc)("dh.new_block.3", bk->req_szB * sizeof(UShort));
+      VG_(memset)(bk->histoW, 0, bk->req_szB * sizeof(UShort));
 
       return True;
    }
@@ -1248,11 +1292,11 @@ static Bool dh_handle_client_request(ThreadId tid, UWord* arg, UWord* ret)
    }
 
    default:
-      VG_(message)(
-         Vg_UserMsg,
-         "Warning: unknown DHAT client request code %llx\n",
-         (ULong)arg[0]
+      VG_(message)(Vg_UserMsg,
+                   "Warning: unknown DHAT client request code %llx\n",
+                   (ULong)arg[0]
       );
+
       return False;
    }
 }
@@ -1799,7 +1843,7 @@ static void dh_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a dynamic heap analysis tool");
    VG_(details_copyright_author)(
-      "Copyright (C) 2010-2018, and GNU GPL'd, by Mozilla Foundation");
+      "Copyright (C) 2010-2024, and GNU GPL'd, by Mozilla Foundation et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 600 );
 

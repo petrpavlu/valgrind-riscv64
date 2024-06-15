@@ -12266,7 +12266,7 @@ static Long dis_FXRSTOR ( const VexAbiInfo* vbi,
 
 static IRTemp math_PINSRW_128 ( IRTemp v128, IRTemp u16, UInt imm8 )
 {
-   vassert(imm8 >= 0 && imm8 <= 7);
+   vassert(imm8 <= 7);
 
    // Create a V128 value which has the selected word in the
    // specified lane, and zeroes everywhere else.
@@ -16826,13 +16826,18 @@ static Long dis_VBLENDV_256 ( const VexAbiInfo* vbi, Prefix pfx, Long delta,
 
 static void finish_xTESTy ( IRTemp andV, IRTemp andnV, Int sign )
 {
-   /* Set Z=1 iff (vecE & vecG) == 0
-      Set C=1 iff (vecE & not vecG) == 0
+   /* Set Z=1 iff (vecE & vecG) == 0--(128)--0
+      Set C=1 iff (vecE & not vecG) == 0--(128)--0
+
+      For the case `sign == 0`, be careful to use only IROps that can be
+      instrumented exactly by memcheck.  This is because PTEST is used for
+      __builtin_strcmp in gcc14.  See
+      https://bugzilla.redhat.com/show_bug.cgi?id=2257546
    */
 
    /* andV, andnV:  vecE & vecG,  vecE and not(vecG) */
 
-   /* andV resp. andnV, reduced to 64-bit values, by or-ing the top
+   /* andV resp. andnV, are reduced to 64-bit values by or-ing the top
       and bottom 64-bits together.  It relies on this trick:
 
       InterleaveLO64x2([a,b],[c,d]) == [b,d]    hence
@@ -16862,11 +16867,13 @@ static void finish_xTESTy ( IRTemp andV, IRTemp andnV, Int sign )
                      binop(Iop_InterleaveHI64x2,
                            mkexpr(andnV), mkexpr(andnV)))));
 
+   // Make z64 and c64 be either all-0s or all-1s
    IRTemp z64 = newTemp(Ity_I64);
    IRTemp c64 = newTemp(Ity_I64);
+
    if (sign == 64) {
-      /* When only interested in the most significant bit, just shift
-         arithmetically right and negate.  */
+      /* When only interested in the most significant bit, just copy bit 63
+         into all bit positions, then invert. */
       assign(z64,
              unop(Iop_Not64,
                   binop(Iop_Sar64, mkexpr(and64), mkU8(63))));
@@ -16874,37 +16881,28 @@ static void finish_xTESTy ( IRTemp andV, IRTemp andnV, Int sign )
       assign(c64,
              unop(Iop_Not64,
                   binop(Iop_Sar64, mkexpr(andn64), mkU8(63))));
-   } else {
-      if (sign == 32) {
-         /* When interested in bit 31 and bit 63, mask those bits and
-            fallthrough into the PTEST handling.  */
-         IRTemp t0 = newTemp(Ity_I64);
-         IRTemp t1 = newTemp(Ity_I64);
-         IRTemp t2 = newTemp(Ity_I64);
-         assign(t0, mkU64(0x8000000080000000ULL));
-         assign(t1, binop(Iop_And64, mkexpr(and64), mkexpr(t0)));
-         assign(t2, binop(Iop_And64, mkexpr(andn64), mkexpr(t0)));
-         and64 = t1;
-         andn64 = t2;
-      }
-      /* Now convert and64, andn64 to all-zeroes or all-1s, so we can
-         slice out the Z and C bits conveniently.  We use the standard
-         trick all-zeroes -> all-zeroes, anything-else -> all-ones
-         done by "(x | -x) >>s (word-size - 1)".
-      */
+   } else if (sign == 32) {
+      /* If we're interested into bits 63 and 31, OR bit 31 into bit 63, copy
+         bit 63 into all bit positions, then invert. */
+      IRTemp and3264 = newTemp(Ity_I64);
+      assign(and3264, binop(Iop_Or64, mkexpr(and64),
+                            binop(Iop_Shl64, mkexpr(and64), mkU8(32))));
       assign(z64,
              unop(Iop_Not64,
-                  binop(Iop_Sar64,
-                        binop(Iop_Or64,
-                              binop(Iop_Sub64, mkU64(0), mkexpr(and64)),
-                                    mkexpr(and64)), mkU8(63))));
+                  binop(Iop_Sar64, mkexpr(and3264), mkU8(63))));
 
+      IRTemp andn3264 = newTemp(Ity_I64);
+      assign(andn3264, binop(Iop_Or64, mkexpr(andn64),
+                             binop(Iop_Shl64, mkexpr(andn64), mkU8(32))));
       assign(c64,
              unop(Iop_Not64,
-                  binop(Iop_Sar64,
-                        binop(Iop_Or64,
-                              binop(Iop_Sub64, mkU64(0), mkexpr(andn64)),
-                                    mkexpr(andn64)), mkU8(63))));
+                  binop(Iop_Sar64, mkexpr(andn3264), mkU8(63))));
+   } else {
+      vassert(sign == 0);
+      assign(z64, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(and64), mkU64(0)),
+                             mkU64(~0ULL), mkU64(0ULL)));
+      assign(c64, IRExpr_ITE(binop(Iop_CmpEQ64, mkexpr(andn64), mkU64(0)),
+                             mkU64(~0ULL), mkU64(0ULL)));
    }
 
    /* And finally, slice out the Z and C flags and set the flags
@@ -16966,9 +16964,7 @@ static Long dis_xTESTy_128 ( const VexAbiInfo* vbi, Prefix pfx,
    IRTemp andnV = newTemp(Ity_V128);
    assign(andV,  binop(Iop_AndV128, mkexpr(vecE), mkexpr(vecG)));
    assign(andnV, binop(Iop_AndV128,
-                       mkexpr(vecE),
-                       binop(Iop_XorV128, mkexpr(vecG),
-                                          mkV128(0xFFFF))));
+                       mkexpr(vecE), unop(Iop_NotV128, mkexpr(vecG))));
 
    finish_xTESTy ( andV, andnV, sign );
    return delta;
@@ -18892,7 +18888,7 @@ static Long dis_PCMPxSTRx ( const VexAbiInfo* vbi, Prefix pfx,
 
 static IRTemp math_PINSRB_128 ( IRTemp v128, IRTemp u8, UInt imm8 )
 {
-   vassert(imm8 >= 0 && imm8 <= 15);
+   vassert(imm8 <= 15);
 
    // Create a V128 value which has the selected byte in the
    // specified lane, and zeroes everywhere else.
@@ -22061,9 +22057,15 @@ Long dis_ESC_0F (
          /* This is a Core-i5-2300-like machine */
       }
       else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
-               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16)) {
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_RDTSCP)) {
          fName = "amd64g_dirtyhelper_CPUID_sse42_and_cx16";
          fAddr = &amd64g_dirtyhelper_CPUID_sse42_and_cx16;
+      }
+      else if ((archinfo->hwcaps & VEX_HWCAPS_AMD64_SSSE3) &&
+               (archinfo->hwcaps & VEX_HWCAPS_AMD64_CX16)) {
+         fName = "amd64g_dirtyhelper_CPUID_sse3_and_cx16";
+         fAddr = &amd64g_dirtyhelper_CPUID_sse3_and_cx16;
          /* This is a Core-i5-670-like machine */
       }
       else {
@@ -23242,6 +23244,8 @@ static ULong dis_AVX_var_shiftV_byE ( const VexAbiInfo* vbi,
                     op == Iop_Sar32 ? binop(op, mkexpr(sVs[i]), mkU8(size-1))
                                     : size == 32 ? mkU32(0) : mkU64(0)
          ));
+      } else {
+         res[i] = IRTemp_INVALID;
       }
    switch (size) {
       case 32:
@@ -27985,8 +27989,8 @@ static Long dis_FMA ( const VexAbiInfo* vbi, Prefix pfx, Long delta, UChar opc )
    }
 
    switch (vty) {
-      case Ity_F32:  putYMMRegLane32(rG, 1, mkU32(0)); /*fallthru*/
-      case Ity_F64:  putYMMRegLane64(rG, 1, mkU64(0)); /*fallthru*/
+      case Ity_F32:
+      case Ity_F64:
       case Ity_V128: putYMMRegLane128(rG, 1, mkV128(0)); /*fallthru*/
       case Ity_V256: break;
       default: vassert(0);
@@ -32168,7 +32172,7 @@ Long dis_ESC_0F3A__VEX (
                                    nameIRegG(size,pfx,rm));
             delta += 2;
          } else {
-            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 0 );
+            addr = disAMode ( &alen, vbi, pfx, delta, dis_buf, 1 );
             imm8 = getUChar(delta+alen);
             assign( src, loadLE(ty, mkexpr(addr)) );
             DIP("rorx %d,%s,%s\n", imm8, dis_buf, nameIRegG(size,pfx,rm));
@@ -32685,10 +32689,32 @@ DisResult disInstr_AMD64 ( IRSB*        irsb_IN,
    if (guest_RIP_next_mustcheck 
        && guest_RIP_next_assumed != guest_RIP_curr_instr + dres.len) {
       vex_printf("\n");
+      vex_printf("     current %%rip = 0x%llx\n",
+                 guest_RIP_curr_instr );
       vex_printf("assumed next %%rip = 0x%llx\n", 
                  guest_RIP_next_assumed );
       vex_printf(" actual next %%rip = 0x%llx\n", 
                  guest_RIP_curr_instr + dres.len );
+      vex_printf("instruction bytes: "
+                 "0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x 0x%x\n",
+                 getUChar(delta+0),
+                 getUChar(delta+1),
+                 getUChar(delta+2),
+                 getUChar(delta+3),
+                 getUChar(delta+4),
+                 getUChar(delta+5),
+                 getUChar(delta+6),
+                 getUChar(delta+7),
+                 getUChar(delta+8),
+                 getUChar(delta+9) );
+
+      /* re-disassemble the instruction so as
+         to generate a useful error message; then assert. */
+      vex_traceflags |= VEX_TRACE_FE;
+      guest_RIP_next_assumed   = 0;
+      guest_RIP_next_mustcheck = False;
+      dres = disInstr_AMD64_WRK ( &expect_CAS,
+                                 delta, archinfo, abiinfo, sigill_diag_IN );
       vpanic("disInstr_AMD64: disInstr miscalculated next %rip");
    }
 

@@ -39,12 +39,17 @@
 #define __NR_fsmount		432
 #define __NR_fspick		433
 
+#define __NR_pidfd_open		434
 #define __NR_clone3		435
 #define __NR_close_range	436
 #define __NR_openat2        437
-
+#define __NR_pidfd_getfd	438
 #define __NR_faccessat2		439
 
+#define __NR_epoll_pwait2		441
+
 #define __NR_memfd_secret		447
+
+#define __NR_fchmodat2		452
 
 #endif

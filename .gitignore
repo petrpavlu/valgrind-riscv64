@@ -3,6 +3,7 @@
 # /
 /.in_place
 /.vs
+/.clang-format
 /acinclude.m4
 /aclocal.m4
 /autom4te-*.cache
@@ -33,6 +34,8 @@
 /svn-commit.2.tmp
 /svn-commit.tmp
 /valgrind
+/valgrind-*tar.gz
+/valgrind-*tar.bz2
 /valgrind.pc
 /valgrind.spec
 /valt_load_address*.lds
@@ -42,6 +45,7 @@
 # /auxprogs/
 /auxprogs/.deps
 /auxprogs/getoff-amd64-darwin
+/auxprogs/getoff-arm-linux
 /auxprogs/getoff-arm64-linux
 /auxprogs/getoff-x86-darwin
 /auxprogs/getoff-amd64-linux
@@ -106,6 +110,7 @@
 /cachegrind/tests/cachegrind.out.*
 /cachegrind/tests/chdir
 /cachegrind/tests/clreq
+/cachegrind/tests/clreq2
 /cachegrind/tests/dlclose
 /cachegrind/tests/wrap5
 
@@ -210,6 +215,13 @@
 /coregrind/m_dispatch/Makefile
 /coregrind/m_dispatch/Makefile.in
 
+# /coregrind/m_extension/
+/coregrind/m_extension/*.a
+/coregrind/m_extension/.deps
+/coregrind/m_extension/.dirstamp
+/coregrind/m_extension/Makefile
+/coregrind/m_extension/Makefile.in
+
 # /coregrind/m_gdbserver/
 /coregrind/m_gdbserver/.deps
 /coregrind/m_gdbserver/.dirstamp
@@ -298,6 +310,7 @@
 /dhat/tests/empty
 /dhat/tests/sig
 /dhat/tests/single
+/dhat/tests/user_histo1
 
 # /docs/
 /docs/FAQ.txt
@@ -479,6 +492,7 @@
 /drd/tests/tc22_exit_w_lock
 /drd/tests/tc23_bogus_condwait
 /drd/tests/tc24_nonzero_sem
+/drd/tests/thrd_create
 /drd/tests/threaded-fork
 /drd/tests/thread_name
 /drd/tests/thread_name_freebsd
@@ -530,7 +544,15 @@
 /exp-bbv/tests/amd64-linux/rep_prefix
 
 # /exp-bbv/tests/arm-linux/
+/exp-bbv/tests/arm-linux/*.post.diff
+/exp-bbv/tests/arm-linux/*.post.out
+/exp-bbv/tests/arm-linux/*.stderr.diff
+/exp-bbv/tests/arm-linux/*.stderr.out
+/exp-bbv/tests/arm-linux/*.stdout.diff
+/exp-bbv/tests/arm-linux/*.stdout.out
 /exp-bbv/tests/arm-linux/.deps
+/exp-bbv/tests/arm-linux/ll
+/exp-bbv/tests/arm-linux/million
 /exp-bbv/tests/arm-linux/Makefile
 /exp-bbv/tests/arm-linux/Makefile.in
 
@@ -656,10 +678,13 @@
 /helgrind/tests/bug322621
 /helgrind/tests/bug327548
 /helgrind/tests/bug392331
+/helgrind/tests/bug484480
 /helgrind/tests/cond_init_destroy
 /helgrind/tests/cond_timedwait_invalid
 /helgrind/tests/cond_timedwait_test
 /helgrind/tests/free_is_write
+/helgrind/tests/garbage.filtered.out
+/helgrind/tests/getaddrinfo
 /helgrind/tests/hg01_all_ok
 /helgrind/tests/hg02_deadlock
 /helgrind/tests/hg03_inherit
@@ -676,6 +701,8 @@
 /helgrind/tests/pth_mempcpy_false_races
 /helgrind/tests/rwlock_race
 /helgrind/tests/rwlock_test
+/helgrind/tests/sem_clockwait_np
+/helgrind/tests/sem_timedwait
 /helgrind/tests/shmem_abits
 /helgrind/tests/stackteardown
 /helgrind/tests/t2t
@@ -769,6 +796,7 @@
 /massif/tests/basic
 /massif/tests/basic_malloc
 /massif/tests/big-alloc
+/massif/tests/bug469146
 /massif/tests/culling1
 /massif/tests/culling2
 /massif/tests/custom_alloc
@@ -821,6 +849,7 @@
 /memcheck/tests/*.stdout.out
 /memcheck/tests/filter_dw4
 /memcheck/tests/filter_overlaperror
+/memcheck/tests/filter_supp
 /memcheck/tests/.deps
 /memcheck/tests/accounting
 /memcheck/tests/addressable
@@ -840,7 +869,10 @@
 /memcheck/tests/bug155125
 /memcheck/tests/bug287260
 /memcheck/tests/bug340392
+/memcheck/tests/bug401284
 /memcheck/tests/bug464969_d_demangle
+/memcheck/tests/bug472219
+/memcheck/tests/bug484002
 /memcheck/tests/calloc-overflow
 /memcheck/tests/cdebug_zlib
 /memcheck/tests/cdebug_zlib_gnu
@@ -850,6 +882,7 @@
 /memcheck/tests/clireq_nofill
 /memcheck/tests/clo_redzone
 /memcheck/tests/cond_ld_st
+/memcheck/tests/close_range
 /memcheck/tests/custom-overlap
 /memcheck/tests/custom_alloc
 /memcheck/tests/cxx17_aligned_new
@@ -861,6 +894,7 @@
 /memcheck/tests/descr_belowsp
 /memcheck/tests/dir
 /memcheck/tests/doublefree
+/memcheck/tests/duplicate_align_size_errors
 /memcheck/tests/dw4
 /memcheck/tests/erringfds
 /memcheck/tests/error_counts
@@ -917,6 +951,8 @@
 /memcheck/tests/match-overrun
 /memcheck/tests/memalign_args
 /memcheck/tests/memalign_test
+/memcheck/tests/memccpy1
+/memcheck/tests/memccpy2
 /memcheck/tests/memcmptest
 /memcheck/tests/memmem
 /memcheck/tests/mempool
@@ -927,6 +963,8 @@
 /memcheck/tests/nanoleak
 /memcheck/tests/nanoleak2
 /memcheck/tests/nanoleak_supp
+/memcheck/tests/new_aligned_delete_default
+/memcheck/tests/new_delete_mismatch_size
 /memcheck/tests/new_nothrow
 /memcheck/tests/new_override
 /memcheck/tests/noisy_child
@@ -949,6 +987,7 @@
 /memcheck/tests/post-syscall
 /memcheck/tests/reach_thread_register
 /memcheck/tests/realloc_size_zero
+/memcheck/tests/realloc_size_zero_again
 /memcheck/tests/realloc_size_zero_mismatch
 /memcheck/tests/realloc1
 /memcheck/tests/realloc2
@@ -965,7 +1004,9 @@
 /memcheck/tests/sh-mem
 /memcheck/tests/sh-mem-random
 /memcheck/tests/sized_aligned_new_delete_args
-/memcheck/tests/sized_aligned_new_delete_misaligned
+/memcheck/tests/sized_aligned_new_delete_misaligned1
+/memcheck/tests/sized_aligned_new_delete_misaligned2
+/memcheck/tests/sized_aligned_new_delete_misaligned3
 /memcheck/tests/sigaltstack
 /memcheck/tests/sigkill
 /memcheck/tests/signal2
@@ -1004,6 +1045,9 @@
 /memcheck/tests/wcs
 /memcheck/tests/weirdioctl
 /memcheck/tests/with space
+/memcheck/tests/wcpncpy
+/memcheck/tests/wcsncpy
+/memcheck/tests/wmemcmp
 /memcheck/tests/wrap1
 /memcheck/tests/wrap2
 /memcheck/tests/wrap3
@@ -1039,15 +1083,19 @@
 /memcheck/tests/amd64/insn-bsfl
 /memcheck/tests/amd64/insn-pmovmskb
 /memcheck/tests/amd64/insn-pcmpistri
+/memcheck/tests/amd64/pcmpgt
 /memcheck/tests/amd64/sh-mem-vec128
 /memcheck/tests/amd64/sh-mem-vec256
 /memcheck/tests/amd64/xsave-avx
+/memcheck/tests/amd64/rh2257546_128
+/memcheck/tests/amd64/rh2257546_256
 
 # /memcheck/tests/amd64-linux/
 /memcheck/tests/amd64-linux/.deps
 /memcheck/tests/amd64-linux/access_below_sp
 /memcheck/tests/amd64-linux/defcfaexpr
 /memcheck/tests/amd64-linux/int3-amd64
+/memcheck/tests/amd64-linux/reallocarray
 /memcheck/tests/amd64-linux/Makefile
 /memcheck/tests/amd64-linux/Makefile.in
 
@@ -1066,6 +1114,15 @@
 /memcheck/tests/amd64-solaris/context_sse
 /memcheck/tests/amd64-solaris/ldsoexec
 /memcheck/tests/amd64-solaris/scalar
+
+# /memcheck/tests/arm64/
+/memcheck/tests/arm64/*.diff*
+/memcheck/tests/arm64/*.dSYM
+/memcheck/tests/arm64/*.out
+/memcheck/tests/arm64/.deps
+/memcheck/tests/arm64/Makefile
+/memcheck/tests/arm64/Makefile.in
+/memcheck/tests/arm64/bug484935
 
 # /memcheck/tests/arm64-linux/
 /memcheck/tests/arm64-linux/.deps
@@ -1100,6 +1157,7 @@
 /memcheck/tests/darwin/Makefile.in
 /memcheck/tests/darwin/aio
 /memcheck/tests/darwin/aligned_alloc
+/memcheck/tests/darwin/bug437790
 /memcheck/tests/darwin/deep_badparam
 /memcheck/tests/darwin/env
 /memcheck/tests/darwin/ioctl-tiocsbrk
@@ -1119,6 +1177,7 @@
 /memcheck/tests/linux/.deps
 /memcheck/tests/linux/aligned_alloc
 /memcheck/tests/linux/brk
+/memcheck/tests/linux/bug480706
 /memcheck/tests/linux/capget
 /memcheck/tests/linux/check_preadv2_pwritev2
 /memcheck/tests/linux/dlclose_leak
@@ -1143,6 +1202,7 @@
 /memcheck/tests/linux/syslog-syscall
 /memcheck/tests/linux/timerfd-syscall
 /memcheck/tests/linux/proc-auxv
+/memcheck/tests/linux/strlcat_strlcpy
 /memcheck/tests/linux/sys-openat
 /memcheck/tests/linux/sys-execveat
 /memcheck/tests/linux/check_execveat
@@ -1196,6 +1256,7 @@
 /memcheck/tests/s390x/Makefile
 /memcheck/tests/s390x/Makefile.in
 /memcheck/tests/s390x/cdsg
+/memcheck/tests/s390x/cli
 /memcheck/tests/s390x/cu21
 /memcheck/tests/s390x/cu42
 /memcheck/tests/s390x/ltgjhe
@@ -1283,12 +1344,14 @@
 /memcheck/tests/x86/Makefile.in
 /memcheck/tests/x86/bug133694
 /memcheck/tests/x86/bug152022
+/memcheck/tests/x86/bug487993
 /memcheck/tests/x86/espindola2
 /memcheck/tests/x86/fpeflags
 /memcheck/tests/x86/fprem
 /memcheck/tests/x86/fxsave
 /memcheck/tests/x86/int3-x86
 /memcheck/tests/x86/more_x86_fp
+/memcheck/tests/x86/pcmpgt
 /memcheck/tests/x86/pushfpopf
 /memcheck/tests/x86/pushfw_x86
 /memcheck/tests/x86/pushpopmem
@@ -1346,14 +1409,23 @@
 /memcheck/tests/freebsd/Makefile.in
 /memcheck/tests/freebsd/452275
 /memcheck/tests/freebsd/access
+/memcheck/tests/freebsd/aio
+/memcheck/tests/freebsd/aiov
+/memcheck/tests/freebsd/aio_read
+/memcheck/tests/freebsd/aligned_alloc
 /memcheck/tests/freebsd/bug464476
+/memcheck/tests/freebsd/bug470713
+/memcheck/tests/freebsd/bug483786
 /memcheck/tests/freebsd/capsicum
 /memcheck/tests/freebsd/chflags
 /memcheck/tests/freebsd/chmod_chown
+/memcheck/tests/freebsd/clock_nanosleep_interrupt
+/memcheck/tests/freebsd/delete_sized_mismatch
 /memcheck/tests/freebsd/errno_aligned_allocs
 /memcheck/tests/freebsd/eventfd1
 /memcheck/tests/freebsd/eventfd2
 /memcheck/tests/freebsd/extattr
+/memcheck/tests/freebsd/fbsd278566
 /memcheck/tests/freebsd/fexecve
 /memcheck/tests/freebsd/file_locking_wait6
 /memcheck/tests/freebsd/get_set_context
@@ -1362,14 +1434,18 @@
 /memcheck/tests/freebsd/getfsstat
 /memcheck/tests/freebsd/inlinfo
 /memcheck/tests/freebsd/inlinfo_nested.so
+/memcheck/tests/freebsd/kqueue
+/memcheck/tests/freebsd/kqueuex
 /memcheck/tests/freebsd/linkat
 /memcheck/tests/freebsd/memalign
 /memcheck/tests/freebsd/misc
+/memcheck/tests/freebsd/openpty
 /memcheck/tests/freebsd/pdfork_pdkill
 /memcheck/tests/freebsd/realpathat
 /memcheck/tests/freebsd/revoke
 /memcheck/tests/freebsd/scalar
 /memcheck/tests/freebsd/scalar_13_plus
+/memcheck/tests/freebsd/scalar_15_plus
 /memcheck/tests/freebsd/scalar_abort2
 /memcheck/tests/freebsd/scalar_fork
 /memcheck/tests/freebsd/scalar_pdfork
@@ -1382,6 +1458,9 @@
 /memcheck/tests/freebsd/stat
 /memcheck/tests/freebsd/statfs
 /memcheck/tests/freebsd/static_allocs
+/memcheck/tests/freebsd/strlcat_strlcpy
+/memcheck/tests/freebsd/timerfd
+/memcheck/tests/freebsd/timing_safe
 /memcheck/tests/freebsd/utimens
 /memcheck/tests/freebsd/utimes
 
@@ -1395,6 +1474,7 @@
 /memcheck/tests/amd64-freebsd/Makefile.in
 /memcheck/tests/amd64-freebsd/posix_fadvise
 /memcheck/tests/amd64-freebsd/posix_fallocate
+/memcheck/tests/amd64-freebsd/reallocarray
 /memcheck/tests/amd64-freebsd/reallocf
 
 # /memcheck/tests/x86-freebsd
@@ -1407,6 +1487,7 @@
 /memcheck/tests/x86-freebsd/Makefile.in
 /memcheck/tests/x86-freebsd/posix_fadvise
 /memcheck/tests/x86-freebsd/posix_fallocate
+/memcheck/tests/x86-freebsd/reallocarray
 
 # /mpi/
 /mpi/*.dSYM
@@ -1467,6 +1548,7 @@
 /none/tests/coolo_sigaction
 /none/tests/coolo_strlen
 /none/tests/discard
+/none/tests/double_close_range
 /none/tests/exec-sigmask
 /none/tests/execve
 /none/tests/faultstatus
@@ -1480,6 +1562,7 @@
 /none/tests/fdleak_open
 /none/tests/fdleak_pipe
 /none/tests/fdleak_socketpair
+/none/tests/file_dclose
 /none/tests/floored
 /none/tests/fork
 /none/tests/fucomip
@@ -1510,6 +1593,7 @@
 /none/tests/map_unmap
 /none/tests/mmap_fcntl_bug
 /none/tests/mq
+/none/tests/mmap_o_direct
 /none/tests/mremap
 /none/tests/mremap2
 /none/tests/munmap_exe
@@ -1560,6 +1644,7 @@
 /none/tests/sigstackgrowth
 /none/tests/sigsusp
 /none/tests/smc1
+/none/tests/socket_close
 /none/tests/stackgrowth
 /none/tests/susphello
 /none/tests/syscall-restart1
@@ -1599,6 +1684,7 @@
 /none/tests/amd64/bug132918
 /none/tests/amd64/bug137714-amd64
 /none/tests/amd64/bug156404-amd64
+/none/tests/amd64/bug485148
 /none/tests/amd64/cet_nops
 /none/tests/amd64/clc
 /none/tests/amd64/cmpxchg
@@ -1697,24 +1783,56 @@
 /none/tests/amd64-solaris/syscall_return_args
 
 # /none/tests/arm/
+/none/tests/arm/*.stderr.diff
+/none/tests/arm/*.stderr.out
+/none/tests/arm/*.stdout.diff
+/none/tests/arm/*.stdout.out
 /none/tests/arm/.deps
 /none/tests/arm/Makefile
 /none/tests/arm/Makefile.in
+/none/tests/arm/allexec
+/none/tests/arm/intdiv
+/none/tests/arm/ldrt
+/none/tests/arm/ldrt_arm
+/none/tests/arm/neon128
+/none/tests/arm/neon64
+/none/tests/arm/v6intARM
+/none/tests/arm/v6intThumb
+/none/tests/arm/v6media
+/none/tests/arm/v8crypto_a
+/none/tests/arm/v8crypto_t
+/none/tests/arm/v8fpsimd_a
+/none/tests/arm/v8fpsimd_t
+/none/tests/arm/v8memory_a
+/none/tests/arm/v8memory_t
+/none/tests/arm/vcvt_fixed_float_VFP
+/none/tests/arm/vfp
+/none/tests/arm/vfpv4_fma
 
 # /none/tests/arm64/
+/none/tests/arm64/*.stderr.diff*
+/none/tests/arm64/*.stderr.out
+/none/tests/arm64/*.stdout.diff*
+/none/tests/arm64/*.stdout.out
 /none/tests/arm64/.deps
 /none/tests/arm64/Makefile
 /none/tests/arm64/Makefile.in
 /none/tests/arm64/allexec
 /none/tests/arm64/atomics_v81
+/none/tests/arm64/bug484426
 /none/tests/arm64/crc32
 /none/tests/arm64/cvtf_imm
+/none/tests/arm64/dc_cvax
 /none/tests/arm64/fmadd_sub
 /none/tests/arm64/fp_and_simd
 /none/tests/arm64/fp_and_simd_v82
+/none/tests/arm64/frinta_frintn
+/none/tests/arm64/ldxp_stxp
 /none/tests/arm64/integer
-/none/tests/arm64/memory
+/none/tests/arm64/memory_test
+/none/tests/arm64/simd_dotprod
 /none/tests/arm64/simd_v81
+/none/tests/arm64/sha512_v82
 
 # /none/tests/darwin/
 /none/tests/darwin/*.dSYM
@@ -1729,6 +1847,7 @@
 /none/tests/darwin/apple-main-arg
 /none/tests/darwin/bug228343
 /none/tests/darwin/bug254164
+/none/tests/darwin/bug390269
 /none/tests/darwin/rlimit
 
 # /none/tests/linux/
@@ -1899,9 +2018,13 @@
 /none/tests/ppc64/power6_bcmp
 /none/tests/ppc64/power6_mf_gpr
 /none/tests/ppc64/round
+/none/tests/ppc64/scv_test
 /none/tests/ppc64/std_reg_imm
+/none/tests/ppc64/subnormal_test
 /none/tests/ppc64/twi_tdi
 /none/tests/ppc64/tw_td
+/none/tests/ppc64/test_copy_paste
+/none/tests/ppc64/test_darn_inst
 /none/tests/ppc64/test_dfp1
 /none/tests/ppc64/test_dfp2
 /none/tests/ppc64/test_dfp3
@@ -1912,6 +2035,17 @@
 /none/tests/ppc64/test_isa_2_06_part3
 /none/tests/ppc64/test_isa_2_07_part1
 /none/tests/ppc64/test_isa_2_07_part2
+/none/tests/ppc64/test_isa_3_0
+/none/tests/ppc64/test_isa_3_1_AT
+/none/tests/ppc64/test_isa_3_1_Misc
+/none/tests/ppc64/test_isa_3_1_R1_RT
+/none/tests/ppc64/test_isa_3_1_R1_XT
+/none/tests/ppc64/test_isa_3_1_RT
+/none/tests/ppc64/test_isa_3_1_VRT
+/none/tests/ppc64/test_isa_3_1_XT
+/none/tests/ppc64/test_lxvx_stxvx
+/none/tests/ppc64/test_mcrxrx
+/none/tests/ppc64/test_mod_instructions
 /none/tests/ppc64/allexec
 /none/tests/ppc64/data-cache-instructions
 /none/tests/ppc64/ldst_multiple
@@ -2128,9 +2262,9 @@
 /none/tests/solaris/threads_exitall
 
 # /none/tests/freebsd/
-/none/tests/freebsd/*.stderr.diff
+/none/tests/freebsd/*.stderr.diff*
 /none/tests/freebsd/*.stderr.out
-/none/tests/freebsd/*.stdout.diff
+/none/tests/freebsd/*.stdout.diff*
 /none/tests/freebsd/*.stdout.out
 /none/tests/freebsd/.deps
 /none/tests/freebsd/Makefile
@@ -2141,6 +2275,7 @@
 /none/tests/freebsd/fexecve
 /none/tests/freebsd/hello_world
 /none/tests/freebsd/452275
+/none/tests/freebsd/sanity_level_thread
 /none/tests/freebsd/usrstack
 /none/tests/freebsd/proc_pid_file
 
@@ -2173,6 +2308,7 @@
 /none/tests/x86/fpu_lazy_eflags
 /none/tests/x86/fxtract
 /none/tests/x86/getseg
+/none/tests/x86/gnu_binutils_nop
 /none/tests/x86/incdec_alt
 /none/tests/x86/insn_basic
 /none/tests/x86/insn_basic.c
@@ -2209,6 +2345,7 @@
 /none/tests/x86/sigcontext
 /none/tests/x86/smc1
 /none/tests/x86/ssse3_misaligned
+/none/tests/x86/sse4-x86
 /none/tests/x86/x86locked
 /none/tests/x86/x87trigOOR
 /none/tests/x86/xadd

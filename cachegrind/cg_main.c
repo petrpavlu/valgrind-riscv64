@@ -5,10 +5,10 @@
 /*--------------------------------------------------------------------*/
 
 /*
-   This file is part of Cachegrind, a Valgrind tool for cache
-   profiling programs.
+   This file is part of Cachegrind, a high-precision tracing profiler
+   built with Valgrind.
 
-   Copyright (C) 2002-2017 Nicholas Nethercote
+   Copyright (C) 2002-2023 Nicholas Nethercote
       njn@valgrind.org
 
    This program is free software; you can redistribute it and/or
@@ -38,10 +38,12 @@
 #include "pub_tool_options.h"
 #include "pub_tool_oset.h"
 #include "pub_tool_tooliface.h"
+#include "pub_tool_transtab.h"
 #include "pub_tool_xarray.h"
 #include "pub_tool_clientstate.h"
 #include "pub_tool_machine.h"      // VG_(fnptr_to_fnentry)
 
+#include "cachegrind.h"
 #include "cg_arch.h"
 #include "cg_sim.c"
 #include "cg_branchpred.c"
@@ -57,8 +59,9 @@
 /*--- Options                                              ---*/
 /*------------------------------------------------------------*/
 
-static Bool  clo_cache_sim  = True;  /* do cache simulation? */
+static Bool  clo_cache_sim  = False; /* do cache simulation? */
 static Bool  clo_branch_sim = False; /* do branch simulation? */
+static Bool  clo_instr_at_start = True; /* instrument at startup? */
 static const HChar* clo_cachegrind_out_file = "cachegrind.out.%p";
 
 /*------------------------------------------------------------*/
@@ -176,6 +179,10 @@ static Int  full_debugs         = 0;
 static Int  file_line_debugs    = 0;
 static Int  fn_debugs           = 0;
 static Int  no_debugs           = 0;
+
+//------------------------------------------------------------
+// Instrumentation control
+static Bool instr_enabled = True;
 
 /*------------------------------------------------------------*/
 /*--- String table operations                              ---*/
@@ -894,15 +901,18 @@ static void addEvent_Ir ( CgState* cgs, InstrInfo* inode )
 static
 void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
-   Event* evt;
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= min_line_size);
+
    if (!clo_cache_sim)
       return;
-   if (cgs->events_used == N_EVENTS)
+
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
+
+   if (cgs->events_used == N_EVENTS) {
       flushEvents(cgs);
+   }
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
-   evt = &cgs->events[cgs->events_used];
+   Event* evt = &cgs->events[cgs->events_used];
    init_Event(evt);
    evt->tag       = Ev_Dr;
    evt->inode     = inode;
@@ -914,13 +924,12 @@ void addEvent_Dr ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 static
 void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
 {
-   Event* evt;
-
    tl_assert(isIRAtom(ea));
-   tl_assert(datasize >= 1 && datasize <= min_line_size);
 
    if (!clo_cache_sim)
       return;
+
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
 
    /* Is it possible to merge this write with the preceding read? */
    if (cgs->events_used > 0) {
@@ -939,7 +948,7 @@ void addEvent_Dw ( CgState* cgs, InstrInfo* inode, Int datasize, IRAtom* ea )
    if (cgs->events_used == N_EVENTS)
       flushEvents(cgs);
    tl_assert(cgs->events_used >= 0 && cgs->events_used < N_EVENTS);
-   evt = &cgs->events[cgs->events_used];
+   Event* evt = &cgs->events[cgs->events_used];
    init_Event(evt);
    evt->tag       = Ev_Dw;
    evt->inode     = inode;
@@ -956,10 +965,11 @@ void addEvent_D_guarded ( CgState* cgs, InstrInfo* inode,
    tl_assert(isIRAtom(ea));
    tl_assert(guard);
    tl_assert(isIRAtom(guard));
-   tl_assert(datasize >= 1 && datasize <= min_line_size);
 
    if (!clo_cache_sim)
       return;
+
+   tl_assert(datasize >= 1 && datasize <= min_line_size);
 
    /* Adding guarded memory actions and merging them with the existing
       queue is too complex.  Simply flush the queue and add this
@@ -1056,6 +1066,10 @@ IRSB* cg_instrument ( VgCallbackClosure* closure,
    if (gWordTy != hWordTy) {
       /* We don't currently support this case. */
       VG_(tool_panic)("host/guest word size mismatch");
+   }
+
+   if (!instr_enabled) {
+      return sbIn;
    }
 
    // Set up new SB
@@ -1391,21 +1405,23 @@ static void fprint_CC_table_and_calc_totals(void)
    if (fp == NULL) {
       // If the file can't be opened for whatever reason (conflict
       // between multiple cachegrinded processes?), give up now.
-      VG_(umsg)("error: can't open cache simulation output file '%s'\n",
+      VG_(umsg)("error: can't open output data file '%s'\n",
                 cachegrind_out_file );
-      VG_(umsg)("       ... so simulation results will be missing.\n");
+      VG_(umsg)("       ... so detailed results will be missing.\n");
       VG_(free)(cachegrind_out_file);
       return;
    } else {
       VG_(free)(cachegrind_out_file);
    }
 
-   // "desc:" lines (giving I1/D1/LL cache configuration).  The spaces after
-   // the 2nd colon makes cg_annotate's output look nicer.
-   VG_(fprintf)(fp,  "desc: I1 cache:         %s\n"
-                     "desc: D1 cache:         %s\n"
-                     "desc: LL cache:         %s\n",
-                     I1.desc_line, D1.desc_line, LL.desc_line);
+   if (clo_cache_sim) {
+      // "desc:" lines (giving I1/D1/LL cache configuration). The spaces after
+      // the 2nd colon makes cg_annotate's output look nicer.
+      VG_(fprintf)(fp,  "desc: I1 cache:         %s\n"
+                        "desc: D1 cache:         %s\n"
+                        "desc: LL cache:         %s\n",
+                        I1.desc_line, D1.desc_line, LL.desc_line);
+   }
 
    // "cmd:" line
    VG_(fprintf)(fp, "cmd: %s", VG_(args_the_exename));
@@ -1509,7 +1525,7 @@ static void fprint_CC_table_and_calc_totals(void)
    }
 
    // Summary stats must come after rest of table, since we calculate them
-   // during traversal.  */
+   // during traversal.
    if (clo_cache_sim && clo_branch_sim) {
       VG_(fprintf)(fp,  "summary:"
                         " %llu %llu %llu"
@@ -1587,7 +1603,7 @@ static void cg_fini(Int exitcode)
    VG_(sprintf)(fmt, "%%s %%,%dllu\n", l1);
 
    /* Always print this */
-   VG_(umsg)(fmt, "I   refs:     ", Ir_total.a);
+   VG_(umsg)(fmt, "I refs:       ", Ir_total.a);
 
    /* If cache profiling is enabled, show D access numbers and all
       miss numbers */
@@ -1612,7 +1628,7 @@ static void cg_fini(Int exitcode)
       VG_(sprintf)(fmt, "%%s %%,%dllu  (%%,%dllu rd   + %%,%dllu wr)\n",
                         l1, l2, l3);
 
-      VG_(umsg)(fmt, "D   refs:     ", 
+      VG_(umsg)(fmt, "D refs:       ", 
                      D_total.a, Dr_total.a, Dw_total.a);
       VG_(umsg)(fmt, "D1  misses:   ",
                      D_total.m1, Dr_total.m1, Dw_total.m1);
@@ -1717,8 +1733,7 @@ static void cg_fini(Int exitcode)
 static
 void cg_discard_superblock_info ( Addr orig_addr64, VexGuestExtents vge )
 {
-   SB_info* sbInfo;
-   Addr     orig_addr = vge.base[0];
+   Addr orig_addr = vge.base[0];
 
    tl_assert(vge.n_used > 0);
 
@@ -1727,11 +1742,17 @@ void cg_discard_superblock_info ( Addr orig_addr64, VexGuestExtents vge )
                    (void*)orig_addr,
                    (void*)vge.base[0], (ULong)vge.len[0]);
 
-   // Get BB info, remove from table, free BB info.  Simple!  Note that we
-   // use orig_addr, not the first instruction address in vge.
-   sbInfo = VG_(OSetGen_Remove)(instrInfoTable, &orig_addr);
-   tl_assert(NULL != sbInfo);
-   VG_(OSetGen_FreeNode)(instrInfoTable, sbInfo);
+   // Get SB info, remove from table, free SB info. Simple! Unless
+   // instrumentation is currently disabled, in which case we won't have an SB
+   // info. Note that we use orig_addr, not the first instruction address in
+   // `vge`.
+   SB_info* sbInfo = VG_(OSetGen_Remove)(instrInfoTable, &orig_addr);
+   if (sbInfo) {
+      tl_assert(instr_enabled);
+      VG_(OSetGen_FreeNode)(instrInfoTable, sbInfo);
+   } else {
+      tl_assert(!instr_enabled);
+   }
 }
 
 /*--------------------------------------------------------------------*/
@@ -1748,6 +1769,7 @@ static Bool cg_process_cmd_line_option(const HChar* arg)
    else if VG_STR_CLO( arg, "--cachegrind-out-file", clo_cachegrind_out_file) {}
    else if VG_BOOL_CLO(arg, "--cache-sim",  clo_cache_sim)  {}
    else if VG_BOOL_CLO(arg, "--branch-sim", clo_branch_sim) {}
+   else if VG_BOOL_CLO(arg, "--instr-at-start", clo_instr_at_start) {}
    else
       return False;
 
@@ -1756,12 +1778,13 @@ static Bool cg_process_cmd_line_option(const HChar* arg)
 
 static void cg_print_usage(void)
 {
-   VG_(print_cache_clo_opts)();
    VG_(printf)(
-"    --cache-sim=yes|no               collect cache stats? [yes]\n"
-"    --branch-sim=yes|no              collect branch prediction stats? [no]\n"
 "    --cachegrind-out-file=<file>     output file name [cachegrind.out.%%p]\n"
+"    --cache-sim=yes|no               collect cache stats? [no]\n"
+"    --branch-sim=yes|no              collect branch prediction stats? [no]\n"
+"    --instr-at-start=yes|no          instrument at start? [yes]\n"
    );
+   VG_(print_cache_clo_opts)();
 }
 
 static void cg_print_debug_usage(void)
@@ -1769,6 +1792,62 @@ static void cg_print_debug_usage(void)
    VG_(printf)(
 "    (none)\n"
    );
+}
+
+/*--------------------------------------------------------------------*/
+/*--- Client requests                                              ---*/
+/*--------------------------------------------------------------------*/
+
+static void set_instr_enabled(Bool enable)
+{
+   if (enable) {
+      // Enable instrumentation.
+      if (!instr_enabled) {
+         // Discard first, then update `instr_enabled`;
+         // `cg_discard_superblock_info` relies on that.
+         VG_(discard_translations_safely)((Addr)0x1000, ~(SizeT)0xfff, "cachegrind");
+         instr_enabled = True;
+      } else {
+         VG_(dmsg)("warning: CACHEGRIND_START_INSTRUMENTATION called,\n");
+         VG_(dmsg)("         but instrumentation is already enabled\n");
+      }
+   } else {
+      // Disable instrumentation.
+      if (instr_enabled) {
+         // Discard first, then update `instr_enabled`;
+         // `cg_discard_superblock_info` relies on that.
+         VG_(discard_translations_safely)((Addr)0x1000, ~(SizeT)0xfff, "cachegrind");
+         instr_enabled = False;
+      } else {
+         VG_(dmsg)("warning: CACHEGRIND_STOP_INSTRUMENTATION called,\n");
+         VG_(dmsg)("         but instrumentation is already disabled\n");
+      }
+   }
+}
+
+static Bool cg_handle_client_request(ThreadId tid, UWord *args, UWord *ret)
+{
+   if (!VG_IS_TOOL_USERREQ('C', 'G', args[0])
+       && VG_USERREQ__GDB_MONITOR_COMMAND != args[0])
+      return False;
+
+   switch(args[0]) {
+   case VG_USERREQ__CG_START_INSTRUMENTATION:
+      set_instr_enabled(True);
+      *ret = 0;
+      return True;
+
+   case VG_USERREQ__CG_STOP_INSTRUMENTATION:
+      set_instr_enabled(False);
+      *ret = 0;
+      return True;
+
+   default:
+      VG_(message)(Vg_UserMsg,
+                   "Warning: unknown cachegrind client request code %llx\n",
+                   (ULong)args[0]);
+      return False;
+   }
 }
 
 /*--------------------------------------------------------------------*/
@@ -1781,9 +1860,9 @@ static void cg_pre_clo_init(void)
 {
    VG_(details_name)            ("Cachegrind");
    VG_(details_version)         (NULL);
-   VG_(details_description)     ("a cache and branch-prediction profiler");
+   VG_(details_description)     ("a high-precision tracing profiler");
    VG_(details_copyright_author)(
-      "Copyright (C) 2002-2017, and GNU GPL'd, by Nicholas Nethercote et al.");
+      "Copyright (C) 2002-2024, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 500 );
 
@@ -1799,6 +1878,7 @@ static void cg_pre_clo_init(void)
    VG_(needs_command_line_options)(cg_process_cmd_line_option,
                                    cg_print_usage,
                                    cg_print_debug_usage);
+   VG_(needs_client_requests)(cg_handle_client_request);
 }
 
 static void cg_post_clo_init(void)
@@ -1821,32 +1901,40 @@ static void cg_post_clo_init(void)
                           VG_(malloc), "cg.main.cpci.3",
                           VG_(free));
 
-   VG_(post_clo_init_configure_caches)(&I1c, &D1c, &LLc,
-                                       &clo_I1_cache,
-                                       &clo_D1_cache,
-                                       &clo_LL_cache);
+   if (clo_cache_sim) {
+      VG_(post_clo_init_configure_caches)(&I1c, &D1c, &LLc,
+                                          &clo_I1_cache,
+                                          &clo_D1_cache,
+                                          &clo_LL_cache);
 
-   // min_line_size is used to make sure that we never feed
-   // accesses to the simulator straddling more than two
-   // cache lines at any cache level
-   min_line_size = (I1c.line_size < D1c.line_size) ? I1c.line_size : D1c.line_size;
-   min_line_size = (LLc.line_size < min_line_size) ? LLc.line_size : min_line_size;
+      // min_line_size is used to make sure that we never feed
+      // accesses to the simulator straddling more than two
+      // cache lines at any cache level
+      min_line_size = (I1c.line_size < D1c.line_size) ? I1c.line_size : D1c.line_size;
+      min_line_size = (LLc.line_size < min_line_size) ? LLc.line_size : min_line_size;
 
-   Int largest_load_or_store_size
-      = VG_(machine_get_size_of_largest_guest_register)();
-   if (min_line_size < largest_load_or_store_size) {
-      /* We can't continue, because the cache simulation might
-         straddle more than 2 lines, and it will assert.  So let's
-         just stop before we start. */
-      VG_(umsg)("Cachegrind: cannot continue: the minimum line size (%d)\n",
-                (Int)min_line_size);
-      VG_(umsg)("  must be equal to or larger than the maximum register size (%d)\n",
-                largest_load_or_store_size );
-      VG_(umsg)("  but it is not.  Exiting now.\n");
-      VG_(exit)(1);
+      Int largest_load_or_store_size
+         = VG_(machine_get_size_of_largest_guest_register)();
+      if (min_line_size < largest_load_or_store_size) {
+         /* We can't continue, because the cache simulation might
+            straddle more than 2 lines, and it will assert.  So let's
+            just stop before we start. */
+         VG_(umsg)("Cachegrind: cannot continue: the minimum line size (%d)\n",
+                   (Int)min_line_size);
+         VG_(umsg)("  must be equal to or larger than the maximum register size (%d)\n",
+                   largest_load_or_store_size );
+         VG_(umsg)("  but it is not.  Exiting now.\n");
+         VG_(exit)(1);
+      }
+
+      cachesim_initcaches(I1c, D1c, LLc);
    }
 
-   cachesim_initcaches(I1c, D1c, LLc);
+   // When instrumentation client requests are enabled, we start with
+   // instrumentation off.
+   if (!clo_instr_at_start) {
+      instr_enabled = False;
+   }
 }
 
 VG_DETERMINE_INTERFACE_VERSION(cg_pre_clo_init)

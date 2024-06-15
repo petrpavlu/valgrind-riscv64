@@ -225,7 +225,11 @@ DECL_TEMPLATE(darwin, gethostuuid);             // 142
 DECL_TEMPLATE(darwin, mount);                   // 167
 // old ustat
 DECL_TEMPLATE(darwin, csops);                   // 169
+#if DARWIN_VERS >= DARWIN_10_8
+DECL_TEMPLATE(darwin, csops_audittoken);        // 170
+#else
 // old table
+#endif
 // old wait3
 // old rpause
 // NYI waitid 173
@@ -290,7 +294,9 @@ DECL_TEMPLATE(darwin, exchangedata);            // 223
 // NYI searchfs 225
 // GEN delete 226
 // NYI copyfile 226
-// 228
+#if DARWIN_VERS >= DARWIN_10_6
+DECL_TEMPLATE(darwin, fgetattrlist);            // 228
+#endif
 // 229
 // GEN poll 230
 DECL_TEMPLATE(darwin, watchevent);              // 231
@@ -421,7 +427,7 @@ DECL_TEMPLATE(darwin, aio_write);              // 319
 DECL_TEMPLATE(darwin, issetugid);               // 327
 DECL_TEMPLATE(darwin, __pthread_kill);          // 328
 DECL_TEMPLATE(darwin, __pthread_sigmask);       // 329
-// NYI __sigwait 330
+DECL_TEMPLATE(darwin, __sigwait);               // 330
 DECL_TEMPLATE(darwin, __disable_threadsignal);  // 331
 DECL_TEMPLATE(darwin, __pthread_markcancel);    // 332
 DECL_TEMPLATE(darwin, __pthread_canceled);      // 333
@@ -471,7 +477,7 @@ DECL_TEMPLATE(darwin, __thread_selfid);         // 372
 DECL_TEMPLATE(darwin, kevent_qos);              // 374
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 #if DARWIN_VERS >= DARWIN_10_13
-// NYI kevent_id                                // 375
+DECL_TEMPLATE(darwin, kevent_id);               // 375
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 // 376
 // 377
@@ -572,8 +578,10 @@ DECL_TEMPLATE(darwin, getattrlistbulk);          // 461
 // NYI clonefileat     // 462
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_10
-// NYI openat          // 463
-// NYI openat_nocancel // 464
+DECL_TEMPLATE(darwin, openat);                   // 463
+#if DARWIN_VERS >= DARWIN_10_13
+DECL_TEMPLATE(darwin, openat_nocancel);          // 464
+#endif
 // NYI renameat        // 465
 DECL_TEMPLATE(darwin, faccessat);                // 466
 // NYI fchmodat        // 467
@@ -614,8 +622,8 @@ DECL_TEMPLATE(darwin, guarded_writev_np);           // 487
 #endif /* DARWIN_VERS >= DARWIN_10_11 */
 #if DARWIN_VERS >= DARWIN_10_12
 DECL_TEMPLATE(darwin, getentropy);                  // 500
-// NYI necp_open                                    // 501
-// NYI necp_client_action                           // 502
+DECL_TEMPLATE(darwin, necp_open);                   // 501
+DECL_TEMPLATE(darwin, necp_client_action);          // 502
 // 503
 // 504
 // 505
@@ -633,8 +641,8 @@ DECL_TEMPLATE(darwin, ulock_wake);                  // 516
 // NYI fclonefileat                                 // 517
 // NYI fs_snapshot                                  // 518
 // 519
-// NYI terminate_with_payload                       // 520
-// NYI abort_with_payload                           // 521
+DECL_TEMPLATE(darwin, terminate_with_payload);      // 520
+DECL_TEMPLATE(darwin, abort_with_payload);          // 521
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 #if DARWIN_VERS >= DARWIN_10_13
 // NYI necp_session_open                            // 522
@@ -763,7 +771,7 @@ DECL_TEMPLATE(darwin, task_for_pid);
 DECL_TEMPLATE(darwin, pid_for_task);
 
 #if DARWIN_VERS >= DARWIN_10_13
-// NYI thread_get_special_reply_port                // 50
+DECL_TEMPLATE(darwin, thread_get_special_reply_port);
 #endif /* DARWIN_VERS >= DARWIN_10_13 */
 
 #if DARWIN_VERS >= DARWIN_10_12
@@ -823,6 +831,7 @@ extern void wqthread_hijack(Addr self, Addr kport, Addr stackaddr, Addr workitem
 extern Addr pthread_starter;
 extern Addr wqthread_starter;
 extern SizeT pthread_structsize;
+extern SizeT pthread_tsd_offset;
 
 
 #endif

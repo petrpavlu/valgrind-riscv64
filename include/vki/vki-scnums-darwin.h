@@ -395,7 +395,11 @@
 #define	__NR_mount          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(167)
 			/* 168  old ustat */
 #define __NR_csops          VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(169)
+#if DARWIN_VERS >= DARWIN_10_8
+#define __NR_csops_audittoken VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(170)
+#else
 			/* 170  old table */
+#endif
 			/* 171  old wait3 */
 			/* 172  old rpause */
 #define	__NR_waitid         VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(173)
@@ -609,7 +613,7 @@
 #define	__NR_issetugid      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(327)
 #define	__NR___pthread_kill VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(328)
 #define	__NR___pthread_sigmask VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(329)
-#define	__NR___sigwait        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(330)
+#define __NR___sigwait      VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(330)
 #define	__NR___disable_threadsignal VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(331)
 #define	__NR___pthread_markcancel VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(332)
 #define	__NR___pthread_canceled VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(333)
@@ -771,6 +775,10 @@
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 #if DARWIN_VERS >= DARWIN_10_10
+#define __NR_openat                 VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(463)
+#if DARWIN_VERS >= DARWIN_10_13
+#define __NR_openat_nocancel        VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(464)
+#endif
 #define __NR_faccessat              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(466)
 #define __NR_fstatat64              VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(470)
 #define __NR_readlinkat             VG_DARWIN_SYSCALL_CONSTRUCT_UNIX(473)

@@ -1239,7 +1239,7 @@ Int VG_(getosreldate)(void)
 
 Bool VG_(is32on64)(void)
 {
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    return False;
 #elif defined(VGP_x86_freebsd)
    SysRes res;
@@ -1301,7 +1301,7 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    Addr endaddr   = startaddr + nbytes;
    VG_(do_syscall2)(__NR_ARM_cacheflush, startaddr, endaddr);
 
-#  elif defined(VGP_arm64_linux)
+#  elif defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    // This arm64_linux section of this function VG_(invalidate_icache)
    // is copied from
    // https://github.com/armvixl/vixl/blob/master/src/a64/cpu-a64.cc
@@ -1335,11 +1335,12 @@ void VG_(invalidate_icache) ( void *ptr, SizeT nbytes )
    */
 
    // Ask what the I and D line sizes are
-   UInt cache_type_register;
+   ULong read_mrs;
    // Copy the content of the cache type register to a core register.
    __asm__ __volatile__ ("mrs %[ctr], ctr_el0" // NOLINT
-                         : [ctr] "=r" (cache_type_register));
+                         : [ctr] "=r" (read_mrs));
 
+   UInt cache_type_register = read_mrs;
    const Int kDCacheLineSizeShift = 16;
    const Int kICacheLineSizeShift = 0;
    const UInt kDCacheLineSizeMask = 0xf << kDCacheLineSizeShift;

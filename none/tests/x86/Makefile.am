@@ -52,6 +52,7 @@ EXTRA_DIST = \
 	fxtract.stdout.exp fxtract.stderr.exp fxtract.vgtest \
 	fxtract.stdout.exp-older-glibc \
 	getseg.stdout.exp getseg.stderr.exp getseg.vgtest \
+	gnu_binutils_nop.stderr.exp gnu_binutils_nop.vgtest \
 	incdec_alt.stdout.exp incdec_alt.stderr.exp incdec_alt.vgtest \
 	int.stderr.exp int.stdout.exp int.disabled \
 	$(addsuffix .stderr.exp,$(INSN_TESTS)) \
@@ -74,6 +75,7 @@ EXTRA_DIST = \
 	smc1.stderr.exp smc1.stdout.exp smc1.vgtest \
 	ssse3_misaligned.stderr.exp ssse3_misaligned.stdout.exp \
 	ssse3_misaligned.vgtest ssse3_misaligned.c \
+	sse4-x86.stdout.exp sse4-x86.stderr.exp sse4-x86.vgtest \
 	x86locked.vgtest x86locked.stdout.exp x86locked.stderr.exp \
 	x87trigOOR.vgtest x87trigOOR.stdout.exp x87trigOOR.stderr.exp \
 	yield.stderr.exp yield.stdout.exp yield.disabled \
@@ -100,6 +102,7 @@ check_PROGRAMS = \
 	fpu_lazy_eflags \
 	fxtract \
 	getseg \
+	gnu_binutils_nop \
 	incdec_alt \
 	$(INSN_TESTS) \
 	int \
@@ -116,6 +119,9 @@ check_PROGRAMS = \
 	xadd
 if BUILD_SSSE3_TESTS
    check_PROGRAMS += ssse3_misaligned
+endif
+if BUILD_SSE42_TESTS
+   check_PROGRAMS += sse4-x86
 endif
 if BUILD_LZCNT_TESTS
  check_PROGRAMS += lzcnt32

@@ -5,8 +5,8 @@
 # --- Cachegrind's annotator.                       cg_annotate.in ---
 # --------------------------------------------------------------------
 
-# This file is part of Cachegrind, a Valgrind tool for cache
-# profiling programs.
+# This file is part of Cachegrind, a high-precision tracing profiler
+# built with Valgrind.
 #
 # Copyright (C) 2002-2023 Nicholas Nethercote
 #    njn@valgrind.org
@@ -26,43 +26,83 @@
 #
 # The GNU General Public License is contained in the file COPYING.
 
-"""
-This script reads Cachegrind output files and produces human-readable reports.
-"""
-
+# This script reads Cachegrind output files and produces human-readable output.
+#
 # Use `make pyann` to "build" this script with `auxprogs/pybuild.rs` every time
 # it is changed. This runs the formatters, type-checkers, and linters on
 # `cg_annotate.in` and then generates `cg_annotate`.
 
-
 from __future__ import annotations
 
+import filecmp
 import os
 import re
 import sys
 from argparse import ArgumentParser, BooleanOptionalAction, Namespace
 from collections import defaultdict
-from typing import DefaultDict, NewType, NoReturn, TextIO
+from typing import Callable, DefaultDict, NoReturn, TextIO
 
 
+def die(msg: str) -> NoReturn:
+    print("cg_annotate: error:", msg, file=sys.stderr)
+    sys.exit(1)
+
+
+SearchAndReplace = Callable[[str], str]
+
+
+# A typed wrapper for parsed args.
 class Args(Namespace):
-    """
-    A typed wrapper for parsed args.
-
-    None of these fields are modified after arg parsing finishes.
-    """
-
+    # None of these fields are modified after arg parsing finishes.
+    diff: bool
+    mod_filename: SearchAndReplace
+    mod_funcname: SearchAndReplace
     show: list[str]
     sort: list[str]
     threshold: float  # a percentage
     show_percs: bool
     annotate: bool
     context: int
-    include: list[str]
     cgout_filename: list[str]
 
     @staticmethod
     def parse() -> Args:
+        # We support Perl-style `s/old/new/flags` search-and-replace
+        # expressions, because that's how this option was implemented in the
+        # old Perl version of `cg_diff`. This requires conversion from
+        # `s/old/new/` style to `re.sub`. The conversion isn't a perfect
+        # emulation of Perl regexps (e.g. Python uses `\1` rather than `$1` for
+        # using captures in the `new` part), but it should be close enough. The
+        # only supported flags are `g` (global) and `i` (ignore case).
+        def search_and_replace(regex: str | None) -> SearchAndReplace:
+            if regex is None:
+                return lambda s: s
+
+            # Extract the parts of an `s/old/new/tail` regex. `(?<!\\)/` is an
+            # example of negative lookbehind. It means "match a forward slash
+            # unless preceded by a backslash".
+            m = re.match(r"s/(.*)(?<!\\)/(.*)(?<!\\)/(g|i|gi|ig|)$", regex)
+            if m is None:
+                raise ValueError
+
+            # Forward slashes must be escaped in an `s/old/new/` expression,
+            # but we then must unescape them before using them with `re.sub`.
+            pat = m.group(1).replace(r"\/", r"/")
+            repl = m.group(2).replace(r"\/", r"/")
+            tail = m.group(3)
+
+            if "g" in tail:
+                count = 0  # unlimited
+            else:
+                count = 1
+
+            if "i" in tail:
+                flags = re.IGNORECASE
+            else:
+                flags = re.RegexFlag(0)
+
+            return lambda s: re.sub(re.compile(pat, flags=flags), repl, s, count=count)
+
         def comma_separated_list(values: str) -> list[str]:
             return values.split(",")
 
@@ -72,16 +112,14 @@ class Args(Namespace):
                 return f
             raise ValueError
 
+        # Add a bool argument that defaults to true.
+        #
+        # Supports these forms: `--foo`, `--no-foo`, `--foo=yes`, `--foo=no`.
+        # The latter two were the forms supported by the old Perl version of
+        # `cg_annotate`, and are now deprecated.
         def add_bool_argument(
             p: ArgumentParser, new_name: str, old_name: str, help_: str
         ) -> None:
-            """
-            Add a bool argument that defaults to true.
-
-            Supports these forms: `--foo`, `--no-foo`, `--foo=yes`, `--foo=no`.
-            The latter two were the forms supported by the old Perl version of
-            `cg_annotate`, and are now deprecated.
-            """
             new_flag = "--" + new_name
             old_flag = "--" + old_name
             dest = new_name.replace("-", "_")
@@ -107,31 +145,49 @@ class Args(Namespace):
                 help=f"(deprecated) same as --no-{new_name}",
             )
 
-        p = ArgumentParser(description="Process a Cachegrind output file.")
+        p = ArgumentParser(description="Process one or more Cachegrind output files.")
 
         p.add_argument("--version", action="version", version="%(prog)s-@VERSION@")
-
+        p.add_argument(
+            "--diff",
+            default=False,
+            action="store_true",
+            help="perform a diff between two Cachegrind output files",
+        )
+        p.add_argument(
+            "--mod-filename",
+            type=search_and_replace,
+            metavar="REGEX",
+            default=search_and_replace(None),
+            help="a search-and-replace regex applied to filenames, e.g. "
+            "`s/prog[0-9]/progN/`",
+        )
+        p.add_argument(
+            "--mod-funcname",
+            type=search_and_replace,
+            metavar="REGEX",
+            default=search_and_replace(None),
+            help="like --mod-filename, but for function names",
+        )
         p.add_argument(
             "--show",
             type=comma_separated_list,
             metavar="A,B,C",
             help="only show figures for events A,B,C (default: all events)",
         )
-
         p.add_argument(
             "--sort",
             type=comma_separated_list,
             metavar="A,B,C",
             help="sort functions by events A,B,C (default: event column order)",
         )
-
         p.add_argument(
             "--threshold",
             type=threshold,
             default=0.1,
             metavar="N:[0,20]",
-            help="only show functions with more than N%% of primary sort event "
-            "counts (default: %(default)s)",
+            help="only show file:function/function:file pairs with more than "
+            "N%% of primary sort event counts (default: %(default)s)",
         )
         add_bool_argument(
             p,
@@ -155,21 +211,20 @@ class Args(Namespace):
             "(default: %(default)s)",
         )
         p.add_argument(
-            "-I",
-            "--include",
-            action="append",
-            default=[],
-            metavar="D",
-            help="add D to the list of searched source file directories",
-        )
-        p.add_argument(
             "cgout_filename",
-            nargs=1,
+            nargs="+",
             metavar="cachegrind-out-file",
             help="file produced by Cachegrind",
         )
 
-        return p.parse_args(namespace=Args())
+        # `args0` name used to avoid shadowing the global `args`, which pylint
+        # doesn't like.
+        args0 = p.parse_args(namespace=Args())
+        if args0.diff and len(args0.cgout_filename) != 2:
+            p.print_usage(file=sys.stderr)
+            die("argument --diff: requires exactly two Cachegrind output files")
+
+        return args0  # type: ignore [return-value]
 
 
 # Args are stored in a global for easy access.
@@ -181,6 +236,9 @@ args = Args.parse()
 class Events:
     # The event names.
     events: list[str]
+
+    # Equal to `len(self.events)`.
+    num_events: int
 
     # The order in which we must traverse events for --show. Can be shorter
     # than `events`.
@@ -196,7 +254,11 @@ class Events:
     # Like `sort_events`, but indices into `events`, rather than names.
     sort_indices: list[int]
 
-    def __init__(self, text: str) -> None:
+    def __init__(self) -> None:
+        # All fields are left uninitialized here, and set instead in `init`.
+        pass
+
+    def init(self, text: str) -> None:
         self.events = text.split()
         self.num_events = len(self.events)
 
@@ -226,10 +288,10 @@ class Events:
 
         self.sort_indices = [event_indices[event] for event in self.sort_events]
 
-    def mk_cc(self, text: str) -> Cc:
-        """Raises a `ValueError` exception on syntax error."""
+    # Raises a `ValueError` exception on syntax error.
+    def mk_cc(self, str_counts: list[str]) -> Cc:
         # This is slightly faster than a list comprehension.
-        counts = list(map(int, text.split()))
+        counts = list(map(int, str_counts))
 
         if len(counts) == self.num_events:
             pass
@@ -239,63 +301,138 @@ class Events:
         else:
             raise ValueError
 
-        return Cc(counts)
+        return counts
 
     def mk_empty_cc(self) -> Cc:
         # This is much faster than a list comprehension.
-        return Cc([0] * self.num_events)
+        return [0] * self.num_events
+
+    def mk_empty_dcc(self) -> Dcc:
+        return Dcc(self.mk_empty_cc(), defaultdict(self.mk_empty_cc))
 
 
-class Cc:
-    """
-    This is a dumb container for counts.
-
-    It doesn't know anything about events, i.e. what each count means. It can
-    do basic operations like `__iadd__` and `__eq__`, and anything more must be
-    done elsewhere. `Events.mk_cc` and `Events.mk_empty_cc` are used for
-    construction.
-    """
-
-    # Always the same length as `Events.events`.
-    counts: list[int]
-
-    def __init__(self, counts: list[int]) -> None:
-        self.counts = counts
-
-    def __repr__(self) -> str:
-        return str(self.counts)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Cc):
-            return NotImplemented
-        return self.counts == other.counts
-
-    def __iadd__(self, other: Cc) -> Cc:
-        for i, other_count in enumerate(other.counts):
-            self.counts[i] += other_count
-        return self
+# A "cost centre", which is a dumb container for counts. Always the same length
+# as `Events.events`, but it doesn't even know event names. `Events.mk_cc` and
+# `Events.mk_empty_cc` are used for construction.
+#
+# This used to be a class with a single field `counts: list[int]`, but this
+# type is very hot and just using a type alias is much faster.
+Cc = list[int]
 
 
-# A paired filename and function name.
-Flfn = NewType("Flfn", tuple[str, str])
+# Add the counts in `a_cc` to `b_cc`.
+def add_cc_to_cc(a_cc: Cc, b_cc: Cc) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc[i] += a_count
 
-# Per-function CCs.
-DictFlfnCc = DefaultDict[Flfn, Cc]
 
-# Per-line CCs, organised by filename and line number.
+# Subtract the counts in `a_cc` from `b_cc`.
+def sub_cc_from_cc(a_cc: Cc, b_cc: Cc) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc[i] -= a_count
+
+
+# Unrolled version of `add_cc_to_cc`, for speed.
+def add_cc_to_ccs(
+    a_cc: Cc, b_cc1: Cc, b_cc2: Cc, b_cc3: Cc, b_cc4: Cc, b_cc5: Cc, total_cc: Cc
+) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc1[i] += a_count
+        b_cc2[i] += a_count
+        b_cc3[i] += a_count
+        b_cc4[i] += a_count
+        b_cc5[i] += a_count
+        total_cc[i] += a_count
+
+
+# Unrolled version of `sub_cc_from_cc`, for speed. Note that the last one,
+# `total_cc`, is added.
+def sub_cc_from_ccs(
+    a_cc: Cc, b_cc1: Cc, b_cc2: Cc, b_cc3: Cc, b_cc4: Cc, b_cc5: Cc, total_cc: Cc
+) -> None:
+    for i, a_count in enumerate(a_cc):
+        b_cc1[i] -= a_count
+        b_cc2[i] -= a_count
+        b_cc3[i] -= a_count
+        b_cc4[i] -= a_count
+        b_cc5[i] -= a_count
+        total_cc[i] += a_count
+
+
+# Update `min_cc` and `max_cc` with `self`.
+def update_cc_extremes(self: Cc, min_cc: Cc, max_cc: Cc) -> None:
+    for i, count in enumerate(self):
+        if count > max_cc[i]:
+            max_cc[i] = count
+        elif count < min_cc[i]:
+            min_cc[i] = count
+
+
+# Note: some abbrevations used below:
+# - Ofl/ofl: original filename, as mentioned in a cgout file.
+# - Ofn/ofn: original function name, as mentioned in a cgout file.
+# - Mfl/mfl: modified filename, the result of passing an Ofl through
+#   `--mod-filename`.
+# - Mfn/mfn: modified function name, the result of passing an Ofn through
+#   `--mod-funcname`.
+# - Mname/mname: modified name, used for what could be an Mfl or an Mfn.
+
+
+# A deep cost centre with a dict for the inner mnames and CCs.
+class Dcc:
+    outer_cc: Cc
+    inner_dict_mname_cc: DictMnameCc
+
+    def __init__(self, outer_cc: Cc, inner_dict_mname_cc: DictMnameCc) -> None:
+        self.outer_cc = outer_cc
+        self.inner_dict_mname_cc = inner_dict_mname_cc
+
+
+# A deep cost centre with a list for the inner mnames and CCs. Used during
+# filtering and sorting.
+class Lcc:
+    outer_cc: Cc
+    inner_list_mname_cc: ListMnameCc
+
+    def __init__(self, outer_cc: Cc, inner_list_mname_cc: ListMnameCc) -> None:
+        self.outer_cc = outer_cc
+        self.inner_list_mname_cc = inner_list_mname_cc
+
+
+# Per-Mfl/Mfn CCs. The list version is used during filtering and sorting.
+DictMnameCc = DefaultDict[str, Cc]
+ListMnameCc = list[tuple[str, Cc]]
+
+# Per-Mfl/Mfn DCCs. The outer Mnames are Mfls and the inner Mnames are Mfns, or
+# vice versa. The list version is used during filtering and sorting.
+DictMnameDcc = DefaultDict[str, Dcc]
+ListMnameLcc = list[tuple[str, Lcc]]
+
+# Per-line CCs, organised by Mfl and line number.
 DictLineCc = DefaultDict[int, Cc]
-DictFlDictLineCc = DefaultDict[str, DictLineCc]
+DictMflDictLineCc = DefaultDict[str, DictLineCc]
+
+# A dictionary tracking how Ofls get mapped to Mfls by `--mod-filename`. If
+# `--mod-filename` isn't used, each entry will be the identity mapping: ("foo"
+# -> set(["foo"])).
+DictMflOfls = DefaultDict[str, set[str]]
 
 
-def die(msg: str) -> NoReturn:
-    print("cg_annotate: error:", msg, file=sys.stderr)
-    sys.exit(1)
-
-
-def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, Cc]:
+def read_cgout_file(
+    cgout_filename: str,
+    is_first_file: bool,
+    descs: list[str],
+    cmds: list[str],
+    events: Events,
+    dict_mfl_ofls: DictMflOfls,
+    dict_mfl_dcc: DictMnameDcc,
+    dict_mfn_dcc: DictMnameDcc,
+    dict_mfl_dict_line_cc: DictMflDictLineCc,
+    summary_cc: Cc,
+) -> None:
     # The file format is described in Cachegrind's manual.
     try:
-        cgout_file = open(args.cgout_filename[0], "r", encoding="utf-8")
+        cgout_file = open(cgout_filename, "r", encoding="utf-8")
     except OSError as err:
         die(f"{err}")
 
@@ -317,69 +454,125 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
                 desc += m.group(1) + "\n"
             else:
                 break
+        descs.append(desc)
 
         # Read "cmd:" line. (`line` is already set from the "desc:" loop.)
         if m := re.match(r"cmd:\s+(.*)", line):
-            cmd = m.group(1)
+            cmds.append(m.group(1))
         else:
             parse_die("missing a `command:` line")
 
         # Read "events:" line.
         line = readline()
         if m := re.match(r"events:\s+(.*)", line):
-            events = Events(m.group(1))
+            if is_first_file:
+                events.init(m.group(1))
+            else:
+                events2 = Events()
+                events2.init(m.group(1))
+                if events.events != events2.events:
+                    die("events in data files don't match")
         else:
             parse_die("missing an `events:` line")
 
         def mk_empty_dict_line_cc() -> DictLineCc:
             return defaultdict(events.mk_empty_cc)
 
-        curr_fl = ""
-        curr_flfn = Flfn(("", ""))
+        # The current Mfl and Mfn.
+        mfl = ""
+        mfn = ""
 
-        # Different places where we accumulate CC data.
-        dict_flfn_cc: DictFlfnCc = defaultdict(events.mk_empty_cc)
-        dict_fl_dict_line_cc: DictFlDictLineCc = defaultdict(mk_empty_dict_line_cc)
-        summary_cc = None
+        # These values are passed in by reference and are modified by this
+        # function. But they can't be properly initialized until the `events:`
+        # line of the first file is read and the number of events is known. So
+        # we initialize them in an invalid state in `main`, and then
+        # reinitialize them properly here, before their first use.
+        if is_first_file:
+            dict_mfl_dcc.default_factory = events.mk_empty_dcc
+            dict_mfn_dcc.default_factory = events.mk_empty_dcc
+            dict_mfl_dict_line_cc.default_factory = mk_empty_dict_line_cc
+            summary_cc.extend(events.mk_empty_cc())
 
-        # Compile the one hot regex.
-        count_pat = re.compile(r"(\d+)\s+(.*)")
+        # These are refs into the dicts above, used to avoid repeated lookups.
+        # They are all overwritten before first use.
+        mfl_dcc = events.mk_empty_dcc()
+        mfn_dcc = events.mk_empty_dcc()
+        mfl_dcc_inner_mfn_cc = events.mk_empty_cc()
+        mfn_dcc_inner_mfl_cc = events.mk_empty_cc()
+        dict_line_cc = mk_empty_dict_line_cc()
+        total_cc = events.mk_empty_cc()
+
+        # When diffing, we negate the first cgout file's counts to effectively
+        # achieve `cgout2 - cgout1`.
+        if args.diff and is_first_file:
+            combine_cc_with_cc = sub_cc_from_cc
+            combine_cc_with_ccs = sub_cc_from_ccs
+        else:
+            combine_cc_with_cc = add_cc_to_cc
+            combine_cc_with_ccs = add_cc_to_ccs
+
+        summary_cc_present = False
 
         # Line matching is done in order of pattern frequency, for speed.
-        while True:
-            line = readline()
-
-            if m := count_pat.match(line):
-                line_num = int(m.group(1))
+        while line := readline():
+            if line[0].isdigit():
+                split_line = line.split()
                 try:
-                    cc = events.mk_cc(m.group(2))
+                    line_num = int(split_line[0])
+                    cc = events.mk_cc(split_line[1:])
                 except ValueError:
                     parse_die("malformed or too many event counts")
 
-                # Record this CC at the function level.
-                flfn_cc = dict_flfn_cc[curr_flfn]
-                flfn_cc += cc
-
-                # Record this CC at the file/line level.
-                line_cc = dict_fl_dict_line_cc[curr_fl][line_num]
-                line_cc += cc
+                # Record this CC at various levels.
+                combine_cc_with_ccs(
+                    cc,
+                    mfl_dcc.outer_cc,
+                    mfn_dcc.outer_cc,
+                    mfl_dcc_inner_mfn_cc,
+                    mfn_dcc_inner_mfl_cc,
+                    dict_line_cc[line_num],
+                    total_cc,
+                )
 
             elif line.startswith("fn="):
-                curr_flfn = Flfn((curr_fl, line[3:-1]))
+                ofn = line[3:-1]
+                mfn = args.mod_funcname(ofn)
+                # `mfl_dcc` is unchanged.
+                mfn_dcc = dict_mfn_dcc[mfn]
+                mfl_dcc_inner_mfn_cc = mfl_dcc.inner_dict_mname_cc[mfn]
+                mfn_dcc_inner_mfl_cc = mfn_dcc.inner_dict_mname_cc[mfl]
 
             elif line.startswith("fl="):
-                curr_fl = line[3:-1]
+                ofl = line[3:-1]
+                mfl = args.mod_filename(ofl)
+                dict_mfl_ofls[mfl].add(ofl)
                 # A `fn=` line should follow, overwriting the function name.
-                curr_flfn = Flfn((curr_fl, "<unspecified>"))
+                mfn = "<unspecified>"
+                mfl_dcc = dict_mfl_dcc[mfl]
+                mfn_dcc = dict_mfn_dcc[mfn]
+                mfl_dcc_inner_mfn_cc = mfl_dcc.inner_dict_mname_cc[mfn]
+                mfn_dcc_inner_mfl_cc = mfn_dcc.inner_dict_mname_cc[mfl]
+                dict_line_cc = dict_mfl_dict_line_cc[mfl]
 
             elif m := re.match(r"summary:\s+(.*)", line):
+                summary_cc_present = True
                 try:
-                    summary_cc = events.mk_cc(m.group(1))
-                except ValueError:
-                    parse_die("too many event counts")
+                    this_summary_cc = events.mk_cc(m.group(1).split())
+                    combine_cc_with_cc(this_summary_cc, summary_cc)
 
-            elif line == "":
-                break  # EOF
+                    # Check summary is correct. Note that `total_cc` doesn't
+                    # get negated for the first file in a diff, unlike the
+                    # other CCs, because it's only used here as a sanity check.
+                    if this_summary_cc != total_cc:
+                        msg = (
+                            "`summary:` line doesn't match computed total\n"
+                            f"- summary:  {this_summary_cc}\n"
+                            f"- computed: {total_cc}"
+                        )
+                        parse_die(msg)
+
+                except ValueError:
+                    parse_die("malformed or too many event counts")
 
             elif line == "\n" or line.startswith("#"):
                 # Skip empty lines and comment lines.
@@ -389,22 +582,25 @@ def read_cgout_file() -> tuple[str, str, Events, DictFlfnCc, DictFlDictLineCc, C
                 parse_die(f"malformed line: {line[:-1]}")
 
     # Check if summary line was present.
-    if not summary_cc:
+    if not summary_cc_present:
         parse_die("missing `summary:` line, aborting")
 
-    # Check summary is correct.
-    total_cc = events.mk_empty_cc()
-    for flfn_cc in dict_flfn_cc.values():
-        total_cc += flfn_cc
-    if summary_cc != total_cc:
-        msg = (
-            "`summary:` line doesn't match computed total\n"
-            f"- summary: {summary_cc}\n"
-            f"- total:   {total_cc}"
-        )
-        parse_die(msg)
 
-    return (desc, cmd, events, dict_flfn_cc, dict_fl_dict_line_cc, summary_cc)
+# The width of a column, in three parts.
+class Width:
+    # Width of the widest commified event count.
+    count: int
+
+    # Width of the widest first percentage, of the form ` (n.n%)` or ` (n.n%,`.
+    perc1: int
+
+    # Width of the widest second percentage, of the form ` n.n%)`.
+    perc2: int
+
+    def __init__(self, count: int, perc1: int, perc2: int) -> None:
+        self.count = count
+        self.perc1 = perc1
+        self.perc2 = perc2
 
 
 class CcPrinter:
@@ -414,90 +610,164 @@ class CcPrinter:
     # Note: every `CcPrinter` gets the same summary CC.
     summary_cc: Cc
 
-    # The width of each event count column. (This column is also used for event
-    # names.) For simplicity, its length matches `events.events`, even though
-    # not all events are necessarily shown.
-    count_widths: list[int]
+    # String to print before the event names.
+    events_prefix: str
 
-    # The width of each percentage column. Zero if --show-percs is disabled.
-    # Its length matches `count_widths`.
-    perc_widths: list[int]
+    # The widths of each event column. For simplicity, its length matches
+    # `events.events`, even though not all events are necessarily shown.
+    widths: list[Width]
 
-    def __init__(self, events: Events, ccs: list[Cc], summary_cc: Cc) -> None:
+    # Text of a missing CC, which can be computed in advance.
+    missing_cc_str: str
+
+    # Must call `init_ccs` or `init_list_mname_lcc` after this.
+    def __init__(self, events: Events, summary_cc: Cc) -> None:
         self.events = events
         self.summary_cc = summary_cc
+        # Other fields initialized in `init_*`.
 
-        # Find min and max value for each event. One of them will be the
-        # widest value.
-        min_cc = events.mk_empty_cc()
-        max_cc = events.mk_empty_cc()
+    def init_ccs(self, ccs: list[Cc]) -> None:
+        self.events_prefix = ""
+
+        # Find min and max count for each event. One of them will be the widest
+        # value.
+        min_cc = self.events.mk_empty_cc()
+        max_cc = self.events.mk_empty_cc()
         for cc in ccs:
-            for i, _ in enumerate(events.events):
-                count = cc.counts[i]
-                if count > max_cc.counts[i]:
-                    max_cc.counts[i] = count
-                elif count < min_cc.counts[i]:
-                    min_cc.counts[i] = count
+            update_cc_extremes(cc, min_cc, max_cc)
 
-        # Find maximum width for each column.
-        self.count_widths = [0] * events.num_events
-        self.perc_widths = [0] * events.num_events
-        for i, event in enumerate(events.events):
-            # Get count and perc widths of the min and max CCs.
-            (min_count, min_perc) = self.count_and_perc(min_cc, i)
-            (max_count, max_perc) = self.count_and_perc(max_cc, i)
+        self.init_widths(min_cc, max_cc, None, None)
 
-            # The event name goes in the count column.
-            self.count_widths[i] = max(len(min_count), len(max_count), len(event))
-            self.perc_widths[i] = max(len(min_perc), len(max_perc))
+    def init_list_mname_lcc(self, list_mname_lcc: ListMnameLcc) -> None:
+        self.events_prefix = "  "
+
+        cumul_cc = self.events.mk_empty_cc()
+
+        # Find min and max value for each event. One of them will be the widest
+        # value. Likewise for the cumulative counts.
+        min_cc = self.events.mk_empty_cc()
+        max_cc = self.events.mk_empty_cc()
+        min_cumul_cc = self.events.mk_empty_cc()
+        max_cumul_cc = self.events.mk_empty_cc()
+        for _, lcc in list_mname_lcc:
+            # Consider both outer and inner CCs for `count` and `perc1`.
+            update_cc_extremes(lcc.outer_cc, min_cc, max_cc)
+            for _, inner_cc in lcc.inner_list_mname_cc:
+                update_cc_extremes(inner_cc, min_cc, max_cc)
+
+            # Consider only outer CCs for `perc2`.
+            add_cc_to_cc(lcc.outer_cc, cumul_cc)
+            update_cc_extremes(cumul_cc, min_cumul_cc, max_cumul_cc)
+
+        self.init_widths(min_cc, max_cc, min_cumul_cc, max_cumul_cc)
+
+    def init_widths(
+        self, min_cc1: Cc, max_cc1: Cc, min_cc2: Cc | None, max_cc2: Cc | None
+    ) -> None:
+        self.widths = [Width(0, 0, 0)] * self.events.num_events
+        for i in range(len(self.events.events)):
+            # Get count and percs widths of the min and max CCs.
+            (min_count, min_perc1, min_perc2) = self.count_and_percs_strs(
+                min_cc1, min_cc2, i
+            )
+            (max_count, max_perc1, max_perc2) = self.count_and_percs_strs(
+                max_cc1, max_cc2, i
+            )
+            self.widths[i] = Width(
+                max(len(min_count), len(max_count)),
+                max(len(min_perc1), len(max_perc1)),
+                max(len(min_perc2), len(max_perc2)),
+            )
+
+        self.missing_cc_str = ""
+        for i in self.events.show_indices:
+            self.missing_cc_str += self.count_and_percs_str(i, ".", "", "")
+
+    # Get the count and perc string for `cc1[i]` and the perc string for
+    # `cc2[i]`. (Unless `cc2` is `None`, in which case `perc2` will be "".)
+    def count_and_percs_strs(
+        self, cc1: Cc, cc2: Cc | None, i: int
+    ) -> tuple[str, str, str]:
+        count = f"{cc1[i]:,d}"  # commify
+        if args.show_percs:
+            summary_count = self.summary_cc[i]
+            if cc2 is None:
+                # A plain or inner CC, with a single percentage.
+                if cc1[i] == 0:
+                    # Don't show percentages for "0" entries, it's just clutter.
+                    perc1 = ""
+                elif summary_count == 0:
+                    # Avoid dividing by zero.
+                    perc1 = " (n/a)"
+                else:
+                    perc1 = f" ({cc1[i] * 100 / summary_count:.1f}%)"
+                perc2 = ""
+            else:
+                # An outer CC, with two percentages.
+                if summary_count == 0:
+                    # Avoid dividing by zero.
+                    perc1 = " (n/a,"
+                    perc2 = " n/a)"
+                else:
+                    perc1 = f" ({cc1[i] * 100 / summary_count:.1f}%,"
+                    perc2 = f" {cc2[i] * 100 / summary_count:.1f}%)"
+        else:
+            perc1 = ""
+            perc2 = ""
+
+        return (count, perc1, perc2)
+
+    def count_and_percs_str(self, i: int, count: str, perc1: str, perc2: str) -> str:
+        event_w = len(self.events.events[i])
+        count_w = self.widths[i].count
+        perc1_w = self.widths[i].perc1
+        perc2_w = self.widths[i].perc2
+        pre_w = max(0, event_w - count_w - perc1_w - perc2_w)
+        return f"{'':>{pre_w}}{count:>{count_w}}{perc1:>{perc1_w}}{perc2:>{perc2_w}} "
 
     def print_events(self, suffix: str) -> None:
+        print(self.events_prefix, end="")
         for i in self.events.show_indices:
-            # The event name goes in the count column.
             event = self.events.events[i]
-            nwidth = self.count_widths[i]
-            pwidth = self.perc_widths[i]
-            empty_perc = ""
-            print(f"{event:<{nwidth}}{empty_perc:>{pwidth}} ", end="")
+            event_w = len(event)
+            count_w = self.widths[i].count
+            perc1_w = self.widths[i].perc1
+            perc2_w = self.widths[i].perc2
+            print(f"{event:_<{max(event_w, count_w + perc1_w + perc2_w)}} ", end="")
 
         print(suffix)
 
-    def print_count_and_perc(self, i: int, count: str, perc: str) -> None:
-        nwidth = self.count_widths[i]
-        pwidth = self.perc_widths[i]
-        print(f"{count:>{nwidth}}{perc:>{pwidth}} ", end="")
-
-    def count_and_perc(self, cc: Cc, i: int) -> tuple[str, str]:
-        count = f"{cc.counts[i]:,d}"  # commify
-        if args.show_percs:
-            if cc.counts[i] == 0:
-                # Don't show percentages for "0" entries, it's just clutter.
-                perc = ""
-            else:
-                summary_count = self.summary_cc.counts[i]
-                if summary_count == 0:
-                    perc = " (n/a)"
-                else:
-                    p = cc.counts[i] * 100 / summary_count
-                    perc = f" ({p:.1f}%)"
+    def print_lcc(self, indent: str, lcc: Lcc, outer_mname: str, cumul_cc: Cc) -> None:
+        print(indent, end="")
+        if (
+            len(lcc.inner_list_mname_cc) == 1
+            and lcc.outer_cc == lcc.inner_list_mname_cc[0][1]
+        ):
+            # There is only one inner CC, it met the threshold, and it is equal
+            # to the outer CC. Print the inner CC and outer CC in a single
+            # line, because they are the same.
+            inner_mname = lcc.inner_list_mname_cc[0][0]
+            self.print_cc(lcc.outer_cc, cumul_cc, f"{outer_mname}:{inner_mname}")
         else:
-            perc = ""
+            # There are multiple inner CCs, and at least one met the threshold.
+            # Print the outer CC and then the inner CCs, indented.
+            self.print_cc(lcc.outer_cc, cumul_cc, f"{outer_mname}:")
+            for inner_mname, inner_cc in lcc.inner_list_mname_cc:
+                print("  ", end="")
+                self.print_cc(inner_cc, None, f"  {inner_mname}")
+        print()
 
-        return (count, perc)
-
-    def print_cc(self, cc: Cc, suffix: str) -> None:
+    # If `cc2` is `None`, it's a vanilla CC or inner CC. Otherwise, it's an
+    # outer CC.
+    def print_cc(self, cc: Cc, cc2: Cc | None, suffix: str) -> None:
         for i in self.events.show_indices:
-            (count, perc) = self.count_and_perc(cc, i)
-            self.print_count_and_perc(i, count, perc)
+            (count, perc1, perc2) = self.count_and_percs_strs(cc, cc2, i)
+            print(self.count_and_percs_str(i, count, perc1, perc2), end="")
 
         print("", suffix)
 
     def print_missing_cc(self, suffix: str) -> None:
-        # Don't show percentages for "." entries, it's just clutter.
-        for i in self.events.show_indices:
-            self.print_count_and_perc(i, ".", "")
-
-        print("", suffix)
+        print(self.missing_cc_str, suffix)
 
 
 # Used in various places in the output.
@@ -508,80 +778,126 @@ def print_fancy(text: str) -> None:
     print(fancy)
 
 
-def print_cachegrind_profile(desc: str, cmd: str, events: Events) -> None:
-    print_fancy("Cachegrind profile")
-    print(desc, end="")
-    print("Command:         ", cmd)
-    print("Data file:       ", args.cgout_filename[0])
+def print_metadata(descs: list[str], cmds: list[str], events: Events) -> None:
+    print_fancy("Metadata")
+
+    def all_the_same(strs: list[str]) -> bool:
+        for i in range(len(strs) - 1):
+            if strs[i] != strs[i + 1]:
+                return False
+
+        return True
+
+    print("Invocation:      ", *sys.argv)
+
+    # When there are multiple descriptions, they are usually all the same. Only
+    # print the description once in that case.
+    if all_the_same(descs):
+        print(descs[0], end="")
+    else:
+        for i, desc in enumerate(descs):
+            print(f"Description {i+1}:")
+            print(desc, end="")
+
+    # Commands are sometimes the same, sometimes not. Always print them
+    # individually, but refer to the previous one when appropriate.
+    if len(cmds) == 1:
+        print("Command:         ", cmds[0])
+    else:
+        for i, cmd in enumerate(cmds):
+            if i > 0 and cmds[i - 1] == cmd:
+                print(f"Command {i+1}:        (same as Command {i})")
+            else:
+                print(f"Command {i+1}:       ", cmd)
+
     print("Events recorded: ", *events.events)
     print("Events shown:    ", *events.show_events)
     print("Event sort order:", *events.sort_events)
-    print("Threshold:       ", args.threshold)
-
-    if len(args.include) == 0:
-        print("Include dirs:     ")
-    else:
-        print(f"Include dirs:     {args.include[0]}")
-        for include_dirname in args.include[1:]:
-            print(f"                  {include_dirname}")
-
+    print("Threshold:        ", args.threshold, "%", sep="")
     print("Annotation:      ", "on" if args.annotate else "off")
     print()
 
 
 def print_summary(events: Events, summary_cc: Cc) -> None:
-    printer = CcPrinter(events, [summary_cc], summary_cc)
+    printer = CcPrinter(events, summary_cc)
+    printer.init_ccs([summary_cc])
     print_fancy("Summary")
     printer.print_events("")
     print()
-    printer.print_cc(summary_cc, "PROGRAM TOTALS")
+    printer.print_cc(summary_cc, None, "PROGRAM TOTALS")
     print()
 
 
-def print_function_summary(
-    events: Events, dict_flfn_cc: DictFlfnCc, summary_cc: Cc
+def print_mname_summary(
+    kind: str, indent: str, events: Events, dict_mname_dcc: DictMnameDcc, summary_cc: Cc
 ) -> set[str]:
-    # Only the first threshold percentage is actually used.
+    # The primary sort event is used for the threshold.
     threshold_index = events.sort_indices[0]
 
     # Convert the threshold from a percentage to an event count.
-    threshold = args.threshold * abs(summary_cc.counts[threshold_index]) / 100
+    threshold = args.threshold * abs(summary_cc[threshold_index]) / 100
 
-    def meets_threshold(flfn_and_cc: tuple[Flfn, Cc]) -> bool:
-        cc = flfn_and_cc[1]
-        return abs(cc.counts[threshold_index]) >= threshold
+    def meets_threshold(mname_and_cc: tuple[str, Cc]) -> bool:
+        cc = mname_and_cc[1]
+        return abs(cc[threshold_index]) >= threshold
 
-    # Create a list with the counts in sort order, so that left-to-right list
-    # comparison does the right thing. Plus the `Flfn` at the end for
-    # deterministic output when all the event counts are identical in two CCs.
-    def key(flfn_and_cc: tuple[Flfn, Cc]) -> tuple[list[int], Flfn]:
-        cc = flfn_and_cc[1]
-        return ([abs(cc.counts[i]) for i in events.sort_indices], flfn_and_cc[0])
+    # Create a list with the outer CC counts in sort order, so that
+    # left-to-right list comparison does the right thing. Plus the outer name
+    # at the end for deterministic output when all the event counts are
+    # identical in two CCs.
+    def key_mname_and_lcc(mname_and_lcc: tuple[str, Lcc]) -> tuple[list[int], str]:
+        (outer_mname, lcc) = mname_and_lcc
+        return (
+            [abs(lcc.outer_cc[i]) for i in events.sort_indices],
+            outer_mname,
+        )
 
-    # Filter out functions for which the primary sort event count is below the
-    # threshold, and sort the remainder.
-    filtered_flfns_and_ccs = filter(meets_threshold, dict_flfn_cc.items())
-    sorted_flfns_and_ccs = sorted(filtered_flfns_and_ccs, key=key, reverse=True)
-    sorted_ccs = list(map(lambda flfn_and_cc: flfn_and_cc[1], sorted_flfns_and_ccs))
+    # Similar to `key_mname_and_lcc`.
+    def key_mname_and_cc(mname_and_cc: tuple[str, Cc]) -> tuple[list[int], str]:
+        (mname, cc) = mname_and_cc
+        return ([abs(cc[i]) for i in events.sort_indices], mname)
 
-    printer = CcPrinter(events, sorted_ccs, summary_cc)
-    print_fancy("Function summary")
-    printer.print_events(" file:function")
+    # This is a `filter_map` operation, which Python doesn't directly support.
+    list_mname_lcc: ListMnameLcc = []
+    for outer_mname, dcc in dict_mname_dcc.items():
+        # Filter out inner CCs for which the primary sort event count is below the
+        # threshold, and sort the remainder.
+        inner_list_mname_cc = sorted(
+            filter(meets_threshold, dcc.inner_dict_mname_cc.items()),
+            key=key_mname_and_cc,
+            reverse=True,
+        )
+
+        # If no inner CCs meet the threshold, ignore the entire DCC, even if
+        # the outer CC meets the threshold.
+        if len(inner_list_mname_cc) == 0:
+            continue
+
+        list_mname_lcc.append((outer_mname, Lcc(dcc.outer_cc, inner_list_mname_cc)))
+
+    list_mname_lcc = sorted(list_mname_lcc, key=key_mname_and_lcc, reverse=True)
+
+    printer = CcPrinter(events, summary_cc)
+    printer.init_list_mname_lcc(list_mname_lcc)
+    print_fancy(kind + " summary")
+    printer.print_events(" " + kind.lower())
     print()
 
-    # Print per-function counts.
-    for flfn, flfn_cc in sorted_flfns_and_ccs:
-        printer.print_cc(flfn_cc, f"{flfn[0]}:{flfn[1]}")
+    # Print LCCs.
+    threshold_mnames: set[str] = set([])
+    cumul_cc = events.mk_empty_cc()
+    for mname, lcc in list_mname_lcc:
+        add_cc_to_cc(lcc.outer_cc, cumul_cc)
+        printer.print_lcc(indent, lcc, mname, cumul_cc)
+        threshold_mnames.add(mname)
 
-    print()
-
-    # Files containing a function that met the threshold.
-    return set(flfn_and_cc[0][0] for flfn_and_cc in sorted_flfns_and_ccs)
+    return threshold_mnames
 
 
 class AnnotatedCcs:
     line_nums_known_cc: Cc
     line_nums_unknown_cc: Cc
+    non_identical_cc: Cc
     unreadable_cc: Cc
     below_threshold_cc: Cc
     files_unknown_cc: Cc
@@ -589,6 +905,7 @@ class AnnotatedCcs:
     labels = [
         "  annotated: files known & above threshold & readable, line numbers known",
         "  annotated: files known & above threshold & readable, line numbers unknown",
+        "unannotated: files known & above threshold & two or more non-identical",
         "unannotated: files known & above threshold & unreadable ",
         "unannotated: files known & below threshold",
         "unannotated: files unknown",
@@ -597,6 +914,7 @@ class AnnotatedCcs:
     def __init__(self, events: Events) -> None:
         self.line_nums_known_cc = events.mk_empty_cc()
         self.line_nums_unknown_cc = events.mk_empty_cc()
+        self.non_identical_cc = events.mk_empty_cc()
         self.unreadable_cc = events.mk_empty_cc()
         self.below_threshold_cc = events.mk_empty_cc()
         self.files_unknown_cc = events.mk_empty_cc()
@@ -605,6 +923,7 @@ class AnnotatedCcs:
         return [
             self.line_nums_known_cc,
             self.line_nums_unknown_cc,
+            self.non_identical_cc,
             self.unreadable_cc,
             self.below_threshold_cc,
             self.files_unknown_cc,
@@ -621,10 +940,11 @@ def mk_warning(msg: str) -> str:
 """
 
 
-def warn_src_file_is_newer(src_filename: str, cgout_filename: str) -> None:
+def warn_ofls_are_all_newer(ofls: list[str], cgout_filename: str) -> None:
+    s = "".join([f"@ - {ofl}\n" for ofl in ofls])
     msg = f"""\
-@ Source file '{src_filename}' is newer than data file '{cgout_filename}'.
-@ Annotations may not be correct.
+@ Original source files are all newer than data file '{cgout_filename}':
+{s}@ Annotations may not be correct.
 """
     print(mk_warning(msg))
 
@@ -643,11 +963,8 @@ def print_annotated_src_file(
     annotated_ccs: AnnotatedCcs,
     summary_cc: Cc,
 ) -> None:
-    # If the source file is more recent than the cgout file, issue warning.
-    if os.stat(src_file.name).st_mtime_ns > os.stat(args.cgout_filename[0]).st_mtime_ns:
-        warn_src_file_is_newer(src_file.name, args.cgout_filename[0])
-
-    printer = CcPrinter(events, list(dict_line_cc.values()), summary_cc)
+    printer = CcPrinter(events, summary_cc)
+    printer.init_ccs(list(dict_line_cc.values()))
     # The starting fancy has already been printed by the caller.
     printer.print_events("")
     print()
@@ -658,8 +975,8 @@ def print_annotated_src_file(
     line0_cc = dict_line_cc.pop(0, None)
     if line0_cc:
         suffix = "<unknown (line 0)>"
-        printer.print_cc(line0_cc, suffix)
-        annotated_ccs.line_nums_unknown_cc += line0_cc
+        printer.print_cc(line0_cc, None, suffix)
+        add_cc_to_cc(line0_cc, annotated_ccs.line_nums_unknown_cc)
         print()
 
     # Find interesting line ranges: all lines with a CC, and all lines within
@@ -698,8 +1015,10 @@ def print_annotated_src_file(
                 if not src_line:
                     return  # EOF
                 if line_nums and line_num == line_nums[0]:
-                    printer.print_cc(dict_line_cc[line_num], src_line[:-1])
-                    annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
+                    printer.print_cc(dict_line_cc[line_num], None, src_line[:-1])
+                    add_cc_to_cc(
+                        dict_line_cc[line_num], annotated_ccs.line_nums_known_cc
+                    )
                     del line_nums[0]
                 else:
                     printer.print_missing_cc(src_line[:-1])
@@ -715,8 +1034,10 @@ def print_annotated_src_file(
         if line_nums:
             print()
             for line_num in line_nums:
-                printer.print_cc(dict_line_cc[line_num], f"<bogus line {line_num}>")
-                annotated_ccs.line_nums_known_cc += dict_line_cc[line_num]
+                printer.print_cc(
+                    dict_line_cc[line_num], None, f"<bogus line {line_num}>"
+                )
+                add_cc_to_cc(dict_line_cc[line_num], annotated_ccs.line_nums_known_cc)
 
             print()
             warn_bogus_lines(src_file.name)
@@ -724,46 +1045,60 @@ def print_annotated_src_file(
         print()
 
 
-# This (partially) consumes `dict_fl_dict_line_cc`.
+# This partially consumes `dict_mfl_dict_line_cc`, and fully consumes
+# `dict_mfl_olfs`.
 def print_annotated_src_files(
+    ann_mfls: set[str],
     events: Events,
-    ann_src_filenames: set[str],
-    dict_fl_dict_line_cc: DictFlDictLineCc,
+    dict_mfl_ofls: DictMflOfls,
+    dict_mfl_dict_line_cc: DictMflDictLineCc,
     summary_cc: Cc,
 ) -> AnnotatedCcs:
     annotated_ccs = AnnotatedCcs(events)
 
-    def add_dict_line_cc_to_cc(dict_line_cc: DictLineCc | None, accum_cc: Cc) -> None:
-        if dict_line_cc:
-            for line_cc in dict_line_cc.values():
-                accum_cc += line_cc
+    def add_dict_line_cc_to_cc(dict_line_cc: DictLineCc, accum_cc: Cc) -> None:
+        for line_cc in dict_line_cc.values():
+            add_cc_to_cc(line_cc, accum_cc)
 
     # Exclude the unknown ("???") file, which is unannotatable.
-    ann_src_filenames.discard("???")
-    dict_line_cc = dict_fl_dict_line_cc.pop("???", None)
-    add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.files_unknown_cc)
+    ann_mfls.discard("???")
+    if "???" in dict_mfl_dict_line_cc:
+        dict_line_cc = dict_mfl_dict_line_cc.pop("???")
+        add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.files_unknown_cc)
 
-    # Prepend "" to the include dirnames so things work in the case where the
-    # filename has the full path.
-    include_dirnames = args.include.copy()
-    include_dirnames.insert(0, "")
+    def print_ann_fancy(mfl: str) -> None:
+        print_fancy(f"Annotated source file: {mfl}")
 
-    def print_ann_fancy(src_filename: str) -> None:
-        print_fancy(f"Annotated source file: {src_filename}")
+    # This can raise an `OSError`.
+    def all_ofl_contents_identical(ofls: list[str]) -> bool:
+        for i in range(len(ofls) - 1):
+            if not filecmp.cmp(ofls[i], ofls[i + 1], shallow=False):
+                return False
 
-    for src_filename in sorted(ann_src_filenames):
-        readable = False
-        for include_dirname in include_dirnames:
-            if include_dirname == "":
-                full_src_filename = src_filename
-            else:
-                full_src_filename = os.path.join(include_dirname, src_filename)
+        return True
 
-            try:
-                with open(full_src_filename, "r", encoding="utf-8") as src_file:
-                    dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
-                    assert dict_line_cc is not None
-                    print_ann_fancy(src_file.name)  # includes full path
+    for mfl in sorted(ann_mfls):
+        ofls = sorted(dict_mfl_ofls.pop(mfl))
+        first_ofl = ofls[0]
+
+        try:
+            if all_ofl_contents_identical(ofls):
+                # All the Ofls that map to this Mfl are identical, which means we
+                # can annotate, and it doesn't matter which Ofl we use.
+                with open(first_ofl, "r", encoding="utf-8") as src_file:
+                    dict_line_cc = dict_mfl_dict_line_cc.pop(mfl)
+                    print_ann_fancy(mfl)
+
+                    # Because all the Ofls are identical, we can treat their
+                    # mtimes as if they are all as early as the earliest one.
+                    # Therefore, we warn only if the earliest source file is
+                    # more recent than the cgout file.
+                    min_ofl_st_mtime_ns = min(os.stat(ofl).st_mtime_ns for ofl in ofls)
+
+                    for cgout_filename in args.cgout_filename:
+                        if min_ofl_st_mtime_ns > os.stat(cgout_filename).st_mtime_ns:
+                            warn_ofls_are_all_newer(ofls, cgout_filename)
+
                     print_annotated_src_file(
                         events,
                         dict_line_cc,
@@ -771,23 +1106,38 @@ def print_annotated_src_files(
                         annotated_ccs,
                         summary_cc,
                     )
+            else:
+                dict_line_cc = dict_mfl_dict_line_cc.pop(mfl)
+                add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.non_identical_cc)
 
-                readable = True
-                break
-            except OSError:
-                pass
-
-        if not readable:
-            dict_line_cc = dict_fl_dict_line_cc.pop(src_filename, None)
+                # We could potentially do better here.
+                # - Annotate until the first line where the src files diverge.
+                # - Also, heuristic resyncing, e.g. by looking for matching
+                #   lines (of sufficient complexity) after a divergence.
+                print_ann_fancy(mfl)
+                print(
+                    "Unannotated because two or more of these original files are not "
+                    "identical:",
+                    *ofls,
+                    sep="\n- ",
+                )
+                print()
+        except OSError:
+            dict_line_cc = dict_mfl_dict_line_cc.pop(mfl)
             add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.unreadable_cc)
 
-            print_ann_fancy(src_filename)
-            print("This file was unreadable")
+            print_ann_fancy(mfl)
+            print(
+                "Unannotated because one or more of these original files are "
+                "unreadable:",
+                *ofls,
+                sep="\n- ",
+            )
             print()
 
-    # Sum the CCs remaining in `dict_fl_dict_line_cc`, which are all in files
+    # Sum the CCs remaining in `dict_mfl_dict_line_cc`, which are all in files
     # below the threshold.
-    for dict_line_cc in dict_fl_dict_line_cc.values():
+    for dict_line_cc in dict_mfl_dict_line_cc.values():
         add_dict_line_cc_to_cc(dict_line_cc, annotated_ccs.below_threshold_cc)
 
     return annotated_ccs
@@ -799,15 +1149,16 @@ def print_annotation_summary(
     summary_cc: Cc,
 ) -> None:
     # Show how many events were covered by annotated lines above.
-    printer = CcPrinter(events, annotated_ccs.ccs(), summary_cc)
+    printer = CcPrinter(events, summary_cc)
+    printer.init_ccs(annotated_ccs.ccs())
     print_fancy("Annotation summary")
     printer.print_events("")
     print()
 
     total_cc = events.mk_empty_cc()
-    for (cc, label) in zip(annotated_ccs.ccs(), AnnotatedCcs.labels):
-        printer.print_cc(cc, label)
-        total_cc += cc
+    for cc, label in zip(annotated_ccs.ccs(), AnnotatedCcs.labels):
+        printer.print_cc(cc, None, label)
+        add_cc_to_cc(cc, total_cc)
 
     print()
 
@@ -822,26 +1173,46 @@ def print_annotation_summary(
 
 
 def main() -> None:
-    (
-        desc,
-        cmd,
-        events,
-        dict_flfn_cc,
-        dict_fl_dict_line_cc,
-        summary_cc,
-    ) = read_cgout_file()
+    # Metadata, initialized to empty states.
+    descs: list[str] = []
+    cmds: list[str] = []
+    events = Events()
+
+    # For tracking original filenames to modified filenames.
+    dict_mfl_ofls: DictMflOfls = defaultdict(set)
+
+    # Different places where we accumulate CC data. Initialized to invalid
+    # states prior to the number of events being known.
+    dict_mfl_dcc: DictMnameDcc = defaultdict(None)
+    dict_mfn_dcc: DictMnameDcc = defaultdict(None)
+    dict_mfl_dict_line_cc: DictMflDictLineCc = defaultdict(None)
+    summary_cc: Cc = []
+
+    for n, filename in enumerate(args.cgout_filename):
+        is_first_file = n == 0
+        read_cgout_file(
+            filename,
+            is_first_file,
+            descs,
+            cmds,
+            events,
+            dict_mfl_ofls,
+            dict_mfl_dcc,
+            dict_mfn_dcc,
+            dict_mfl_dict_line_cc,
+            summary_cc,
+        )
 
     # Each of the following calls prints a section of the output.
-
-    print_cachegrind_profile(desc, cmd, events)
-
+    print_metadata(descs, cmds, events)
     print_summary(events, summary_cc)
-
-    ann_src_filenames = print_function_summary(events, dict_flfn_cc, summary_cc)
-
+    ann_mfls = print_mname_summary(
+        "File:function", "< ", events, dict_mfl_dcc, summary_cc
+    )
+    print_mname_summary("Function:file", "> ", events, dict_mfn_dcc, summary_cc)
     if args.annotate:
         annotated_ccs = print_annotated_src_files(
-            events, ann_src_filenames, dict_fl_dict_line_cc, summary_cc
+            ann_mfls, events, dict_mfl_ofls, dict_mfl_dict_line_cc, summary_cc
         )
 
         print_annotation_summary(events, annotated_ccs, summary_cc)

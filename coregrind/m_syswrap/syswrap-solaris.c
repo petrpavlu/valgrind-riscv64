@@ -639,10 +639,11 @@ void VG_(restore_context)(ThreadId tid, vki_ucontext_t *uc, CorePart part,
       if (tst->os_state.ustack
           && VG_(am_is_valid_for_client)((Addr)tst->os_state.ustack,
                                          sizeof(*tst->os_state.ustack),
-                                         VKI_PROT_WRITE))
+                                         VKI_PROT_WRITE)) {
          *tst->os_state.ustack = uc->uc_stack;
          VG_TRACK(post_mem_write, part, tid, (Addr)&tst->os_state.ustack,
                   sizeof(tst->os_state.ustack));
+      }
    }
 
    /* Restore the architecture-specific part of the context. */
@@ -1781,16 +1782,7 @@ PRE(sys_close)
 {
    WRAPPER_PRE_NAME(generic, sys_close)(tid, layout, arrghs, status,
                                         flags);
-}
-
-POST(sys_close)
-{
-   WRAPPER_POST_NAME(generic, sys_close)(tid, arrghs, status);
    door_record_revoke(tid, ARG1);
-   /* Possibly an explicitly open'ed client door fd was just closed.
-      Generic sys_close wrapper calls this only if VG_(clo_track_fds) = True. */
-   if (!VG_(clo_track_fds))
-      ML_(record_fd_close)(ARG1);
 }
 
 PRE(sys_linkat)
@@ -7831,8 +7823,9 @@ PRE(sys_pollsys)
    for (i = 0; i < ARG2; i++) {
       vki_pollfd_t *u = &ufds[i];
       PRE_FIELD_READ("poll(ufds.fd)", u->fd);
-      /* XXX Check if it's valid? */
-      PRE_FIELD_READ("poll(ufds.events)", u->events);
+      if (ML_(safe_to_deref)(&ufds[i].fd, sizeof(ufds[i].fd)) && ufds[i].fd >= 0) {
+         PRE_FIELD_READ("poll(ufds.events)", u->events);
+      }
       PRE_FIELD_WRITE("poll(ufds.revents)", u->revents);
    }
 
@@ -8691,7 +8684,7 @@ static Int pre_check_and_close_fds(ThreadId tid, const HChar *name,
          if ((desc->d_attributes & DOOR_DESCRIPTOR) &&
              (desc->d_attributes & DOOR_RELEASE)) {
             Int fd = desc->d_data.d_desc.d_descriptor;
-            ML_(record_fd_close)(fd);
+            ML_(record_fd_close)(tid, fd);
          }
       }
    }
@@ -9561,7 +9554,7 @@ POST(sys_door)
    case VKI_DOOR_REVOKE:
       door_record_revoke(tid, ARG1);
       if (VG_(clo_track_fds))
-         ML_(record_fd_close)(ARG1);
+         ML_(record_fd_close)(tid, ARG1);
       break;
    case VKI_DOOR_INFO:
       POST_MEM_WRITE(ARG2, sizeof(vki_door_info_t));
@@ -10827,7 +10820,7 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(SOLARIS_OLD_SYSCALLS)
    SOLXY(__NR_open,                 sys_open),                  /*   5 */
 #endif /* SOLARIS_OLD_SYSCALLS */
-   SOLXY(__NR_close,                sys_close),                 /*   6 */
+   SOLX_(__NR_close,                sys_close),                 /*   6 */
    SOLX_(__NR_linkat,               sys_linkat),                /*   7 */
 #if defined(SOLARIS_OLD_SYSCALLS)
    GENX_(__NR_link,                 sys_link),                  /*   9 */
@@ -10951,6 +10944,9 @@ static SyscallTableEntry syscall_table[] = {
 #if defined(SOLARIS_UUIDSYS_SYSCALL)
    SOLXY(__NR_uuidsys,              sys_uuidsys),               /* 124 */
 #endif /* SOLARIS_UUIDSYS_SYSCALL */
+#if defined(HAVE_MREMAP)
+   GENX_(__NR_mremap,               sys_mremap),                /* 126 */
+#endif /* HAVE_MREMAP */
    SOLX_(__NR_mmapobj,              sys_mmapobj),               /* 127 */
    GENX_(__NR_setrlimit,            sys_setrlimit),             /* 128 */
    GENXY(__NR_getrlimit,            sys_getrlimit),             /* 129 */

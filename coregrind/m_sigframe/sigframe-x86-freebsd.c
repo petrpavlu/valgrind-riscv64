@@ -99,7 +99,7 @@ struct sigframe {
 
    /*
     * The following 7 members are roughly the same as
-    * 'stuct sigframe' in x86/sigrame.h
+    * 'struct sigframe' in x86/sigframe.h
     */
    Int  sigNo;
    Addr psigInfo;      /* code or pointer to sigContext */
@@ -445,7 +445,7 @@ void VG_(sigframe_destroy)( ThreadId tid )
    if (VG_(clo_trace_signals))
       VG_(message)(
          Vg_DebugMsg,
-         "VG_(signal_return) (thread %u): EIP=%#x\n",
+         "VG_(sigframe_destroy) (thread %u): EIP=%#x\n",
          tid, tst->arch.vex.guest_EIP);
 
    /* tell the tools */

@@ -25,9 +25,9 @@
 int main(void)
 {
    /* Uninitialised, but we know px[0] is 0x0. */
-   /* PJF why ? */
    long *px = malloc(2*sizeof(long));
    x0 = px[0];
+   const char* running_in_vgtest = getenv("RUNNING_IN_VGTEST");
 
    /* SYS_syscall                 0 */
    /* does this need a specific test? There are two diffeent IDs for syscall, see 198 */
@@ -104,7 +104,12 @@ int main(void)
 
    /* break                       17 */
    GO(SYS_break, "1s 1m");
-   SY(SYS_break, x0+1); SUCC;
+   SY(SYS_break, x0+1);
+#if defined(VGP_arm64_freebsd)
+   FAILx(ENOSYS);
+#else
+   SUCC;
+#endif
 
    /* freebsd4 getfsstat          18 */
 
@@ -196,6 +201,7 @@ int main(void)
    GO(SYS_dup, "1s 0m");
    SY(SYS_dup, x0-1); FAIL;
 
+#if !defined(VGP_arm64_freebsd)
    /* freebsd10_pipe              42 */
 #if (FREEBSD_VERS >= FREEBSD_11)
    GO(SYS_freebsd10_pipe, "0s 0m");
@@ -203,6 +209,7 @@ int main(void)
 #else
    GO(SYS_pipe, "0s 0m");
    SY(SYS_pipe, x0); SUCC;
+#endif
 #endif
 
    /* getegid                     43 */
@@ -244,13 +251,12 @@ int main(void)
               char *ss_sp;
               size_t ss_size;
               int ss_flags;
-      } ss;
-      ss.ss_sp     = NULL;
-      ss.ss_flags  = 0;
-      ss.ss_size   = 0;
-      VALGRIND_MAKE_MEM_NOACCESS(& ss, sizeof(struct our_sigaltstack));
+      } ss = { NULL, 0, 0};
+      struct our_sigaltstack oss;
+      VALGRIND_MAKE_MEM_NOACCESS(&ss, sizeof(struct our_sigaltstack));
+      VALGRIND_MAKE_MEM_NOACCESS(&oss, sizeof(struct our_sigaltstack));
       GO(SYS_sigaltstack, "2s 2m");
-      SY(SYS_sigaltstack, x0+&ss, x0+&ss); SUCC; /* FAIL when run standalone */
+      SY(SYS_sigaltstack, x0+&ss, x0+&oss); FAIL;
    }
 
    /* SYS_ioctl                   54 */
@@ -303,9 +309,11 @@ int main(void)
 
    /* obsol vwrite                68 */
 
+#if (FREEBSD_VERS < FREEBSD_15)
    /* SYS_sbrk                    69 */
    GO(SYS_sbrk, "1s 1m");
    SY(SYS_sbrk, x0); FAIL;
+#endif
 
    /* not implemented on OS SYS_sstk 70 */
 
@@ -554,7 +562,12 @@ int main(void)
 
    /* SYS_setsid                  147 */
    GO(SYS_setsid, "0s 0m");
-   SY(SYS_setsid); SUCC; /* FAIL when run standalone */
+   SY(SYS_setsid);
+   if (running_in_vgtest) {
+       SUCC;
+   } else {
+      FAIL;
+   }
 
    /* SYS_quotactl                148 */
    GO(SYS_quotactl, "(Q_QUOTAOFF) 2s 0m");
@@ -618,6 +631,8 @@ int main(void)
 
    GO(SYS_sysarch, "2s 0m");
    SY(SYS_sysarch, x0+AMD64_SET_FSBASE, x0); FAIL;
+#elif defined(VGP_arm64_freebsd)
+// does not exist
 #else
 #error "freebsd platform not defined"
 #endif
@@ -781,15 +796,23 @@ int main(void)
    /* netbsd newreboot            208 */
 
    /* SYS_poll                    209 */
-   GO(SYS_poll, "3s 3m");
+   GO(SYS_poll, "2s 2m");
    SY(SYS_poll, x0, x0+1, x0); FAIL;
 
+   {
+      struct pollfd fds = { x0, x0, x0 };
+      GO(SYS_poll, "0s 2m");
+      SY(SYS_poll, &fds, 1, 1); SUCC;
+   }
+
+#if (FREEBSD_VERS <= FREEBSD_14_0)
    /* SYS_freebsd7___semctl       220 */
-   GO(SYS_freebsd7___semctl, "(IPC_INFO) 4s 1m");
-   SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_INFO, x0+1); FAIL;
+   GO(SYS_freebsd7___semctl, "(IPC_STAT) 4s 1m");
+   SY(SYS_freebsd7___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
 
    GO(SYS_freebsd7___semctl, "(bogus cmd) 3s 0m");
    SY(SYS_freebsd7___semctl, x0, x0, x0-1, x0+1); FAIL;
+#endif
 
    /* SYS_semget                  221 */
    GO(SYS_semget, "3s 0m");
@@ -801,12 +824,14 @@ int main(void)
 
    /* unimpl semconfig            223 */
 
+#if (FREEBSD_VERS <= FREEBSD_14_0)
    /* SYS_freebsd7_msgctl         224 */
    GO(SYS_freebsd7_msgctl, "(set) 3s 1m");
    SY(SYS_freebsd7_msgctl, x0, x0+1, x0); FAIL;
 
    GO(SYS_freebsd7_msgctl, "(stat) 3s 1m");
    SY(SYS_freebsd7_msgctl, x0, x0+2, x0); FAIL;
+#endif
 
    /* SYS_msgget                  225 */
    GO(SYS_msgget, "2s 0m");
@@ -824,13 +849,14 @@ int main(void)
    GO(SYS_shmat, "3s 0m");
    SY(SYS_shmat, x0, x0, x0); FAIL;
 
+#if (FREEBSD_VERS <= FREEBSD_14_0)
    /* SYS_freebsd7_shmctl         229 */
    GO(SYS_freebsd7_shmctl, "3s 0m");
    SY(SYS_freebsd7_shmctl, x0, x0, x0); FAIL;
 
    GO(SYS_freebsd7_shmctl, "(bogus cmd) 3s 0m");
    SY(SYS_freebsd7_shmctl, x0, x0-1, x0+1); FAIL;
-
+#endif
 
    /* SYS_shmdt                   230 */
    GO(SYS_shmdt, "1s 0m");
@@ -884,9 +910,8 @@ int main(void)
 
 #if (FREEBSD_VERS >= FREEBSD_11)
    /* SYS_clock_nanosleep         244 */
-   /* this succeeds ? */
    GO(SYS_clock_nanosleep, "4s 2m");
-   SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0, x0+1); SUCC;
+   SY(SYS_clock_nanosleep, x0+5000, x0+3000, x0+3, x0+1); SUCC;
 #endif
 
    // SYS_clock_getcpuclockid2                             247
@@ -954,7 +979,7 @@ int main(void)
    /* netbsd lstat                280 */
 
    /* SYS_preadv                  289 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_preadv, "4s 0m");
    /* 0m because of the bogus fd */
    SY(SYS_preadv, x0+9999999, x0+1, x0+16, x0+20); FAIL;
@@ -964,7 +989,7 @@ int main(void)
 #endif
 
    /* SYS_pwritev                    290 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_pwritev, "4s 0m");
    SY(SYS_pwritev, x0+9999999, x0+1, x0+16, x0+20); FAIL;
 #else
@@ -1606,7 +1631,7 @@ int main(void)
    SY(SYS_mmap, x0+1, x0, x0+123456, x0+234567, x0+99, x0+3); FAIL;
 
    /* SYS_lseek                   478 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_lseek, "3s 0m");
    SY(SYS_lseek, x0+99, x0+1, x0+55); FAIL;
 #else
@@ -1615,7 +1640,7 @@ int main(void)
 #endif
 
    /* SYS_truncate                479 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_truncate, "2s 1m");
    SY(SYS_truncate, x0+1, x0+1); FAIL;
 #else
@@ -1624,7 +1649,7 @@ int main(void)
 #endif
 
    /* SYS_ftruncate               480 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_ftruncate, "2s 0m");
    SY(SYS_ftruncate, x0+99, x0+1); FAIL;
 #else
@@ -1658,7 +1683,7 @@ int main(void)
    SY(SYS_cpuset, x0+1); FAIL;
 
    /* cpuset_setid                485 */
-#if defined (VGP_amd64_freebsd)
+#if defined (VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
    GO(SYS_cpuset_setid, "3s 0m");
    SY(SYS_cpuset_setid, x0, x0, x0); FAIL;
 #else
@@ -1779,8 +1804,8 @@ int main(void)
 #endif
 
    /* SYS___semctl                510 */
-   GO(SYS___semctl, "(IPC_INFO) 4s 1m");
-   SY(SYS___semctl, x0, x0, x0+IPC_INFO, x0+1); FAIL;
+   GO(SYS___semctl, "(IPC_STAT) 4s 1m");
+   SY(SYS___semctl, x0, x0, x0+IPC_STAT, x0+1); FAIL;
 
    GO(SYS___semctl, "(other) 3s 0m");
    SY(SYS___semctl, x0, x0, x0+3000, x0+1); FAIL;
@@ -1856,7 +1881,7 @@ int main(void)
     SY(SYS_rctl_remove_rule, x0+1, x0+1, x0+2, x0+16); FAIL;
 
     /* SYS_posix_fallocate        530 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
     GO(SYS_posix_fallocate, "3s 0m");
     SY(SYS_posix_fallocate, x0+99999, x0+10, x0+20); SUCC;
 #else
@@ -1923,9 +1948,9 @@ int main(void)
     SY(SYS_aio_mlock, x0+1); FAIL;
 
     /* SYS_procctl                544 */
-#if defined(VGP_amd64_freebsd)
+#if defined(VGP_amd64_freebsd) || defined(VGP_arm64_freebsd)
     GO(SYS_procctl, "(PROC_REAP_RELEASE) 3s 0m");
-    SY(SYS_procctl, x0+9999, x0+9999, x0+PROC_REAP_RELEASE); FAIL;
+    SY(SYS_procctl, x0+9999, x0+9999, x0+PROC_REAP_RELEASE, NULL); FAIL;
 
     GO(SYS_procctl, "(PROC_REAP_GETPIDS) 4s 1m");
     SY(SYS_procctl, x0+9999, x0+9999, x0+PROC_REAP_GETPIDS, x0+1); FAIL;
@@ -1948,8 +1973,8 @@ int main(void)
    {
        struct pollfd arg1;
        arg1.fd = arg1.events = arg1.revents = x0;
-        GO(SYS_ppoll, "2s 2+2m");
-        SY(SYS_ppoll, &arg1, 1, x0+1, x0+1); FAIL;
+       GO(SYS_ppoll, "2s 2+2m");
+       SY(SYS_ppoll, &arg1, 1, x0+1, x0+1); FAIL;
    }
 
    /* SYS_futimens                546 */

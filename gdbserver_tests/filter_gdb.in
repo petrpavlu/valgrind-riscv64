@@ -1,4 +1,5 @@
 #! /bin/sh
+# @configure_input@
 
 # filter the output of gdb.
 
@@ -47,6 +48,10 @@ s/^\[?1034hReading symbols/Reading symbols/
 #       errors get produced by GDB
 /\(rtld_start.S\|kill.S\|_exit.S\|_select.S\): No such file or directory/d
 
+#       FreeBSD syscall wrapper macros
+/PSEUDO(select)/d
+/RSYSCALL(kill)/d
+
 #       Remove some Suse package manager messages
 /^Try: zypper install -C/d
 
@@ -56,6 +61,12 @@ s/^\[?1034hReading symbols/Reading symbols/
 #       Anonymise pid numbers
 s/pid [0-9][0-9]*/pid ..../g
 
+#      Align the 'delete' prompt to the GDB 15 prompt
+s/Delete all breakpoints?/Delete all breakpoints, watchpoints, tracepoints, and catchpoints?/
+
+#      Align the 'remote failure reply' string to the GDB 15 behaviour.
+s/remote failure reply 'E\./remote failure reply '/
+
 #       filter 'remote target killed' messages (produced by gdb >= 8.2)
 /(Remote target) killed/d
 
@@ -64,6 +75,9 @@ s/Thread [0-9][0-9]*/Thread ..../g
 
 #       delete thread switches
 /\[Switching to Thread ....\]/d
+
+#       delete thread exiting
+/\[Thread .... exited\]/d
 
 #       ??? Probably we had a 'Switching ' message in front of
 #        a frame line ?
@@ -120,11 +134,11 @@ s/in kill ().*$/in syscall .../
 #       anonymise syscall on ppc64 (bugzilla #284305)
 s/in .*kill ().*$/in syscall .../
 
-
 s/in _dl_sysinfo_int80 ()/in syscall .../
 /^   from \/lib\/ld-linux.so.*$/d
 s/\(0x........\) in ?? () from \/lib.*$/\1 in syscall .../
 s/\(0x........\) in ?? ()$/\1 in syscall .../
+s/in __select64 (.*/in syscall .../
 
 #       4 expressions to cover glibc 2.27 way to do a select, such as
 #          * 1    Thread 5548 (tid 1 VgTs_WaitSys) 0x0000000004f6203f in __GI___select (
@@ -142,15 +156,16 @@ s/in _select ()/in syscall .../
 /sysv\/linux\/generic\/select.c/d
 /return SYSCALL_CANCEL /d
 /r = SYSCALL_CANCEL /d
+/result = SYSCALL_CANCEL /d
 
 #       a more specialised system call select stack trace part
 #             (on 32 bits, we have an int_80, on 64 bits, directly select)
 s/in \(.__\)\{0,1\}select () from \/.*$/in syscall .../
 
-/^   from \/lib\/libc.so.*$/d
-/^   from \/lib64\/libc.so.*$/d
-/^   from \/lib64\/.*\/libc.so.*$/d
-/^   from \/lib64\/.*\/libc-.*.so/d
+/^   from \/lib.*\/libc.so.*$/d
+/^   from \/lib64.*\/libc.so.*$/d
+/^   from \/lib64.*\/.*\/libc.so.*$/d
+/^   from \/lib64.*\/.*\/libc-.*.so/d
 s/ from \/lib\/libc\.so.*//
 
 #       and yet another (gdb 7.0 way) to get a system call
@@ -181,7 +196,7 @@ s/in \.__select () at \.\.\/sysdeps\/unix\/syscall-template\.S.*$/in syscall ...
 /^[ 	]*at \.\.\/sysdeps\/unix\/syscall-template\.S/d
 /^[ 	]*in \.\.\/sysdeps\/unix\/syscall-template\.S/d
 
-/^[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d
+/^\(warning: \)\?[1-9][0-9]*[ 	]*\.\.\/sysdeps\/unix\/syscall-template\.S/d
 /^[1-9][0-9]*[ 	]in *\.\.\/sysdeps\/unix\/syscall-template\.S/d
 /^[1-9][0-9]*[ 	]T_PSEUDO (SYSCALL_SYMBOL, SYSCALL_NAME, SYSCALL_NARGS)/d
 

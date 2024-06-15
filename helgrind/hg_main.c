@@ -685,7 +685,7 @@ static ThreadId map_threads_maybe_reverse_lookup_SLOW ( Thread* thr )
    ThreadId tid;
    tl_assert(HG_(is_sane_Thread)(thr));
    /* Check nobody used the invalid-threadid slot */
-   tl_assert(VG_INVALID_THREADID >= 0 && VG_INVALID_THREADID < VG_N_THREADS);
+   tl_assert(VG_INVALID_THREADID < VG_N_THREADS);
    tl_assert(map_threads[VG_INVALID_THREADID] == NULL);
    tid = thr->coretid;
    tl_assert(HG_(is_sane_ThreadId)(tid));
@@ -715,17 +715,24 @@ static void map_threads_delete ( ThreadId coretid )
 
 static void HG_(thread_enter_synchr)(Thread *thr) {
    tl_assert(thr->synchr_nesting >= 0);
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
    thr->synchr_nesting += 1;
 #endif /* VGO_solaris */
 }
 
 static void HG_(thread_leave_synchr)(Thread *thr) {
-#if defined(VGO_solaris)
+#if defined(VGO_solaris) || defined(VGO_freebsd)
    thr->synchr_nesting -= 1;
 #endif /* VGO_solaris */
    tl_assert(thr->synchr_nesting >= 0);
 }
+
+#if defined(VGO_freebsd)
+static Int HG_(get_pthread_synchr_nesting_level)(ThreadId tid) {
+   Thread *thr = map_threads_maybe_lookup(tid);
+   return thr->synchr_nesting;
+}
+#endif
 
 static void HG_(thread_enter_pthread_create)(Thread *thr) {
    tl_assert(thr->pthread_create_nesting_level >= 0);
@@ -3328,7 +3335,7 @@ static void evh__HG_PTHREAD_BARRIER_RESIZE_PRE ( ThreadId tid,
          the barrier, so need to mess with dep edges in the same way
          as if the barrier had filled up normally. */
       present = VG_(sizeXA)(bar->waiting);
-      tl_assert(present >= 0 && present <= bar->size);
+      tl_assert(present <= bar->size);
       if (newcount <= present) {
          bar->size = present; /* keep the cross_sync call happy */
          do_barrier_cross_sync_and_empty(bar);
@@ -3625,9 +3632,9 @@ static void univ_laog_do_GC ( void ) {
    links = NULL;
    while (VG_(nextIterFM)( laog, NULL, (UWord*)&links )) {
       tl_assert(links);
-      tl_assert(links->inns >= 0 && links->inns < univ_laog_cardinality);
+      tl_assert(links->inns < univ_laog_cardinality);
       univ_laog_seen[links->inns] = True;
-      tl_assert(links->outs >= 0 && links->outs < univ_laog_cardinality);
+      tl_assert(links->outs < univ_laog_cardinality);
       univ_laog_seen[links->outs] = True;
       links = NULL;
    }
@@ -4237,7 +4244,7 @@ static void* hg_cli____builtin_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment),
                          /*is_zeroed*/False );
 }
-static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+static void* hg_cli____builtin_new_aligned ( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
@@ -4247,12 +4254,12 @@ static void* hg_cli____builtin_vec_new ( ThreadId tid, SizeT n ) {
    return handle_alloc ( tid, n, VG_(clo_alignment), 
                          /*is_zeroed*/False );
 }
-static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align ) {
+static void* hg_cli____builtin_vec_new_aligned ( ThreadId tid, SizeT n, SizeT align, SizeT orig_align ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align,
                          /*is_zeroed*/False );
 }
-static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT n ) {
+static void* hg_cli__memalign ( ThreadId tid, SizeT align, SizeT orig_alignT, SizeT n ) {
    if (((SSizeT)n) < 0) return NULL;
    return handle_alloc ( tid, n, align, 
                          /*is_zeroed*/False );
@@ -5373,6 +5380,11 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          map_pthread_t_to_Thread_INIT();
          my_thr = map_threads_maybe_lookup( tid );
          tl_assert(my_thr); /* See justification above in SET_MY_PTHREAD_T */
+#if defined(VGO_freebsd)
+         if (HG_(get_pthread_synchr_nesting_level)(tid) >= 1) {
+            break;
+         }
+#endif
          HG_(record_error_PthAPIerror)(
             my_thr, (HChar*)args[1], (UWord)args[2], (HChar*)args[3] );
          break;
@@ -5603,8 +5615,13 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
          break;
 
       case _VG_USERREQ__HG_POSIX_SEM_WAIT_POST: /* sem_t*, long tookLock */
+#if defined(VGO_freebsd)
+      if (args[2] == True && HG_(get_pthread_synchr_nesting_level)(tid) == 1)
+         evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+#else
          if (args[2] == True)
             evh__HG_POSIX_SEM_WAIT_POST( tid, (void*)args[1] );
+#endif
          HG_(thread_leave_synchr)(map_threads_maybe_lookup(tid));
          break;
 
@@ -5747,8 +5764,10 @@ Bool hg_handle_client_request ( ThreadId tid, UWord* args, UWord* ret)
 
       default:
          /* Unhandled Helgrind client request! */
-         tl_assert2(0, "unhandled Helgrind client request 0x%lx",
-                       args[0]);
+         VG_(message)(Vg_UserMsg,
+                      "Warning: unknown Helgrind client request code %llx\n",
+                      (ULong)args[0]);
+         return False;
    }
 
    return True;
@@ -6036,7 +6055,7 @@ static void hg_pre_clo_init ( void )
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a thread error detector");
    VG_(details_copyright_author)(
-      "Copyright (C) 2007-2017, and GNU GPL'd, by OpenWorks LLP et al.");
+      "Copyright (C) 2007-2024, and GNU GPL'd, by OpenWorks LLP et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
    VG_(details_avg_translation_sizeB) ( 320 );
 
@@ -6044,7 +6063,7 @@ static void hg_pre_clo_init ( void )
                                    hg_instrument,
                                    hg_fini);
 
-   VG_(needs_core_errors)         ();
+   VG_(needs_core_errors)         (True);
    VG_(needs_tool_errors)         (HG_(eq_Error),
                                    HG_(before_pp_Error),
                                    HG_(pp_Error),

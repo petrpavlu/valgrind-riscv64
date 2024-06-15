@@ -372,8 +372,9 @@ void remote_open (const HChar *name)
                 pid);
    }
    if (VG_(clo_verbosity) > 1 
-       || VG_(clo_vgdb_error) < 999999999
-       || VG_(clo_vgdb_stop_at) != 0) {
+       || ((VG_(clo_vgdb_error) < 999999999
+            || VG_(clo_vgdb_stop_at) != 0)
+           && !(VG_(clo_launched_with_multi)))) {
       VG_(umsg)("\n");
       VG_(umsg)(
          "TO DEBUG THIS PROCESS USING GDB: start GDB like this\n"
@@ -657,33 +658,6 @@ void decode_address (CORE_ADDR *addrp, const char *start, int len)
       addr = addr | (fromhex (ch) & 0x0f);
    }
    *addrp = addr;
-}
-
-/* Convert number NIB to a hex digit.  */
-
-static
-int tohex (int nib)
-{
-   if (nib < 10)
-      return '0' + nib;
-   else
-      return 'a' + nib - 10;
-}
-
-int hexify (char *hex, const char *bin, int count)
-{
-   int i;
-
-   /* May use a length, or a nul-terminated string as input. */
-   if (count == 0)
-      count = strlen (bin);
-
-  for (i = 0; i < count; i++) {
-     *hex++ = tohex ((*bin >> 4) & 0xf);
-     *hex++ = tohex (*bin++ & 0xf);
-  }
-  *hex = 0;
-  return i;
 }
 
 /* builds an image of bin according to byte order of the architecture 

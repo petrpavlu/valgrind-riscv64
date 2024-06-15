@@ -772,6 +772,8 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 #  endif
    Addr fp_min = sp - VG_STACK_REDZONE_SZB;
 
+   VG_(addr_load_di)(ip);
+
    /* Snaffle IPs from the client's stack into ips[0 .. max_n_ips-1],
       stopping when the trail goes cold, which we guess to be
       when FP is not a reasonable stack location. */
@@ -913,6 +915,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                             play safe, a la x86/amd64 above.  See
                             extensive comments above. */
             RECURSIVE_MERGE(cmrf,ips,i);
+            VG_(addr_load_di)(ip);
             continue;
          }
 
@@ -1158,7 +1161,7 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
 
 /* ------------------------ arm64 ------------------------- */
 
-#if defined(VGP_arm64_linux)
+#if defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
 
 UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
                                /*OUT*/Addr* ips, UInt max_n_ips,
@@ -1204,14 +1207,20 @@ UInt VG_(get_StackTrace_wrk) ( ThreadId tid_if_known,
    /* vg_assert(fp_min <= fp_max);*/
    // On Darwin, this kicks in for pthread-related stack traces, so they're
    // only 1 entry long which is wrong.
+#  if defined(VGO_linux)
    if (fp_min + 512 >= fp_max) {
+#  elif defined(VGO_freebsd)
+   if (fp_max == 0) {
+#endif
+#  if defined(VGO_linux) || defined(VGO_freebsd)
       /* If the stack limits look bogus, don't poke around ... but
          don't bomb out either. */
       if (sps) sps[0] = uregs.sp;
       if (fps) fps[0] = uregs.x29;
       ips[0] = uregs.pc;
       return 1;
-   } 
+   }
+#endif
 
    /* */
 

@@ -36,6 +36,9 @@ problems that are common in C and C++ programs.</para>
     <function>malloc</function>/<computeroutput>new</computeroutput>/<computeroutput>new[]</computeroutput>
     versus
     <function>free</function>/<computeroutput>delete</computeroutput>/<computeroutput>delete[]</computeroutput></para>
+    <para>Mismatches will also be reported for <computeroutput>sized</computeroutput> and <computeroutput>aligned</computeroutput>
+    allocation and deallocation functions if the deallocation value
+    does not match the allocation value.</para>
   </listitem>
 
   <listitem>
@@ -54,6 +57,11 @@ problems that are common in C and C++ programs.</para>
   <listitem>
     <para>Using a <computeroutput>size</computeroutput> value of 0
     with realloc.</para>
+  </listitem>
+
+  <listitem>
+    <para>Using an <computeroutput>alignment</computeroutput> value that
+    is not a power of two.</para>
   </listitem>
 
   <listitem>
@@ -311,7 +319,21 @@ Mismatched free() / delete / delete []
 ]]></programlisting>
 
 <para>In <literal>C++</literal> it's important to deallocate memory in a
-way compatible with how it was allocated.  The deal is:</para>
+way compatible with how it was allocated.</para>
+<para>Most of the time in C++ you will write code that
+uses <function>new expression</function> and <function>delete
+expression</function>
+(see <ulink url="https://en.cppreference.com/w/cpp/language/new">cppreference
+new expression</ulink>
+and <ulink url="https://en.cppreference.com/w/cpp/language/delete">cppreference
+delete expression</ulink>). A new expression will
+call <function>operator new</function> to perform the allocation and
+then call the constructor (if one exists) on the object. Similarly a
+delete expression will call the destructor on the object (if one
+exists) and then call <function>operator delete</function>. The array
+overloads call constructors/destructors for each object in the
+array.</para>
+<para>The deal is:</para>
 <itemizedlist>
   <listitem>
     <para>If allocated with
@@ -332,19 +354,26 @@ way compatible with how it was allocated.  The deal is:</para>
   </listitem>
 </itemizedlist>
 
-<para>The worst thing is that on Linux apparently it doesn't matter if
-you do mix these up, but the same program may then crash on a
-different platform, Solaris for example.  So it's best to fix it
-properly.  According to the KDE folks "it's amazing how many C++
-programmers don't know this".</para>
+<para>Mixing types of allocators and deallocators is undefined
+behaviour.  That means that on some platforms you might not have any
+problems, but the same program may then crash on a different platform,
+Solaris for example.  So it's best to fix it properly.  According to
+the KDE folks "it's amazing how many C++ programmers don't know
+this".</para>
 
 <para>The reason behind the requirement is as follows.  In some C++
 implementations, <function>delete[]</function> must be used for
 objects allocated by <function>new[]</function> because the compiler
 stores the size of the array and the pointer-to-member to the
 destructor of the array's content just before the pointer actually
-returned.  <function>delete</function> doesn't account for this and will get
-confused, possibly corrupting the heap.</para>
+returned.  <function>delete</function> doesn't account for this and
+will get confused, possibly corrupting the heap. Even if there is no
+corruption there are likely to be resource leaks since using the wrong
+delete may result in the wrong number of destructors being
+called.</para>
+
+<para>C++ aligned allocations need to be freed using aligned delete
+with the same alignment.</para>
 
 </sect2>
 
@@ -415,11 +444,13 @@ is checked for being fishy:
 <function>calloc</function>,
 <function>realloc</function>,
 <function>memalign</function>,
+<function>posix_memalign</function>,
+<function>aligned_alloc</function>,
 <function>new</function>,
 <function>new []</function>. 
 <function>__builtin_new</function>,
 <function>__builtin_vec_new</function>,
-For <function>calloc</function> both arguments are being checked.
+For <function>calloc</function> both arguments are checked.
 </para>
 
 <para>For example:</para>
@@ -458,6 +489,52 @@ the non-portable use or realloc.</para>
 
 </sect2>
 
+<sect2 id="mc-manual.alignment"
+       xreflabel="Alignment (and Size) Errors">
+<title>Alignment Errors</title>
+
+<para>C and C++ have several functions that allow the user to obtain aligned memory.
+Typically this is done for performance reasons so that the memory will be cache line
+or memory page aligned. C has the functions <computeroutput>memalign</computeroutput>,
+<computeroutput>posix_memalign</computeroutput> and <computeroutput>aligned_alloc</computeroutput>.
+C++ has numerous overloads of <computeroutput>operator new</computeroutput> and <computeroutput>
+operator delete</computeroutput>. Of these, posix_memalign is quite clearly
+specified, the others vary quite widely between implementations. Valgrind will generate
+errors for values of alignment that are invalid on any platform.</para>
+
+<!-- would like to have a table here -->
+<para><computeroutput>memalign</computeroutput> will produce errors if the alignment
+is zero or not a multiple of two.</para>
+
+<para><computeroutput>posix_memalign</computeroutput> will produce errors if the alignment
+is less than sizeof(size_t), not a multiple of two or if the size is zero.</para>
+
+<para><computeroutput>aligned_alloc</computeroutput> will produce errors if the alignment
+is not a multiple of two , if the size is zero or if the size is not an integral
+multiple of the alignment.</para>
+
+<para><computeroutput>aligned new</computeroutput> will produce errors if the alignment
+is zero or not a multiple of two. The <computeroutput>nothrow</computeroutput> overloads
+will return a NULL pointer. The non-nothrow overloads will abort Valgrind.</para>
+
+<para><computeroutput>aligned delete</computeroutput> will produce errors if the alignment
+is zero or not a multiple of two or if the alignment is not the same as that used by
+<computeroutput>aligned new</computeroutput>.</para>
+
+<para><computeroutput>sized delete</computeroutput> will produce errors if the size
+is not the same as that used by <computeroutput>new</computeroutput>.</para>
+
+<para><computeroutput>sized aligned delete</computeroutput> combines the error conditions
+of the individual sized and aligned delete operators.</para>
+
+<para>Example output:</para>
+<programlisting><![CDATA[
+==65825== Invalid alignment value: 3 (should be power of 2)
+==65825==    at 0x485197E: memalign (vg_replace_malloc.c:1740)
+==65825==    by 0x201CD2: main (memalign.c:39)
+]]></programlisting>
+
+</sect2>
 
 <sect2 id="mc-manual.leaks" xreflabel="Memory leak detection">
 <title>Memory leak detection</title>
@@ -925,7 +1002,7 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
         automatically sets the options <option>--leak-check=full</option>
         and <option>--show-leak-kinds=all</option>, to allow
         xtree visualisation tools such as kcachegrind to select what kind
-        to leak to visualise.
+        to leak to visualize.
         The produced file will contain the following events:</para>
       <itemizedlist>
         <listitem><para><option>RB</option> : Reachable Bytes</para></listitem> 
@@ -1288,6 +1365,20 @@ is <option>--errors-for-leak-kinds=definite,possible</option>
       reports.  <varname>--show-mismatched-frees=no</varname> disables
       these checks.  It is not generally advisable to disable them,
       though, because you may miss real errors as a result.</para>
+    </listitem>
+  </varlistentry>
+
+   <varlistentry id="opt.show-realloc-size-zero"
+                xreflabel="--show-realloc-size-zero">
+    <term>
+      <option><![CDATA[--show-realloc-size-zero=<yes|no> [default: yes] ]]></option>
+    </term>
+    <listitem>
+      <para>When enabled, Memcheck checks for uses of <varname>realloc</varname> with a size of zero.
+      This usage of <varname>realloc</varname> is unsafe since it is not portable. On some systems it
+      will behave like <varname>free</varname>. On other systems it will either do nothing or else
+      behave like a call to <varname>free</varname> followed by a call to <varname>malloc</varname>
+      with a size of zero.</para>
     </listitem>
   </varlistentry>
 

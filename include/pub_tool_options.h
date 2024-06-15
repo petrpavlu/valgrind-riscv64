@@ -255,11 +255,36 @@ Bool VG_(bool_clom)(Clo_Mode qq_mode, const HChar* qq_arg, const HChar* qq_optio
       }                                                                \
       res;}))
 
+// As above, but for unsigned int arguments with a lower bound of 0
+#define VG_BUINTN_CLOM(qq_mode, qq_base, qq_arg, qq_option, qq_var, qq_hi) \
+(VG_(check_clom)                                                     \
+ (qq_mode, qq_arg, qq_option,                                        \
+  VG_STREQN(VG_(strlen)(qq_option)+1, qq_arg, qq_option"=")) &&      \
+ ({Bool res = True;                                                  \
+      const HChar* val = &(qq_arg)[ VG_(strlen)(qq_option)+1 ];         \
+      HChar* s;                                                         \
+      Long n = VG_(strtoll##qq_base)( val, &s );                        \
+      (qq_var) = n;                                                     \
+      if ('\0' != s[0] || (qq_var) != n) {                              \
+         VG_(fmsg_bad_option)(qq_arg,                                   \
+                              "Invalid integer value '%s'\n", val);     \
+         res = False; }                                                 \
+      /* Check bounds. */                                               \
+      if ((qq_var) > (qq_hi)) {                                         \
+         VG_(fmsg_bad_option)(qq_arg,                                   \
+            "'%s' argument must be <= %lld\n",            \
+                              (qq_option), (Long)(qq_hi));              \
+         res = False;                                                  \
+      }                                                                \
+      res;}))
+
 // Bounded decimal integer arg, eg. --foo=100
 #define VG_BINT_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    VG_BINTN_CLOM(cloP, 10, (qq_arg), qq_option, (qq_var), (qq_lo), (qq_hi))
 #define VG_BINT_CLOM(qq_mode, qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
    VG_BINTN_CLOM(qq_mode, 10, (qq_arg), qq_option, (qq_var), (qq_lo), (qq_hi))
+#define VG_BUINT_CLOM(qq_mode, qq_arg, qq_option, qq_var, qq_hi) \
+   VG_BUINTN_CLOM(qq_mode, 10, (qq_arg), qq_option, (qq_var), (qq_hi))
 
 // Bounded hexadecimal integer arg, eg. --foo=0x1fa8
 #define VG_BHEX_CLO(qq_arg, qq_option, qq_var, qq_lo, qq_hi) \
@@ -332,6 +357,11 @@ extern Bool VG_(clo_stats);
    Note that this value can be changed dynamically. */
 extern Int VG_(clo_vgdb_error);
 
+/* Set by vgdb in --multi mode when launching valgrind. This suppresses
+   the "TO DEBUG" banner because vgdb will take care of attaching in that
+   case.  */
+extern Bool VG_(clo_launched_with_multi);
+
 /* If user has provided the --vgdb-prefix command line option,
    VG_(arg_vgdb_prefix) points at the provided argument (including the
    '--vgdb-prefix=' string).
@@ -385,6 +415,9 @@ extern Bool VG_(clo_show_below_main);
    previously captured stack traces.  e.g. ... showing where a block was
    allocated e.g. leaks of or accesses just outside a block. */
 extern Bool VG_(clo_keep_debuginfo);
+
+/* Track open file descriptors? 0 = No, 1 = Yes, 2 = All (including std)  */
+extern UInt  VG_(clo_track_fds);
 
 
 /* Used to expand file names.  "option_name" is the option name, eg.

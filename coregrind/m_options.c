@@ -93,7 +93,7 @@ Int    VG_(clo_error_exitcode) = 0;
 HChar *VG_(clo_error_markers)[2] = {NULL, NULL};
 Bool   VG_(clo_exit_on_first_error) = False;
 
-Bool   VG_(clo_show_error_list) = False;
+Int   VG_(clo_show_error_list) = 0;
 
 #if defined(VGPV_arm_linux_android) \
     || defined(VGPV_x86_linux_android) \
@@ -106,6 +106,7 @@ VgVgdb VG_(clo_vgdb)           = Vg_VgdbYes;
 #endif
 Int    VG_(clo_vgdb_poll)      = 5000; 
 Int    VG_(clo_vgdb_error)     = 999999999;
+Bool   VG_(clo_launched_with_multi)  = False;
 UInt   VG_(clo_vgdb_stop_at)   = 0;
 const HChar *VG_(clo_vgdb_prefix)    = NULL;
 const HChar *VG_(arg_vgdb_prefix)    = NULL;

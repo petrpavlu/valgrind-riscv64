@@ -282,6 +282,12 @@ static Bool have_started_executing_code = False;
 //--- Alloc fns                                            ---//
 //------------------------------------------------------------//
 
+// alloc_fns is not used for detecting allocations
+// it is used when checking for ignore functions in the callstack
+// see filter_IPs
+// allocation detection uses the usual coregrind reaplace malloc
+// mechanism which calls ms_malloc etc. here and in the end
+// everything goes through alloc_and_record_block
 static XArray* alloc_fns;
 static XArray* ignore_fns;
 
@@ -298,6 +304,12 @@ static void init_alloc_fns(void)
    // prodigiously stupid overloading that caused them to not allocate
    // memory.
    //
+   // PJF: the above comment is a bit wide of the mark.
+   // See https://en.cppreference.com/w/cpp/memory/new/operator_new
+   // There are two "non-allocating placement allocation functions"
+   //
+   // Because of the above we can't use wildcards.
+   //
    // XXX: because we don't look at the first stack entry (unless it's a
    // custom allocation) there's not much point to having all these alloc
    // functions here -- they should never appear anywhere (I think?) other
@@ -309,20 +321,38 @@ static void init_alloc_fns(void)
    //
    DO("malloc"                                              );
    DO("__builtin_new"                                       );
+# if VG_WORDSIZE == 4
    DO("operator new(unsigned)"                              );
+#else
    DO("operator new(unsigned long)"                         );
+#endif
    DO("__builtin_vec_new"                                   );
+# if VG_WORDSIZE == 4
    DO("operator new[](unsigned)"                            );
+#else
    DO("operator new[](unsigned long)"                       );
+#endif
    DO("calloc"                                              );
+   DO("aligned_alloc"                                       );
    DO("realloc"                                             );
    DO("memalign"                                            );
    DO("posix_memalign"                                      );
    DO("valloc"                                              );
+# if VG_WORDSIZE == 4
    DO("operator new(unsigned, std::nothrow_t const&)"       );
    DO("operator new[](unsigned, std::nothrow_t const&)"     );
+   DO("operator new(unsigned, std::align_val_t)"            );
+   DO("operator new[](unsigned, std::align_val_t)"          );
+   DO("operator new(unsigned, std::align_val_t, std::nothrow_t const&)"   );
+   DO("operator new[](unsigned, std::align_val_t, std::nothrow_t const&)" );
+#else
    DO("operator new(unsigned long, std::nothrow_t const&)"  );
    DO("operator new[](unsigned long, std::nothrow_t const&)");
+   DO("operator new(unsigned long, std::align_val_t)"       );
+   DO("operator new[](unsigned long, std::align_val_t)"     );
+   DO("operator new(unsigned long, std::align_val_t, std::nothrow_t const&)"   );
+   DO("operator new[](unsigned long, std::align_val_t, std::nothrow_t const&)" );
+#endif
 #if defined(VGO_darwin)
    DO("malloc_zone_malloc"                                  );
    DO("malloc_zone_calloc"                                  );
@@ -506,6 +536,8 @@ void filter_IPs (Addr* ips, Int n_ips,
 {
    Int i;
    Bool top_has_fnname = False;
+   Bool is_alloc_fn = False;
+   Bool is_inline_fn = False;
    const HChar *fnname;
 
    *top = 0;
@@ -519,9 +551,21 @@ void filter_IPs (Addr* ips, Int n_ips,
    //    0x1 0x2 0x3 alloc func1 main
    //  became   0x1 0x2 0x3 func1 main
    const DiEpoch ep = VG_(current_DiEpoch)();
-   for (i = *top; i < n_ips; i++) {
-      top_has_fnname = VG_(get_fnname)(ep, ips[*top], &fnname);
-      if (top_has_fnname &&  VG_(strIsMemberXA)(alloc_fns, fnname)) {
+   InlIPCursor *iipc = NULL;
+
+   for (i = *top; i < n_ips; ++i) {
+      iipc = VG_(new_IIPC)(ep, ips[i]);
+      do {
+         top_has_fnname = VG_(get_fnname_inl)(ep, ips[i], &fnname, iipc);
+         is_alloc_fn = top_has_fnname && VG_(strIsMemberXA)(alloc_fns, fnname);
+         is_inline_fn = VG_(next_IIPC)(iipc);
+         if (is_alloc_fn && is_inline_fn) {
+            VERB(4, "filtering inline alloc fn %s\n", fnname);
+         }
+      } while (is_alloc_fn && is_inline_fn);
+      VG_(delete_IIPC)(iipc);
+
+      if (is_alloc_fn) {
          VERB(4, "filtering alloc fn %s\n", fnname);
          (*top)++;
          (*n_ips_sel)--;
@@ -534,8 +578,15 @@ void filter_IPs (Addr* ips, Int n_ips,
    if (*n_ips_sel > 0 && VG_(sizeXA)(ignore_fns) > 0) {
       if (!top_has_fnname) {
          // top has no fnname => search for the first entry that has a fnname
-         for (i = *top; i < n_ips && !top_has_fnname; i++) {
-            top_has_fnname = VG_(get_fnname)(ep, ips[i], &fnname);
+         for (i = *top; i < n_ips && !top_has_fnname; ++i) {
+            iipc = VG_(new_IIPC)(ep, ips[i]);
+            do {
+               top_has_fnname = VG_(get_fnname_inl)(ep, ips[i], &fnname, iipc);
+               if (top_has_fnname) {
+                  break;
+               }
+            } while (VG_(next_IIPC)(iipc));
+            VG_(delete_IIPC)(iipc);
          }
       }
       if (top_has_fnname && VG_(strIsMemberXA)(ignore_fns, fnname)) {
@@ -1407,7 +1458,7 @@ static void* ms___builtin_new ( ThreadId tid, SizeT szB )
    return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* ms___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* ms___builtin_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB , SizeT orig_alignB )
 {
    return alloc_and_record_block( tid, szB, alignB, /*is_zeroed*/False );
 }
@@ -1417,7 +1468,7 @@ static void* ms___builtin_vec_new ( ThreadId tid, SizeT szB )
    return alloc_and_record_block( tid, szB, VG_(clo_alignment), /*is_zeroed*/False );
 }
 
-static void* ms___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB )
+static void* ms___builtin_vec_new_aligned ( ThreadId tid, SizeT szB, SizeT alignB, SizeT orig_alignB )
 {
    return alloc_and_record_block( tid, szB, alignB, /*is_zeroed*/False );
 }
@@ -1427,7 +1478,7 @@ static void* ms_calloc ( ThreadId tid, SizeT m, SizeT szB )
    return alloc_and_record_block( tid, m*szB, VG_(clo_alignment), /*is_zeroed*/True );
 }
 
-static void *ms_memalign ( ThreadId tid, SizeT alignB, SizeT szB )
+static void *ms_memalign ( ThreadId tid, SizeT alignB, SizeT orig_alignB, SizeT szB)
 {
    return alloc_and_record_block( tid, szB, alignB, False );
 }
@@ -2120,7 +2171,7 @@ static void ms_pre_clo_init(void)
    VG_(details_version)         (NULL);
    VG_(details_description)     ("a heap profiler");
    VG_(details_copyright_author)(
-      "Copyright (C) 2003-2017, and GNU GPL'd, by Nicholas Nethercote");
+      "Copyright (C) 2003-2024, and GNU GPL'd, by Nicholas Nethercote et al.");
    VG_(details_bug_reports_to)  (VG_BUGS_TO);
 
    VG_(details_avg_translation_sizeB) ( 330 );

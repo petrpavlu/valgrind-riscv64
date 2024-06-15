@@ -142,7 +142,6 @@ static Bool is_sane_CEnt ( const HChar* who, const DiImage* img, UInt i )
       if (!(ce->used == ce->size || ce->used == 0)) goto fail;
    } else {
       if (!(ce->size == CACHE_ENTRY_SIZE)) goto fail;
-      if (!(ce->off >= 0)) goto fail;
       if (!(ce->off + ce->used <= img->real_size)) goto fail;
    }
    return True;
@@ -553,7 +552,7 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
    DiOffT off_orig = off;
    vg_assert(img != NULL);
    vg_assert(img->ces_used <= CACHE_N_ENTRIES);
-   vg_assert(entNo >= 0 && entNo < img->ces_used);
+   vg_assert(entNo < img->ces_used);
    vg_assert(off < img->real_size);
    CEnt* ce = img->ces[entNo];
    vg_assert(ce != NULL);
@@ -583,7 +582,28 @@ static void set_CEnt ( const DiImage* img, UInt entNo, DiOffT off )
 
    if (img->source.is_local) {
       // Simple: just read it
+
+      // PJF not quite so simple - see
+      // https://bugs.kde.org/show_bug.cgi?id=480405
+      // if img->source.fd was opened with O_DIRECT the memory needs
+      // to be aligned and also the length
+      // that's a lot of hassle just to take a quick peek to see if
+      // is an ELF binary so just twiddle the flag before and after
+      // peeking.
+      // This doesn't seem to be a problem on FreeBSD. I haven't tested
+      // on macOS or Solaris, hence the conditional compilation
+#if defined(VKI_O_DIRECT)
+      Int flags = VG_(fcntl)(img->source.fd, VKI_F_GETFL, 0);
+      if (flags & VKI_O_DIRECT) {
+          VG_(fcntl)(img->source.fd, VKI_F_SETFL, flags & ~VKI_O_DIRECT);
+      }
+#endif
       SysRes sr = VG_(pread)(img->source.fd, &ce->data[0], (Int)len, off);
+#if defined(VKI_O_DIRECT)
+      if (flags & VKI_O_DIRECT) {
+         VG_(fcntl)(img->source.fd, VKI_F_SETFL, flags);
+      }
+#endif
       vg_assert(!sr_isError(sr));
    } else {
       // Not so simple: poke the server
@@ -776,7 +796,7 @@ static UChar get_slowcase ( DiImage* img, DiOffT off )
       if (!img->ces[i]->fromC)
          break;
    }
-   vg_assert(i >= 0 && i < CACHE_N_ENTRIES);
+   vg_assert(i < CACHE_N_ENTRIES);
 
    realloc_CEnt(img, i, size, /*fromC?*/cslc != NULL);
    img->ces[i]->size = size;
@@ -1167,7 +1187,7 @@ SizeT ML_(img_get_some)(/*OUT*/void* dst,
    vg_assert(is_in_CEnt(ce, offset));
    SizeT nToCopy = size - 1;
    SizeT nAvail  = (SizeT)(ce->used - (offset + 1 - ce->off));
-   vg_assert(nAvail >= 0 && nAvail <= ce->used-1);
+   vg_assert(nAvail <= ce->used-1);
    if (nAvail < nToCopy) nToCopy = nAvail;
    VG_(memcpy)(&dstU[1], &ce->data[offset + 1 - ce->off], nToCopy);
    return nToCopy + 1;
@@ -1220,6 +1240,20 @@ Int ML_(img_strcmp_c)(DiImage* img, DiOffT off1, const HChar* str2)
       if (c1 == 0) return 0;
       off1++; str2++;
    }
+}
+
+Int ML_(img_strcmp_n)(DiImage* img, DiOffT off1, const HChar* str2, Word n)
+{
+   ensure_valid(img, off1, 1, "ML_(img_strcmp_c)");
+   while (n) {
+      UChar c1 = get(img, off1);
+      UChar c2 = *(const UChar*)str2;
+      if (c1 < c2) return -1;
+      if (c1 > c2) return 1;
+      if (c1 == 0) return 0;
+      off1++; str2++; --n;
+   }
+   return 0;
 }
 
 UChar ML_(img_get_UChar)(DiImage* img, DiOffT offset)
@@ -1322,7 +1356,7 @@ UInt ML_(img_calc_gnu_debuglink_crc32)(DiImage* img)
       DiOffT img_szB  = ML_(img_size)(img);
       DiOffT curr_off = 0;
       while (1) {
-         vg_assert(curr_off >= 0 && curr_off <= img_szB);
+         vg_assert(curr_off <= img_szB);
          if (curr_off == img_szB) break;
          DiOffT avail = img_szB - curr_off;
          vg_assert(avail > 0 && avail <= img_szB);

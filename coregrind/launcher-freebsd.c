@@ -174,10 +174,11 @@ static const char *select_platform(const char *clientname)
       } else if ((size_t)n_bytes >= sizeof(Elf64_Ehdr) && header[EI_CLASS] == ELFCLASS64) {
          const Elf64_Ehdr *ehdr = (Elf64_Ehdr *)header;
 
-         if (header[EI_DATA] == ELFDATA2LSB) {
-            if (ehdr->e_machine == EM_X86_64 &&
-                  ehdr->e_ident[EI_OSABI] == ELFOSABI_FREEBSD) {
+         if (header[EI_DATA] == ELFDATA2LSB && ehdr->e_ident[EI_OSABI] == ELFOSABI_FREEBSD) {
+            if (ehdr->e_machine == EM_X86_64) {
                platform = "amd64-freebsd";
+            } else if (ehdr->e_machine == EM_AARCH64) {
+               platform = "arm64-freebsd";
             }
          }
       }
@@ -198,7 +199,7 @@ int main(int argc, char** argv, char** envp)
    const char *toolname = NULL;
    const char *clientname = NULL;
    const char *platform;
-   const char *default_platform;
+   const char *default_platform = VG_PLATFORM;
    const char *cp;
    char *toolfile;
    char launcher_name[PATH_MAX+1];
@@ -241,23 +242,6 @@ int main(int argc, char** argv, char** envp)
       VG_(debugLog)(1, "launcher",
                     "no tool requested, defaulting to 'memcheck'\n");
       toolname = "memcheck";
-   }
-
-   /* Select a platform to use if we can't decide that by looking at
-      the executable (eg because it's a shell script).  Note that the
-      default_platform is not necessarily either the primary or
-      secondary build target.  Instead it's chosen to maximise the
-      chances that /bin/sh will work on it.  Hence for a primary
-      target of ppc64-linux we still choose ppc32-linux as the default
-      target, because on most ppc64-linux setups, the basic /bin,
-      /usr/bin, etc, stuff is built in 32-bit mode, not 64-bit
-      mode. */
-   if (0==strcmp(VG_PLATFORM,"x86-freebsd")) {
-      default_platform = "x86-freebsd";
-   } else if (0==strcmp(VG_PLATFORM,"amd64-freebsd")) {
-      default_platform = "amd64-freebsd";
-   } else {
-      barf("Unknown VG_PLATFORM '%s'", VG_PLATFORM);
    }
 
    /* Work out what platform to use, or use the default platform if

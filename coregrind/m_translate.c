@@ -1742,7 +1742,7 @@ Bool VG_(translate) ( ThreadId tid,
          = SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints));
 #endif
 
-#  if defined(VGP_arm64_linux)
+#  if defined(VGP_arm64_linux) || defined(VGP_arm64_freebsd)
    vex_abiinfo.guest__use_fallback_LLSC
       = /* The user asked explicitly */
         SimHintiS(SimHint_fallback_llsc, VG_(clo_sim_hints))
@@ -1835,7 +1835,7 @@ Bool VG_(translate) ( ThreadId tid,
    tres = LibVEX_Translate ( &vta );
 
    vg_assert(tres.status == VexTransOK);
-   vg_assert(tres.n_sc_extents >= 0 && tres.n_sc_extents <= 3);
+   vg_assert(tres.n_sc_extents <= 3);
    vg_assert(tmpbuf_used <= N_TMPBUF);
    vg_assert(tmpbuf_used > 0);
 

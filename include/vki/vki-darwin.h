@@ -274,6 +274,8 @@ typedef uint32_t vki_u32;
 #define	VKI_O_EXCL	O_EXCL
 #define	VKI_O_EVTONLY	O_EVTONLY
 
+#define VKI_AT_FDCWD AT_FDCWD
+
 #define	VKI_F_DUPFD	F_DUPFD
 #define	VKI_F_GETFD	F_GETFD
 #define	VKI_F_SETFD	F_SETFD
@@ -1120,7 +1122,7 @@ typedef int vki_errno_t;
 
 /* necp stuff.  This doesn't appear to exist in any user space include
    file. */
-#if DARWIN_VERS == DARWIN_10_10
+#if DARWIN_VERS >= DARWIN_10_10
 struct vki_necp_aggregate_result {
    vki_u_int32_t field1;
    unsigned int  field2;
@@ -1130,7 +1132,10 @@ struct vki_necp_aggregate_result {
    u_int32_t     field6;
    u_int32_t     field7;
 };
-#endif /* DARWIN_VERS == DARWIN_10_10 */
+
+#define VKI_CSR_CHECK 0
+#define VKI_CSR_GET_ACTIVE_CONFIG 1
+#endif /* DARWIN_VERS >= DARWIN_10_10 */
 
 #if DARWIN_VERS >= DARWIN_10_12
 // ulock_wake & ulock_wait operations
@@ -1141,8 +1146,73 @@ struct vki_necp_aggregate_result {
 // ulock_wake & ulock_wait flags
 #define ULF_NO_ERRNO            0x01000000
 
+// ulock_wake flags
+#define VKI_ULF_WAKE_ALL          0x00000100
+#define VKI_ULF_WAKE_THREAD       0x00000200
+
 // ulock_wait flags
 #define WKI_ULF_WAIT_WORKQ_DATA_CONTENTION	0x00010000
+
+#define VKI_NECP_CLIENT_ACTION_ADD                     1
+#define VKI_NECP_CLIENT_ACTION_REMOVE                  2
+#define VKI_NECP_CLIENT_ACTION_COPY_PARAMETERS         3
+#define VKI_NECP_CLIENT_ACTION_COPY_RESULT             4
+#define VKI_NECP_CLIENT_ACTION_COPY_LIST               5
+#define VKI_NECP_CLIENT_ACTION_AGENT                   7
+#define VKI_NECP_CLIENT_ACTION_COPY_AGENT              8
+#define VKI_NECP_CLIENT_ACTION_COPY_INTERFACE          9
+#define VKI_NECP_CLIENT_ACTION_COPY_ROUTE_STATISTICS  11
+#define VKI_NECP_CLIENT_ACTION_AGENT_USE              12
+#define VKI_NECP_CLIENT_ACTION_UPDATE_CACHE           14
+#define VKI_NECP_CLIENT_ACTION_COPY_CLIENT_UPDATE     15
+#define VKI_NECP_CLIENT_ACTION_COPY_UPDATED_RESULT    16
+#define VKI_NECP_CLIENT_ACTION_CLAIM                  19
+#define VKI_NECP_CLIENT_ACTION_SIGN                   20
+
+#define VKI_NECP_MAX_CLIENT_PARAMETERS_SIZE    1024
+#define VKI_NECP_CLIENT_ACTION_SIGN_TAG_LENGTH   32
+
+#define VKI_IFXNAMSIZ     IFNAMSIZ + 8
+#define VKI_IFNET_SIGNATURELEN      20
+
+struct vki_necp_client_signable {
+	uuid_t client_id;
+	u_int32_t sign_type;
+} __attribute__((__packed__));
+
+struct vki_necp_cache_buffer {
+	u_int8_t                necp_cache_buf_type;    //  NECP_CLIENT_CACHE_TYPE_*
+	u_int8_t                necp_cache_buf_ver;     //  NECP_CLIENT_CACHE_TYPE_*_VER
+	u_int32_t               necp_cache_buf_size;
+	mach_vm_address_t       necp_cache_buf_addr;
+};
+
+struct vki_necp_interface_signature {
+  u_int8_t signature[VKI_IFNET_SIGNATURELEN];
+  u_int8_t signature_len;
+};
+
+struct vki_necp_interface_details_legacy {
+	char name[VKI_IFXNAMSIZ];
+	u_int32_t index;
+	u_int32_t generation;
+	u_int32_t functional_type;
+	u_int32_t delegate_index;
+	u_int32_t flags; // see NECP_INTERFACE_FLAG_*
+	u_int32_t mtu;
+	struct vki_necp_interface_signature ipv4_signature;
+	struct vki_necp_interface_signature ipv6_signature;
+};
+
+struct vki_necp_agent_use_parameters {
+	uuid_t agent_uuid;
+	uint64_t out_use_count;
+};
+
+// Precalculated as the struct are really big
+#define VKI_IFNET_STATS_PER_FLOW_SIZE 96
+#define VKI_NECP_STAT_COUNTS_SIZE 68
+
 #endif /* DARWIN_VERS >= DARWIN_10_12 */
 
 #endif
