@@ -1160,6 +1160,10 @@ static HReg iselIntExpr_R_wrk(ISelEnv* env, IRExpr* e)
          vassert(ty == Ity_I8);
          u = vex_sx_to_64(e->Iex.Const.con->Ico.U8, 8);
          break;
+      case Ico_U1:
+         vassert(ty == Ity_I1);
+         u = vex_sx_to_64(e->Iex.Const.con->Ico.U1, 1);
+         break;
       default:
          goto irreducible;
       }
