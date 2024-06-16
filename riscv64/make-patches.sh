@@ -118,6 +118,7 @@ memcheck/tests/atomic_incs.c
 memcheck/tests/leak-segv-jmp.c
 memcheck/tests/leak-segv-jmp.stderr.exp
 memcheck/tests/leak.h
+memcheck/tests/sh-mem-random.c
 none/tests/Makefile.am
 none/tests/allexec_prepare_prereq
 none/tests/faultstatus.c

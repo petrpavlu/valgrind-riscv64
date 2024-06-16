@@ -247,9 +247,10 @@ int main(void)
       int nbytes_p;
       // (U1*)(UWord)constULL funny casting to keep gcc quiet on
       // 32-bit platforms
-      U1* huge_addr = (U1*)(UWord)0x6600000000ULL;  // 408GB
+      U1* huge_addr = (U1*)(UWord)0x3300000000ULL;  // 204GB
       // Note, kernel 2.6.? on Athlon64 refuses fixed mmap requests
-      // at above 512GB.
+      // at above 512GB. Further, Linux on RISC-V with Sv39 has user mappings
+      // limited to 256GB.
 
       printf("-------- testing auxmap range --------\n");
 
