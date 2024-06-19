@@ -6,24 +6,21 @@ This repository contains [Valgrind][Valgrind] with support for the
 [RISCV64][RISC-V]/[Linux][Linux] platform.
 
 The aim of the project is to enable Valgrind for the RV64GC instruction set on
-the Linux operating system. Once this support is implemented and has sufficient
-quality, it is intended for this port to become a part of the upstream Valgrind
-project and to continue further development there.
+the Linux operating system. It is intended for this port to eventually become
+a part of the upstream Valgrind project and to continue further development
+there.
 
 For installation, please follow the generic steps how to build Valgrind in [the
 main README file](README).
 
-In case you are interested in helping with the port then the best option is to
-analyze remaining failing tests in the Valgrind test suite, or just try the port
-with your application and report any discovered bugs.
-
-The project was presented at [FOSDEM 2022][FOSDEM talk].
+The project was presented at [FOSDEM 2022][FOSDEM talk]. Work on integrating the
+code into the official Valgrind project has been tracked in [an upstream
+bug][submit bug].
 
 ## Current state
 
-Current focus is on functionality and correctness.
-
-The following tables summarize the basic state as of 2022-12-04.
+Current focus is on functionality and correctness. The following summarizes the
+high-level state as of 2024-06-18.
 
 Enabled RV64GC instructions:
 
@@ -40,17 +37,14 @@ Enabled RV64GC instructions:
 
 Test results:
 
-| Test set   | #Failed/#Total |
-| ---------- | -------------: |
-| Memcheck   |         10/219 |
-| Nulgrind   |          1/140 |
-| Cachegrind |            0/7 |
-| Callgrind  |           0/15 |
-| DHAT       |            0/8 |
-| DRD        |          4/130 |
-| Helgrind   |           4/55 |
-| Massif     |           2/37 |
-| GDBserver  |           2/25 |
+    == 737 tests, 3 stderr failures, 0 stdout failures, 0 stderrB failures, 1 stdoutB failure, 0 post failures ==
+    gdbserver_tests/hgtls                    (stdoutB)
+    none/tests/double_close_range            (stderr)
+    none/tests/double_close_range_sup        (stderr)
+    none/tests/double_close_range_xml        (stderr)
+
+For limitations and to-do tasks, please refer to
+[README.riscv64](README.riscv64).
 
 ## License
 
@@ -60,3 +54,4 @@ This project is released under the terms of [the GPLv2 License](COPYING).
 [RISC-V]: https://riscv.org/
 [Linux]: https://github.com/torvalds/linux
 [FOSDEM talk]: https://archive.fosdem.org/2022/schedule/event/valgrind_riscv/
+[submit bug]: https://bugs.kde.org/show_bug.cgi?id=468575
