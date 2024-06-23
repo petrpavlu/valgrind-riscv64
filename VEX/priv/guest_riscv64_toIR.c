@@ -1618,7 +1618,7 @@ static Bool dis_RV64I(/*MB_OUT*/ DisResult* dres,
          /* Invalid FENCE, fall through. */
       } else {
          stmt(irsb, IRStmt_MBE(Imbe_Fence));
-         if (fm = 0b1000)
+         if (fm == 0b1000)
             DIP("fence.tso\n");
          else if (pred == 0b1111 && succ == 0b1111)
             DIP("fence\n");
