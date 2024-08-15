@@ -1611,10 +1611,11 @@ static Bool dis_RV64I(/*MB_OUT*/ DisResult* dres,
 
    /* ------------------------ fence ------------------------ */
    if (INSN(19, 0) == 0b00000000000000001111) {
-      UInt succ = INSN(23, 20);
-      UInt pred = INSN(27, 24);
-      UInt fm   = INSN(31, 28);
-      if (fm != 0b0000 && (fm != 0b1000 || succ != 0b0011 || pred != 0b0011)) {
+      UInt succ   = INSN(23, 20);
+      UInt pred   = INSN(27, 24);
+      UInt fm     = INSN(31, 28);
+      UInt funct3 = INSN(14, 12);
+      if (fm != 0b0000 && (fm != 0b1000 || succ != 0b0011 || pred != 0b0011) && funct3 != 0b001) {
          /* Invalid FENCE, fall through. */
       } else {
          stmt(irsb, IRStmt_MBE(Imbe_Fence));
@@ -1622,6 +1623,8 @@ static Bool dis_RV64I(/*MB_OUT*/ DisResult* dres,
             DIP("fence.tso\n");
          else if (pred == 0b1111 && succ == 0b1111)
             DIP("fence\n");
+         else if (funct3 == 0b001)
+            DIP("fence.i\n");
          else
             DIP("fence %s%s%s%s,%s%s%s%s\n", (pred & 0x8) ? "i" : "",
                 (pred & 0x4) ? "o" : "", (pred & 0x2) ? "r" : "",
