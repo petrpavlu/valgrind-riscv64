@@ -215,3 +215,174 @@ csrrc zero, fcsr, a1 ::
 csrrc a0, fcsr, zero ::
   inputs: zero=0x0000000000000000, fcsr=0x00000000000000ff
   output: a0=0x00000000000000ff, fcsr=0x00000000000000ff
+csrrwi a0, fflags, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000001
+csrrwi a0, fflags, 0x1f ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x000000000000001f
+csrrwi a0, fflags, 0x1e ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000fe
+csrrwi a0, fflags, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000e0
+csrrwi t5, fflags, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000001
+csrrwi zero, fflags, 0x01 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000e1
+csrrwi a0, fflags, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000e0
+csrrwi a0, frm, 0x1 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000020
+csrrwi a0, frm, 0x7 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x00000000000000e0
+csrrwi a0, frm, 0x6 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x00000000000000df
+csrrwi a0, frm, 0x0 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x000000000000001f
+csrrwi t5, frm, 0x1 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000020
+csrrwi zero, frm, 0x1 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x000000000000003f
+csrrwi a0, frm, 0x0 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x000000000000001f
+csrrwi a0, fcsr, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000001
+csrrwi a0, fcsr, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x00000000000000ff, fcsr=0x0000000000000000
+csrrwi t5, fcsr, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000001
+csrrwi zero, fcsr, 0x01 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x0000000000000001
+csrrwi a0, fcsr, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x00000000000000ff, fcsr=0x0000000000000000
+csrrsi a0, fflags, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000001
+csrrsi a0, fflags, 0x1f ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x000000000000001f
+csrrsi a0, fflags, 0x1e ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000ff
+csrrsi a0, fflags, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000ff
+csrrsi t5, fflags, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000001
+csrrsi zero, fflags, 0x01 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000ff
+csrrsi a0, fflags, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000ff
+csrrsi a0, frm, 0x1 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000020
+csrrsi a0, frm, 0x7 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x00000000000000e0
+csrrsi a0, frm, 0x6 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x00000000000000ff
+csrrsi a0, frm, 0x0 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x00000000000000ff
+csrrsi t5, frm, 0x1 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000020
+csrrsi zero, frm, 0x1 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000ff
+csrrsi a0, frm, 0x0 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x00000000000000ff
+csrrsi a0, fcsr, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000001
+csrrsi a0, fcsr, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x00000000000000ff, fcsr=0x00000000000000ff
+csrrsi t5, fcsr, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000001
+csrrsi zero, fcsr, 0x01 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000ff
+csrrsi a0, fcsr, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x00000000000000ff, fcsr=0x00000000000000ff
+csrrci a0, fflags, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000000
+csrrci a0, fflags, 0x1f ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000000
+csrrci a0, fflags, 0x1e ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000e1
+csrrci a0, fflags, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000ff
+csrrci t5, fflags, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000000
+csrrci zero, fflags, 0x01 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000fe
+csrrci a0, fflags, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x000000000000001f, fcsr=0x00000000000000ff
+csrrci a0, frm, 0x1 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000000
+csrrci a0, frm, 0x7 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000000
+csrrci a0, frm, 0x6 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x000000000000003f
+csrrci a0, frm, 0x0 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x00000000000000ff
+csrrci t5, frm, 0x1 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000000
+csrrci zero, frm, 0x1 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000df
+csrrci a0, frm, 0x0 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x0000000000000007, fcsr=0x00000000000000ff
+csrrci a0, fcsr, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: a0=0x0000000000000000, fcsr=0x0000000000000000
+csrrci a0, fcsr, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x00000000000000ff, fcsr=0x00000000000000ff
+csrrci t5, fcsr, 0x01 ::
+  inputs: fcsr=0x0000000000000000
+  output: t5=0x0000000000000000, fcsr=0x0000000000000000
+csrrci zero, fcsr, 0x01 ::
+  inputs: fcsr=0x00000000000000ff
+  output: zero=0x0000000000000000, fcsr=0x00000000000000fe
+csrrci a0, fcsr, 0x00 ::
+  inputs: fcsr=0x00000000000000ff
+  output: a0=0x00000000000000ff, fcsr=0x00000000000000ff

@@ -1753,76 +1753,89 @@ static Bool dis_RV64M(/*MB_OUT*/ DisResult* dres,
       UInt funct3 = INSN(14, 12);
       UInt rs1    = INSN(19, 15);
       UInt rs2    = INSN(24, 20);
-      if (funct3 == 0b010) {
-         /* Invalid {MUL,DIV,REM}<x>, fall through. */
-      } else if (funct3 == 0b010) {
-         /* MULHSU, not currently handled, fall through. */
-      } else {
-         if (rd != 0) {
-            IRExpr* expr;
-            switch (funct3) {
-            case 0b000:
-               expr = binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2));
-               break;
-            case 0b001:
-               expr = unop(Iop_128HIto64,
-                           binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2)));
-               break;
-            case 0b011:
-               expr = unop(Iop_128HIto64,
-                           binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2)));
-               break;
-            case 0b100:
-               expr = binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2));
-               break;
-            case 0b101:
-               expr = binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2));
-               break;
-            case 0b110:
-               expr =
-                  unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
-                                            getIReg64(rs2)));
-               break;
-            case 0b111:
-               expr =
-                  unop(Iop_128HIto64, binop(Iop_DivModU64to64, getIReg64(rs1),
-                                            getIReg64(rs2)));
-               break;
-            default:
-               vassert(0);
-            }
-            putIReg64(irsb, rd, expr);
-         }
-         const HChar* name;
+      if (rd != 0) {
+         IRExpr* expr;
          switch (funct3) {
          case 0b000:
-            name = "mul";
+            expr = binop(Iop_Mul64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b001:
-            name = "mulh";
+            expr = unop(Iop_128HIto64,
+                        binop(Iop_MullS64, getIReg64(rs1), getIReg64(rs2)));
+            break;
+         case 0b010:
+            /* Inspired by QEMU's mulhsu emulation.
+               mulhsu(rs1, rs2)
+               => ((s128)rs1 * (u128)rs2) >> 64
+               => mulhu(rs1, rs2) + mul(rs1 < 0 ? -1 : 0, rs2)
+               => mulhu(rs1, rs2) + (rs1 < 0 ? -rs2 : 0)
+               => mulhu(rs1, rs2) - (rs1 < 0 ? rs2 : 0)
+               => mulhu(rs1, rs2) - (srai(rs1, __riscv_xlen - 1) & rs2)
+             */
+            expr = unop(Iop_128HIto64,
+                        binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2)));
+            IRExpr* tmp = binop(Iop_And64,
+                                binop(Iop_Sar64, getIReg64(rs1), mkU8(63)),
+                                getIReg64(rs2));
+            expr = binop(Iop_Sub64, expr, tmp);
             break;
          case 0b011:
-            name = "mulhu";
+            expr = unop(Iop_128HIto64,
+                        binop(Iop_MullU64, getIReg64(rs1), getIReg64(rs2)));
             break;
          case 0b100:
-            name = "div";
+            expr = binop(Iop_DivS64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b101:
-            name = "divu";
+            expr = binop(Iop_DivU64, getIReg64(rs1), getIReg64(rs2));
             break;
          case 0b110:
-            name = "rem";
+            expr =
+               unop(Iop_128HIto64, binop(Iop_DivModS64to64, getIReg64(rs1),
+                                         getIReg64(rs2)));
             break;
          case 0b111:
-            name = "remu";
+            expr =
+               unop(Iop_128HIto64, binop(Iop_DivModU64to64, getIReg64(rs1),
+                                         getIReg64(rs2)));
             break;
          default:
             vassert(0);
          }
-         DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
-             nameIReg(rs2));
-         return True;
+         putIReg64(irsb, rd, expr);
       }
+      const HChar* name;
+      switch (funct3) {
+      case 0b000:
+         name = "mul";
+         break;
+      case 0b001:
+         name = "mulh";
+         break;
+      case 0b010:
+         name = "mulhsu";
+         break;
+      case 0b011:
+         name = "mulhu";
+         break;
+      case 0b100:
+         name = "div";
+         break;
+      case 0b101:
+         name = "divu";
+         break;
+      case 0b110:
+         name = "rem";
+         break;
+      case 0b111:
+         name = "remu";
+         break;
+      default:
+         vassert(0);
+      }
+      DIP("%s %s, %s, %s\n", name, nameIReg(rd), nameIReg(rs1),
+          nameIReg(rs2));
+      return True;
    }
 
    /* ------------------ mulw rd, rs1, rs2 ------------------ */
@@ -3176,7 +3189,8 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
       UInt funct3 = INSN(14, 12);
       UInt rs1    = INSN(19, 15);
       UInt csr    = INSN(31, 20);
-      if ((funct3 != 0b001 && funct3 != 0b010 && funct3 != 0b011) ||
+      UInt imm4_0 = rs1;
+      if (funct3 == 0b000 || funct3 == 0b100 ||
           (csr != 0x001 && csr != 0x002 && csr != 0x003)) {
          /* Invalid CSRR{W,S,C}, fall through. */
       } else {
@@ -3205,6 +3219,18 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
                expr = binop(Iop_And32, mkexpr(fcsr),
                             unop(Iop_Not32, binop(Iop_And32, getIReg32(rs1),
                                                   mkU32(0x1f))));
+               break;
+            case 0b101:
+               expr = binop(Iop_Or32,
+                            binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffffe0)),
+                            mkU32(imm4_0));
+               break;
+            case 0b110:
+               expr = binop(Iop_Or32, mkexpr(fcsr), mkU32(imm4_0));
+               break;
+            case 0b111:
+               expr = binop(Iop_And32, mkexpr(fcsr),
+                            unop(Iop_Not32, mkU32(imm4_0)));
                break;
             default:
                vassert(0);
@@ -3245,6 +3271,26 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
                                    binop(Iop_And32, getIReg32(rs1), mkU32(0x7)),
                                    mkU8(5))));
                break;
+            case 0b101:
+               expr = binop(
+                  Iop_Or32, binop(Iop_And32, mkexpr(fcsr), mkU32(0xffffff1f)),
+                  binop(Iop_Shl32, binop(Iop_And32, mkU32(imm4_0), mkU32(0x7)),
+                        mkU8(5)));
+               break;
+            case 0b110:
+               expr = binop(Iop_Or32, mkexpr(fcsr),
+                            binop(Iop_Shl32,
+                                  binop(Iop_And32, mkU32(imm4_0), mkU32(0x7)),
+                                  mkU8(5)));
+               break;
+            case 0b111:
+               expr =
+                  binop(Iop_And32, mkexpr(fcsr),
+                        unop(Iop_Not32,
+                             binop(Iop_Shl32,
+                                   binop(Iop_And32, mkU32(imm4_0), mkU32(0x7)),
+                                   mkU8(5))));
+               break;
             default:
                vassert(0);
             }
@@ -3272,6 +3318,16 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
                             unop(Iop_Not32, binop(Iop_And32, getIReg32(rs1),
                                                   mkU32(0xff))));
                break;
+            case 0b101:
+               expr = mkU32(imm4_0);
+               break;
+            case 0b110:
+               expr = binop(Iop_Or32, mkexpr(fcsr), mkU32(imm4_0));
+               break;
+            case 0b111:
+               expr = binop(Iop_And32, mkexpr(fcsr),
+                            unop(Iop_Not32, mkU32(imm4_0)));
+               break;
             default:
                vassert(0);
             }
@@ -3292,6 +3348,15 @@ static Bool dis_RV64Zicsr(/*MB_OUT*/ DisResult* dres,
             break;
          case 0b011:
             name = "csrrc";
+            break;
+         case 0b101:
+            name = "csrrwi";
+            break;
+         case 0b110:
+            name = "csrrsi";
+            break;
+         case 0b111:
+            name = "csrrci";
             break;
          default:
             vassert(0);

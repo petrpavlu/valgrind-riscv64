@@ -758,4 +758,42 @@ static void show_block_diff(unsigned char* block1,
       printf("  output: %s=0x%016lx, %s=0x%016lx\n", #rd, w[0], #csr, w[1]);   \
    }
 
+#define TESTINST_1_1_CSRI(length, instruction, csr_val, rd, csr)               \
+   {                                                                           \
+      unsigned long w[2 /*out*/ + 1 /*in*/ + 2 /*spill*/] = {                  \
+         0, 0, (unsigned long)csr_val, 0, 0};                                  \
+      /* w[0] = output rd value                                                \
+         w[1] = output csr value                                               \
+         w[2] = input csr value                                                \
+         w[3] = spill slot for rd                                              \
+         w[4] = spill slot for csr                                             \
+       */                                                                      \
+      register unsigned long* t1 asm("t1") = w;                                \
+      __asm__ __volatile__(                                                    \
+         ".if \"" #rd "\" != \"unused\";"                                      \
+         "sd " #rd ", 24(%[w]);"       /* Spill rd. */                         \
+         ".endif;"                                                             \
+         "csrr t2, " #csr ";"                                                  \
+         "sd t2, 32(%[w]);"            /* Spill csr. */                        \
+         "ld t2, 16(%[w]);"                                                    \
+         "csrw " #csr ", t2;"          /* Load csr. */                         \
+         ASMINST_##length(instruction) ";"                                     \
+         ".if \"" #rd "\" != \"unused\";"                                      \
+         "sd " #rd ", 0(%[w]);"        /* Save result of the operation. */     \
+         ".endif;"                                                             \
+         "csrr t2, " #csr ";"                                                  \
+         "sd t2, 8(%[w]);"             /* Save csr. */                         \
+         "ld t2, 32(%[w]);"                                                    \
+         "csrw " #csr ", t2;"          /* Reload csr. */                       \
+         ".if \"" #rd "\" != \"unused\";"                                      \
+         "ld " #rd ", 24(%[w]);"       /* Reload rd. */                        \
+         ".endif;"                                                             \
+         :                                                                     \
+         : [w] "r"(t1)                                                         \
+         : "t2", "memory");                                                    \
+      printf("%s ::\n", instruction);                                          \
+      printf("  inputs: %s=0x%016lx\n", #csr, (unsigned long)csr_val);         \
+      printf("  output: %s=0x%016lx, %s=0x%016lx\n", #rd, w[0], #csr, w[1]);   \
+   }
+
 /* clang-format on */
