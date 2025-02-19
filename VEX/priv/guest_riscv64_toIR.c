@@ -826,10 +826,12 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b000) {
       UInt rd_rs1   = INSN(11, 7);
       UInt nzimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      ULong simm     = vex_sx_to_64(nzimm5_0, 6);
       if (rd_rs1 == 0 || nzimm5_0 == 0) {
-         /* Invalid C.ADDI, fall through. */
+         // hint
+         DIP("c.addi %s, %lld\n", nameIReg(rd_rs1), (Long)simm);
+         return True;
       } else {
-         ULong simm = vex_sx_to_64(nzimm5_0, 6);
          putIReg64(irsb, rd_rs1,
                    binop(Iop_Add64, getIReg64(rd_rs1), mkU64(simm)));
          DIP("c.addi %s, %lld\n", nameIReg(rd_rs1), (Long)simm);
@@ -856,10 +858,12 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b010) {
       UInt rd     = INSN(11, 7);
       UInt imm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
+      ULong simm   = vex_sx_to_64(imm5_0, 6);
       if (rd == 0) {
-         /* Invalid C.LI, fall through. */
+         // hint
+         DIP("c.li %s, %lld\n", nameIReg(rd), (Long)simm);
+         return True;
       } else {
-         ULong simm = vex_sx_to_64(imm5_0, 6);
          putIReg64(irsb, rd, mkU64(simm));
          DIP("c.li %s, %lld\n", nameIReg(rd), (Long)simm);
          return True;
@@ -886,7 +890,11 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b01 && INSN(15, 13) == 0b011) {
       UInt rd         = INSN(11, 7);
       UInt nzimm17_12 = INSN(12, 12) << 5 | INSN(6, 2);
-      if (rd == 0 || rd == 2 || nzimm17_12 == 0) {
+      if (rd == 0 && nzimm17_12 != 0) {
+         // hint
+         DIP("c.lui %s, 0x%x\n", nameIReg(rd), nzimm17_12);
+         return True;
+      } else if (rd == 0 || rd == 2 || nzimm17_12 == 0) {
          /* Invalid C.LUI, fall through. */
       } else {
          putIReg64(irsb, rd, mkU64(vex_sx_to_64(nzimm17_12 << 12, 18)));
@@ -901,7 +909,10 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
       UInt rd_rs1    = INSN(9, 7) + 8;
       UInt nzuimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
       if (nzuimm5_0 == 0) {
-         /* Invalid C.{SRLI,SRAI}, fall through. */
+         // hint
+         DIP("c.%s %s, %u\n", is_log ? "srli" : "srai", nameIReg(rd_rs1),
+             nzuimm5_0);
+         return True;
       } else {
          putIReg64(irsb, rd_rs1,
                    binop(is_log ? Iop_Shr64 : Iop_Sar64, getIReg64(rd_rs1),
@@ -1010,8 +1021,15 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b10 && INSN(15, 13) == 0b000) {
       UInt rd_rs1    = INSN(11, 7);
       UInt nzuimm5_0 = INSN(12, 12) << 5 | INSN(6, 2);
-      if (rd_rs1 == 0 || nzuimm5_0 == 0) {
-         /* Invalid C.SLLI, fall through. */
+      if (rd_rs1 == 0 && nzuimm5_0 != 0) {
+         // hint
+         DIP("c.slli %s, %u\n", nameIReg(rd_rs1), nzuimm5_0);
+         return True;
+      } else if (nzuimm5_0 == 0) {
+         // NOTE: for rv128 rs1 != 0
+         // hint
+         DIP("c.slli64 %s\n", nameIReg(rd_rs1));
+         return True;
       } else {
          putIReg64(irsb, rd_rs1,
                    binop(Iop_Shl64, getIReg64(rd_rs1), mkU8(nzuimm5_0)));
@@ -1091,7 +1109,11 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1000) {
       UInt rd  = INSN(11, 7);
       UInt rs2 = INSN(6, 2);
-      if (rd == 0 || rs2 == 0) {
+      if (rd == 0 && rs2 != 0) {
+         // hint
+         DIP("c.mv %s, %s\n", nameIReg(rd), nameIReg(rs2));
+         return True;
+      } else if (rd == 0 || rs2 == 0) {
          /* Invalid C.MV, fall through. */
       } else {
          putIReg64(irsb, rd, getIReg64(rs2));
@@ -1129,6 +1151,13 @@ static Bool dis_RV64C(/*MB_OUT*/ DisResult* dres,
    if (INSN(1, 0) == 0b10 && INSN(15, 12) == 0b1001) {
       UInt rd_rs1 = INSN(11, 7);
       UInt rs2    = INSN(6, 2);
+      if (rd_rs1 == 0 && rs2 != 0) {
+         // hint
+         // TODO: we may want to be more accurate
+         // and print C.NTL.* instructions
+         DIP("c.add %s, %s\n", nameIReg(rd_rs1), nameIReg(rs2));
+         return True;
+      }
       if (rd_rs1 == 0 || rs2 == 0) {
          /* Invalid C.ADD, fall through. */
       } else {
